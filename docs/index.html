@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logyx — un linguaggio, server e client</title>
+<meta name="description" content="Logyx: un solo sorgente per server e client. Conciso come Python, comodo per il web come PHP, compilato a codice macchina via Rust (nativo + WebAssembly).">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<style>
+  :root{
+    --bg:#f6f7fb; --panel:#ffffff; --panel-2:#f0f1f7;
+    --text:#171a2b; --muted:#5a6076; --border:#e3e5ef;
+    --accent:#5b4be1; --accent-2:#22c3dd; --accent-soft:#efeefc;
+    --code-bg:#0f1220; --code-text:#e7e9f5; --shadow:0 12px 40px rgba(23,26,43,.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c0e17; --panel:#141826; --panel-2:#1b2133;
+    --text:#e8eaf3; --muted:#9aa3bd; --border:#252b3f;
+    --accent:#8b7dff; --accent-2:#34d6ee; --accent-soft:#1c1f3a;
+    --code-bg:#0a0c15; --code-text:#e7e9f5; --shadow:0 14px 44px rgba(0,0,0,.45);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0c0e17; --panel:#141826; --panel-2:#1b2133;
+      --text:#e8eaf3; --muted:#9aa3bd; --border:#252b3f;
+      --accent:#8b7dff; --accent-2:#34d6ee; --accent-soft:#1c1f3a;
+      --code-bg:#0a0c15; --code-text:#e7e9f5; --shadow:0 14px 44px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1040px; margin:0 auto; padding:0 20px}
+
+  /* Header */
+  header{position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
+    background:color-mix(in srgb, var(--bg) 82%, transparent); border-bottom:1px solid var(--border)}
+  .nav{display:flex; align-items:center; gap:14px; padding:12px 0}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.15rem}
+  .brand svg{width:34px; height:34px; border-radius:9px; display:block}
+  .nav .spacer{flex:1}
+  .nav a.link{color:var(--muted); font-weight:600; font-size:.94rem}
+  .nav a.link:hover{color:var(--text); text-decoration:none}
+  .ctrl{display:inline-flex; align-items:center; gap:6px; background:var(--panel);
+    border:1px solid var(--border); border-radius:10px; padding:4px}
+  .ctrl button{all:unset; cursor:pointer; padding:5px 9px; border-radius:7px; font-size:.82rem;
+    font-weight:600; color:var(--muted)}
+  .ctrl button.active{background:var(--accent-soft); color:var(--accent)}
+  @media(max-width:720px){ .nav a.link{display:none} }
+
+  /* Hero */
+  .hero{padding:66px 0 40px; text-align:center}
+  .hero .badge{display:inline-block; font-size:.8rem; font-weight:700; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--accent); background:var(--accent-soft);
+    padding:6px 12px; border-radius:999px; margin-bottom:22px}
+  .hero h1{font-size:clamp(2.1rem,5vw,3.4rem); line-height:1.1; margin:.1em 0 .35em; letter-spacing:-.02em}
+  .hero h1 .grad{background:linear-gradient(100deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text; background-clip:text; color:transparent}
+  .hero p.lead{font-size:clamp(1.05rem,2.2vw,1.28rem); color:var(--muted); max-width:640px; margin:0 auto 28px}
+  .cta{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+  .btn{display:inline-flex; align-items:center; gap:8px; padding:12px 22px; border-radius:12px;
+    font-weight:700; font-size:.98rem; border:1px solid transparent; cursor:pointer}
+  .btn.primary{background:linear-gradient(100deg,var(--accent),#6d5ef6); color:#fff}
+  .btn.primary:hover{filter:brightness(1.06); text-decoration:none}
+  .btn.ghost{background:var(--panel); border-color:var(--border); color:var(--text)}
+  .btn.ghost:hover{border-color:var(--accent); text-decoration:none}
+
+  /* Sections */
+  section{padding:44px 0}
+  h2{font-size:clamp(1.5rem,3vw,2rem); letter-spacing:-.01em; margin:0 0 8px}
+  .sub{color:var(--muted); margin:0 0 28px; max-width:680px}
+  .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px}
+  .card{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:22px;
+    box-shadow:var(--shadow)}
+  .card .ic{width:42px; height:42px; border-radius:11px; display:flex; align-items:center;
+    justify-content:center; font-size:1.3rem; background:var(--accent-soft); margin-bottom:12px}
+  .card h3{margin:0 0 6px; font-size:1.08rem}
+  .card p{margin:0; color:var(--muted); font-size:.95rem}
+
+  /* Code */
+  .code-wrap{background:var(--code-bg); border-radius:16px; padding:20px 22px; overflow:auto;
+    border:1px solid var(--border); box-shadow:var(--shadow)}
+  pre{margin:0; font-family:"SF Mono",SFMono-Regular,ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+    font-size:.9rem; line-height:1.7; color:var(--code-text)}
+  .k{color:#c4b5ff} .s{color:#8ce6b0} .c{color:#6b7398; font-style:italic}
+  .fn{color:#6fd7f0} .n{color:#ffcf8a}
+  .split{display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start}
+  @media(max-width:780px){ .split{grid-template-columns:1fr} }
+
+  /* Roadmap */
+  .road{display:flex; flex-direction:column; gap:2px}
+  .road .row{display:flex; align-items:flex-start; gap:14px; padding:14px 16px; background:var(--panel);
+    border:1px solid var(--border); border-radius:12px}
+  .road .row .st{flex:0 0 auto; font-size:1.15rem; line-height:1.5}
+  .road .row .tx b{display:block}
+  .road .row .tx span{color:var(--muted); font-size:.92rem}
+  .tag{display:inline-block; font-size:.72rem; font-weight:700; padding:2px 8px; border-radius:6px;
+    margin-left:8px; vertical-align:middle}
+  .tag.done{background:#1f8a4c22; color:#1f9d57} .tag.wip{background:#c9821022; color:#d69314}
+  .tag.next{background:#5b4be122; color:var(--accent)} .tag.plan{background:#6b73981f; color:var(--muted)}
+
+  footer{border-top:1px solid var(--border); padding:34px 0; color:var(--muted); font-size:.9rem}
+  footer .wrap{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
+  footer .spacer{flex:1}
+  .kbd{font-family:ui-monospace,monospace; background:var(--panel-2); border:1px solid var(--border);
+    border-radius:6px; padding:1px 7px; font-size:.85em}
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <div class="brand">
+      <svg viewBox="0 0 256 256" aria-hidden="true"><rect x="8" y="8" width="240" height="240" rx="60" fill="#5b4be1"/><path d="M96 74 L150 190M96 74 L60 190M120 122 L196 74" stroke="#fff" stroke-width="26" stroke-linecap="round"/><circle cx="96" cy="74" r="19" fill="#22c3dd"/></svg>
+      <span>Logyx</span>
+    </div>
+    <a class="link" href="#perche" data-i18n="nav.why">Perché</a>
+    <a class="link" href="#codice" data-i18n="nav.code">Codice</a>
+    <a class="link" href="#stato" data-i18n="nav.status">Stato</a>
+    <a class="link" href="#inizia" data-i18n="nav.start">Inizia</a>
+    <div class="spacer"></div>
+    <div class="ctrl" role="group" aria-label="lingua">
+      <button data-lang="it">IT</button><button data-lang="en">EN</button>
+    </div>
+    <div class="ctrl" role="group" aria-label="tema">
+      <button data-theme-btn="light" title="chiaro">☀</button>
+      <button data-theme-btn="dark" title="scuro">☾</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <span class="badge" data-i18n="hero.badge">Un linguaggio · molti mondi</span>
+      <h1 data-i18n-html="hero.title">Un solo sorgente per <span class="grad">server e client</span></h1>
+      <p class="lead" data-i18n="hero.lead">Conciso come Python, comodo per il web come PHP, ma compilato a codice macchina. Lo stesso codice gira nativo sul server e come WebAssembly nel browser.</p>
+      <div class="cta">
+        <a class="btn primary" id="repo-cta" href="#" data-i18n="hero.cta.repo">Vai al repository</a>
+        <a class="btn ghost" href="#codice" data-i18n="hero.cta.see">Guarda il codice</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="perche">
+    <div class="wrap">
+      <h2 data-i18n="why.h">Perché Logyx</h2>
+      <p class="sub" data-i18n="why.sub">Oggi per il web servono due linguaggi diversi. Logyx cancella quel confine: una sola sintassi, un solo sorgente, deploy semplice come PHP e velocità vicina al C.</p>
+      <div class="grid">
+        <div class="card"><div class="ic">🌐</div><h3 data-i18n="why.c1.h">Un sorgente, molti mondi</h3><p data-i18n="why.c1.p">Lo stesso codice gira nativo sul server e come WASM nel client, senza duplicazione e senza un secondo linguaggio.</p></div>
+        <div class="card"><div class="ic">⚡</div><h3 data-i18n="why.c2.h">Facile per default, veloce a richiesta</h3><p data-i18n="why.c2.p">Dinamico e conciso come Python; i tipi si aggiungono solo dove serve prestazione (gradual typing).</p></div>
+        <div class="card"><div class="ic">🦀</div><h3 data-i18n="why.c3.h">Transpila verso Rust</h3><p data-i18n="why.c3.p">Da Rust si ereditano nativo, WebAssembly, desktop e mobile — con sicurezza di memoria e ottimizzazioni gratis.</p></div>
+        <div class="card"><div class="ic">🔒</div><h3 data-i18n="why.c4.h">Il confine è esplicito</h3><p data-i18n="why.c4.p">I blocchi <code>@start-client</code> mostrano dove passa la rete. Il client non è mai fidato: è anche un confine di sicurezza.</p></div>
+        <div class="card"><div class="ic">🔌</div><h3 data-i18n="why.c5.h">Interoperabilità dal primo giorno</h3><p data-i18n="why.c5.p">FFI con C (la lingua franca) e accesso alle crates Rust: l'ecosistema copre i mondi che il linguaggio non gonfia.</p></div>
+        <div class="card"><div class="ic">🧩</div><h3 data-i18n="why.c6.h">Batterie da web incluse</h3><p data-i18n="why.c6.p">Routing, template, HTTP e database nella libreria standard, alla PHP. Il cuore del linguaggio resta piccolo.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="codice">
+    <div class="wrap">
+      <h2 data-i18n="code.h">Che aspetto ha</h2>
+      <p class="sub" data-i18n="code.sub">Sintassi non posizionale con graffe, punto e virgola opzionale, tipi facoltativi. Server fuori, client dentro le isole.</p>
+      <div class="split">
+        <div class="code-wrap"><pre><span class="c">// server (come PHP) + isola client → WASM</span>
+<span class="k">route</span> <span class="s">"/"</span> {
+    saluto = <span class="s">"Ciao, mondo!"</span>
+
+    <span class="k">render</span> &lt;html&gt;&lt;body&gt;
+      &lt;h1&gt;{saluto}&lt;/h1&gt;
+      &lt;button id=<span class="s">"btn"</span>&gt;Cliccami&lt;/button&gt;
+      &lt;p id=<span class="s">"out"</span>&gt;—&lt;/p&gt;
+
+      <span class="k">@start-client</span>
+        clic = <span class="n">0</span>
+        <span class="k">on</span> <span class="s">"click"</span> <span class="k">of</span> <span class="s">"#btn"</span> {
+            clic = clic + <span class="n">1</span>
+            <span class="k">set</span> text <span class="k">of</span> <span class="s">"#out"</span> <span class="k">to</span> <span class="s">"Premuto {clic} volte"</span>
+        }
+      <span class="k">@end-client</span>
+    &lt;/body&gt;&lt;/html&gt;
+}</pre></div>
+        <div class="code-wrap"><pre><span class="c">// sottoinsieme tipizzato → compila a nativo via Rust</span>
+<span class="k">fn</span> <span class="fn">fib</span>(n: <span class="k">int</span>) {        <span class="c">// ritorno dedotto</span>
+    <span class="k">if</span> n &lt; <span class="n">2</span> {
+        <span class="k">return</span> n
+    }
+    <span class="k">return</span> <span class="fn">fib</span>(n - <span class="n">1</span>) + <span class="fn">fib</span>(n - <span class="n">2</span>)
+}
+
+<span class="k">fn</span> <span class="fn">main</span>() {
+    <span class="k">for</span> i <span class="k">in</span> <span class="fn">range</span>(<span class="n">11</span>) {
+        <span class="fn">print</span>(<span class="s">"fib({i}) = {fib(i)}"</span>)
+    }
+}
+
+<span class="c">// $ python3 main.py build native_fib.logyx</span>
+<span class="c">// → genera Rust e compila a eseguibile</span></pre></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="stato">
+    <div class="wrap">
+      <h2 data-i18n="status.h">A che punto è</h2>
+      <p class="sub" data-i18n="status.sub">Logyx è un prototipo funzionante in Python (lexer, parser, interprete, render web, transpiler Rust). Ecco la mappa.</p>
+      <div class="road">
+        <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r1.h">Nucleo del linguaggio</b><span data-i18n="status.r1.p">Variabili, funzioni, if/while/for, liste e mappe, stringhe con interpolazione, builtin.</span></div></div>
+        <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r2.h">Web lato server</b><span data-i18n="status.r2.p">route + render con interpolazione, escaping e blocchi { for } / { if }.</span></div></div>
+        <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r3.h">Isole client → JavaScript</b><span data-i18n="status.r3.p">Blocchi @start-client compilati a JS: eventi, stato, aggiornamento del DOM.</span></div></div>
+        <div class="row"><div class="st">🟡</div><div class="tx"><b data-i18n="status.r4.h">Transpiler Rust (sottoinsieme tipizzato)</b><span data-i18n="status.r4.p">Aritmetica, stringhe, controllo di flusso, ricorsione, inferenza del tipo di ritorno.</span></div></div>
+        <div class="row"><div class="st">⏳</div><div class="tx"><b data-i18n="status.r5.h">Prossimi passi</b><span data-i18n="status.r5.p">Inferenza dei tipi dei parametri, liste/mappe nel transpiler, moduli, target WASM del client, compilatore vero in Rust.</span></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="inizia">
+    <div class="wrap">
+      <h2 data-i18n="start.h">Come iniziare</h2>
+      <p class="sub" data-i18n="start.sub">Il prototipo gira con il solo Python 3.8+ (nessuna dipendenza). Rust serve solo, in opzione, per compilare a nativo.</p>
+      <div class="code-wrap"><pre>git clone https://github.com/RedRider21/logyx.git
+cd logyx/prototype
+
+<span class="c"># esegui un programma</span>
+python3 main.py ../examples/hello.logyx
+
+<span class="c"># avvia un server web</span>
+python3 main.py serve ../examples/web_demo.logyx 8137
+
+<span class="c"># transpila a Rust e compila a nativo</span>
+python3 main.py build ../examples/native_fib.logyx</pre></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <strong>Logyx</strong> — <span data-i18n="footer.author">di Daniele Deplano (RedRider21)</span><br>
+      <span data-i18n="footer.license">Licenza AGPL-3.0. Software libero.</span>
+    </div>
+    <div class="spacer"></div>
+    <a id="repo-foot" href="#">GitHub</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var REPO = "https://github.com/RedRider21/logyx";
+  ["repo-cta","repo-foot"].forEach(function(id){var e=document.getElementById(id); if(e) e.href=REPO;});
+
+  var I18N = {
+    it:{
+      "nav.why":"Perché","nav.code":"Codice","nav.status":"Stato","nav.start":"Inizia",
+      "hero.badge":"Un linguaggio · molti mondi",
+      "hero.title":"Un solo sorgente per <span class=\"grad\">server e client</span>",
+      "hero.lead":"Conciso come Python, comodo per il web come PHP, ma compilato a codice macchina. Lo stesso codice gira nativo sul server e come WebAssembly nel browser.",
+      "hero.cta.repo":"Vai al repository","hero.cta.see":"Guarda il codice",
+      "why.h":"Perché Logyx",
+      "why.sub":"Oggi per il web servono due linguaggi diversi. Logyx cancella quel confine: una sola sintassi, un solo sorgente, deploy semplice come PHP e velocità vicina al C.",
+      "why.c1.h":"Un sorgente, molti mondi","why.c1.p":"Lo stesso codice gira nativo sul server e come WASM nel client, senza duplicazione e senza un secondo linguaggio.",
+      "why.c2.h":"Facile per default, veloce a richiesta","why.c2.p":"Dinamico e conciso come Python; i tipi si aggiungono solo dove serve prestazione (gradual typing).",
+      "why.c3.h":"Transpila verso Rust","why.c3.p":"Da Rust si ereditano nativo, WebAssembly, desktop e mobile — con sicurezza di memoria e ottimizzazioni gratis.",
+      "why.c4.h":"Il confine è esplicito","why.c4.p":"I blocchi @start-client mostrano dove passa la rete. Il client non è mai fidato: è anche un confine di sicurezza.",
+      "why.c5.h":"Interoperabilità dal primo giorno","why.c5.p":"FFI con C (la lingua franca) e accesso alle crates Rust: l'ecosistema copre i mondi che il linguaggio non gonfia.",
+      "why.c6.h":"Batterie da web incluse","why.c6.p":"Routing, template, HTTP e database nella libreria standard, alla PHP. Il cuore del linguaggio resta piccolo.",
+      "code.h":"Che aspetto ha","code.sub":"Sintassi non posizionale con graffe, punto e virgola opzionale, tipi facoltativi. Server fuori, client dentro le isole.",
+      "status.h":"A che punto è","status.sub":"Logyx è un prototipo funzionante in Python (lexer, parser, interprete, render web, transpiler Rust). Ecco la mappa.",
+      "status.r1.h":"Nucleo del linguaggio","status.r1.p":"Variabili, funzioni, if/while/for, liste e mappe, stringhe con interpolazione, builtin.",
+      "status.r2.h":"Web lato server","status.r2.p":"route + render con interpolazione, escaping e blocchi { for } / { if }.",
+      "status.r3.h":"Isole client → JavaScript","status.r3.p":"Blocchi @start-client compilati a JS: eventi, stato, aggiornamento del DOM.",
+      "status.r4.h":"Transpiler Rust (sottoinsieme tipizzato)","status.r4.p":"Aritmetica, stringhe, controllo di flusso, ricorsione, inferenza del tipo di ritorno.",
+      "status.r5.h":"Prossimi passi","status.r5.p":"Inferenza dei tipi dei parametri, liste/mappe nel transpiler, moduli, target WASM del client, compilatore vero in Rust.",
+      "start.h":"Come iniziare","start.sub":"Il prototipo gira con il solo Python 3.8+ (nessuna dipendenza). Rust serve solo, in opzione, per compilare a nativo.",
+      "footer.author":"di Daniele Deplano (RedRider21)","footer.license":"Licenza AGPL-3.0. Software libero."
+    },
+    en:{
+      "nav.why":"Why","nav.code":"Code","nav.status":"Status","nav.start":"Start",
+      "hero.badge":"One language · many worlds",
+      "hero.title":"One source for <span class=\"grad\">server and client</span>",
+      "hero.lead":"Concise like Python, web-friendly like PHP, yet compiled to machine code. The same code runs native on the server and as WebAssembly in the browser.",
+      "hero.cta.repo":"Go to the repository","hero.cta.see":"See the code",
+      "why.h":"Why Logyx",
+      "why.sub":"Today the web needs two different languages. Logyx erases that divide: one syntax, one source, deploy as simple as PHP and speed close to C.",
+      "why.c1.h":"One source, many worlds","why.c1.p":"The same code runs native on the server and as WASM on the client — no duplication, no second language.",
+      "why.c2.h":"Easy by default, fast on demand","why.c2.p":"Dynamic and concise like Python; types are added only where performance needs them (gradual typing).",
+      "why.c3.h":"Transpiles to Rust","why.c3.p":"From Rust you inherit native, WebAssembly, desktop and mobile — with memory safety and optimizations for free.",
+      "why.c4.h":"The boundary is explicit","why.c4.p":"@start-client blocks show where the network is crossed. The client is never trusted: it is also a security boundary.",
+      "why.c5.h":"Interoperability from day one","why.c5.p":"C FFI (the lingua franca) and access to Rust crates: the ecosystem covers the worlds the language doesn't bloat.",
+      "why.c6.h":"Web batteries included","why.c6.p":"Routing, templates, HTTP and database in the standard library, PHP-style. The language core stays small.",
+      "code.h":"What it looks like","code.sub":"Non-positional brace syntax, optional semicolons, optional types. Server outside, client inside the islands.",
+      "status.h":"Where it stands","status.sub":"Logyx is a working prototype in Python (lexer, parser, interpreter, web render, Rust transpiler). Here's the map.",
+      "status.r1.h":"Language core","status.r1.p":"Variables, functions, if/while/for, lists and maps, string interpolation, builtins.",
+      "status.r2.h":"Server-side web","status.r2.p":"route + render with interpolation, escaping and { for } / { if } blocks.",
+      "status.r3.h":"Client islands → JavaScript","status.r3.p":"@start-client blocks compiled to JS: events, state, DOM updates.",
+      "status.r4.h":"Rust transpiler (typed subset)","status.r4.p":"Arithmetic, strings, control flow, recursion, return-type inference.",
+      "status.r5.h":"Next steps","status.r5.p":"Parameter-type inference, lists/maps in the transpiler, modules, client WASM target, the real compiler in Rust.",
+      "start.h":"Getting started","start.sub":"The prototype runs on Python 3.8+ alone (no dependencies). Rust is optional, only to compile to native.",
+      "footer.author":"by Daniele Deplano (RedRider21)","footer.license":"AGPL-3.0 licensed. Free software."
+    }
+  };
+
+  function store(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+  function load(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+
+  function applyLang(lang){
+    var dict=I18N[lang]||I18N.it;
+    document.documentElement.lang=lang;
+    document.querySelectorAll("[data-i18n]").forEach(function(el){
+      var v=dict[el.getAttribute("data-i18n")]; if(v!=null) el.textContent=v;
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach(function(el){
+      var v=dict[el.getAttribute("data-i18n-html")]; if(v!=null) el.innerHTML=v;
+    });
+    document.querySelectorAll("[data-lang]").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-lang")===lang);
+    });
+    store("logyx-lang",lang);
+  }
+  function applyTheme(mode){
+    if(mode==="light"||mode==="dark") document.documentElement.setAttribute("data-theme",mode);
+    else document.documentElement.removeAttribute("data-theme");
+    document.querySelectorAll("[data-theme-btn]").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-theme-btn")===mode);
+    });
+    store("logyx-theme",mode||"");
+  }
+
+  document.querySelectorAll("[data-lang]").forEach(function(b){
+    b.addEventListener("click",function(){applyLang(b.getAttribute("data-lang"));});
+  });
+  document.querySelectorAll("[data-theme-btn]").forEach(function(b){
+    b.addEventListener("click",function(){applyTheme(b.getAttribute("data-theme-btn"));});
+  });
+
+  var savedLang=load("logyx-lang");
+  if(!savedLang){ savedLang=(navigator.language||"it").toLowerCase().indexOf("it")===0?"it":"en"; }
+  applyLang(savedLang);
+
+  var savedTheme=load("logyx-theme");
+  applyTheme(savedTheme||"");
+})();
+</script>
+</body>
+</html>

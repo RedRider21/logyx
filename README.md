@@ -9,8 +9,30 @@ Il nome unisce la radice greca **λόγος** (parola, ragione, linguaggio) al s
 - **Estensione dei file:** `.logyx` (breve: `.lgx`)
 - **Autore:** Daniele Deplano (RedRider21)
 - **Licenza:** AGPL-3.0 (vedi `LICENSE`)
-- **Stato:** fase di design (nessun codice del compilatore ancora scritto)
+- **Stato:** prototipo funzionante in Python (interprete + render web + transpiler Rust su sottoinsieme tipizzato)
+- **Sito:** https://redrider21.github.io/logyx/
 - **Documento di design online:** https://claude.ai/code/artifact/0aa46f19-cef5-4728-8e26-4b83867259cd
+
+## In due parole
+
+Logyx nasce per **cancellare la divisione tra linguaggio server e linguaggio client**: un solo
+sorgente, una sola sintassi, che gira nativo sul server e come WebAssembly nel browser. Deploy
+semplice come PHP, velocità vicina al C, concisione di Python. Il backend **transpila verso Rust**
+e da lì `rustc` raggiunge nativo, WASM, desktop e mobile.
+
+## Cosa funziona già (prototipo)
+
+- **Nucleo**: variabili, funzioni, `if`/`while`/`for`, liste e mappe base, stringhe con
+  interpolazione, builtin (`print`, `len`, `str`, `range`).
+- **Web lato server**: `route` + `render` con interpolazione, escaping automatico e blocchi
+  di controllo `{ for }` / `{ if }`.
+- **Isole client** `@start-client … @end-client` compilate a **JavaScript**.
+- **Transpiler Rust** (comando `build`) su un sottoinsieme tipizzato: aritmetica, confronti,
+  logica, concatenazione di stringhe, `if`/`while`/`for range`, ricorsione, con inferenza del
+  tipo di ritorno. `rustc` compila il `.rs` prodotto a eseguibile nativo.
+
+Il dettaglio aggiornato di ciò che il prototipo esegue è nel `MANUAL.md`; il punto di ripresa
+dello sviluppo è in `CONTEXT.md`.
 
 ## Intestazione di copyright per i file di programma
 

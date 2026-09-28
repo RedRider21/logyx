@@ -1,0 +1,15 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logyx">
+  <defs>
+    <linearGradient id="lgx-bg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6D5EF6"/>
+      <stop offset="1" stop-color="#5B4BE1"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="60" fill="url(#lgx-bg)"/>
+  <!-- lambda: sorgente unico in alto, due percorsi (server / client) -->
+  <path d="M96 74 L150 190" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M96 74 L60 190" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M120 122 L196 74" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- nodo sorgente -->
+  <circle cx="96" cy="74" r="19" fill="#22D3EE"/>
+</svg>
