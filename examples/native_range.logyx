@@ -1,0 +1,14 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// range(a, b) e divisione intera. Eseguibile e compilabile a nativo.
+
+fn main() {
+    somma = 0
+    for i in range(1, 5) {
+        somma = somma + i
+    }
+    print("somma 1..4 = {somma}")
+    print("7 / 2 = {7 / 2}")
+    print("7 % 3 = {7 % 3}")
+}

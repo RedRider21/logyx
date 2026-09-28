@@ -91,12 +91,15 @@ class RustTranspiler:
         pad = "    " * indent
         it = s.iterable
         if not (isinstance(it, N.Call) and isinstance(it.callee, N.Identifier)
-                and it.callee.name == "range" and len(it.args) == 1):
-            raise LogyxError("il transpiler v0 supporta solo 'for x in range(n)'")
+                and it.callee.name == "range" and len(it.args) in (1, 2)):
+            raise LogyxError("il transpiler v0 supporta solo 'for x in range(n)' o 'range(a, b)'")
         declared.add(s.var)
-        n = self.expr(it.args[0])
+        if len(it.args) == 1:
+            lo, hi = "0i64", self.expr(it.args[0])
+        else:
+            lo, hi = self.expr(it.args[0]), self.expr(it.args[1])
         body = self.block(s.body, declared, indent + 1)
-        return pad + f"for {s.var} in 0i64..({n}) {{\n" + body + "\n" + pad + "}"
+        return pad + f"for {s.var} in ({lo})..({hi}) {{\n" + body + "\n" + pad + "}"
 
     def print_call(self, args):
         if len(args) != 1:
@@ -139,7 +142,9 @@ class RustTranspiler:
                 raise LogyxError("nil non supportato dal transpiler v0")
             if isinstance(v, str):
                 return json.dumps(v) + ".to_string()"
-            return str(v)
+            if isinstance(v, int):
+                return f"{v}i64"
+            return f"{v}f64"
         if t == "StringLit":
             if all(kind == "lit" for kind, _ in e.parts):
                 text = "".join(val for _, val in e.parts)

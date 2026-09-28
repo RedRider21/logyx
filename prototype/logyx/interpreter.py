@@ -93,6 +93,12 @@ def logyx_str(v):
     return str(v)
 
 
+def _intdiv(a, b):
+    """Divisione intera troncata verso lo zero (come Rust su i64)."""
+    q = abs(a) // abs(b)
+    return -q if (a < 0) != (b < 0) else q
+
+
 def truthy(v):
     if v is None or v is False:
         return False
@@ -112,7 +118,15 @@ class Interpreter:
         g.define("print", lambda *a: print(" ".join(logyx_str(x) for x in a)))
         g.define("len", lambda x: len(x))
         g.define("str", logyx_str)
-        g.define("range", lambda n: list(range(int(n))))
+
+        def _range(*args):
+            if len(args) == 1:
+                return list(range(int(args[0])))
+            if len(args) == 2:
+                return list(range(int(args[0]), int(args[1])))
+            raise LogyxError("range accetta 1 o 2 argomenti")
+
+        g.define("range", _range)
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.
@@ -357,8 +371,14 @@ class Interpreter:
         if op == "/":
             if b == 0:
                 raise LogyxError("divisione per zero")
+            if isinstance(a, int) and isinstance(b, int):
+                return _intdiv(a, b)
             return a / b
         if op == "%":
+            if b == 0:
+                raise LogyxError("modulo per zero")
+            if isinstance(a, int) and isinstance(b, int):
+                return a - _intdiv(a, b) * b
             return a % b
         if op == "==":
             return a == b

@@ -53,7 +53,7 @@ nome: string = "Ada"   // con tipo esplicito
 const PI = 3.14159     // costante (non riassegnabile)
 ```
 
-- Aritmetici: `+  -  *  /  %`
+- Aritmetici: `+  -  *  /  %` — fra interi `/` è divisione intera troncata verso zero (come Rust)
 - Confronto: `==  !=  <  <=  >  >=`
 - Logici: `and  or  not`
 - `+` fra stringhe (o stringa e numero) concatena.
@@ -110,7 +110,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `print(x)` | Stampa `x` (con conversione leggibile) |
 | `len(x)` | Lunghezza di lista, mappa o stringa |
 | `str(x)` | Converte in stringa |
-| `range(n)` | Lista `0 .. n-1` |
+| `range(n)` / `range(a, b)` | Lista `0 .. n-1`, oppure `a .. b-1` |
 
 ## 10. Web lato server ✅
 
@@ -152,7 +152,8 @@ Target WASM: previsto. ⏳
 `build` traduce un **sottoinsieme tipizzato** in Rust, che `rustc` compila a eseguibile nativo.
 
 - Supporta: funzioni con tipi espliciti (`int`/`float`/`bool`/`string`), aritmetica, confronti, logica,
-  concatenazione di stringhe con `+`, `if`/`else`, `while`, `for x in range(n)`, `return`, `print`, ricorsione.
+  concatenazione di stringhe con `+`, `if`/`else`, `while`, `for x in range(n)` o `range(a, b)`, `return`,
+  `print`, ricorsione. Gli interi sono `i64`; `/` è divisione intera.
 - Non ancora: liste/mappe, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```
