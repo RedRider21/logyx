@@ -44,8 +44,8 @@
   header{position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
     background:color-mix(in srgb, var(--bg) 82%, transparent); border-bottom:1px solid var(--border)}
   .nav{display:flex; align-items:center; gap:14px; padding:12px 0}
-  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.15rem}
-  .brand svg{width:34px; height:34px; border-radius:9px; display:block}
+  .brand{display:flex; align-items:center; gap:11px; font-weight:700; font-size:1.28rem}
+  .brand svg{width:42px; height:42px; display:block}
   .nav .spacer{flex:1}
   .nav a.link{color:var(--muted); font-weight:600; font-size:.94rem}
   .nav a.link:hover{color:var(--text); text-decoration:none}
@@ -57,7 +57,11 @@
   @media(max-width:720px){ .nav a.link{display:none} }
 
   /* Hero */
-  .hero{padding:66px 0 40px; text-align:center}
+  .hero{padding:56px 0 40px; text-align:center}
+  .hero-logo{margin:0 auto 26px}
+  .hero-logo svg{width:120px; height:120px; display:block; margin:0 auto;
+    filter:drop-shadow(0 12px 30px rgba(91,75,225,.38))}
+  @media(max-width:720px){ .hero-logo svg{width:96px; height:96px} }
   .hero .badge{display:inline-block; font-size:.8rem; font-weight:700; letter-spacing:.04em;
     text-transform:uppercase; color:var(--accent); background:var(--accent-soft);
     padding:6px 12px; border-radius:999px; margin-bottom:22px}
@@ -140,6 +144,7 @@
 <main>
   <section class="hero">
     <div class="wrap">
+      <div class="hero-logo"><svg viewBox="0 0 256 256" aria-hidden="true"><defs><linearGradient id="hg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6D5EF6"/><stop offset="1" stop-color="#5B4BE1"/></linearGradient></defs><circle cx="128" cy="128" r="120" fill="url(#hg)"/><path d="M494 1020 432 1188Q404 1265 366.5 1293.0Q329 1321 235 1321H123V1556H330Q512 1556 610.5 1479.0Q709 1402 777 1220L1235 0H877L654 588L419 0H61Z" transform="translate(64.70,216.00) scale(0.0977,-0.0977)" fill="#fff"/><circle cx="128" cy="44" r="15" fill="#22c3dd"/></svg></div>
       <span class="badge" data-i18n="hero.badge">Un linguaggio · molti mondi</span>
       <h1 data-i18n-html="hero.title">Un solo sorgente per <span class="grad">server e client</span></h1>
       <p class="lead" data-i18n="hero.lead">Conciso come Python, comodo per il web come PHP, ma compilato a codice macchina. Lo stesso codice gira nativo sul server e come WebAssembly nel browser.</p>
