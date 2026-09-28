@@ -1,0 +1,8 @@
+# Build e artefatti
+target/
+dist/
+build/
+*.wasm
+
+# Sistema
+.DS_Store
