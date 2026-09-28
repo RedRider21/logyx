@@ -4,6 +4,7 @@
 from . import nodes as N
 from .tokens import T
 from .errors import LogyxError
+from .client import compile_island
 
 
 class _Return(Exception):
@@ -178,8 +179,9 @@ class Interpreter:
                 k = raw.find(island_end, i)
                 if k == -1:
                     raise LogyxError("isola client non terminata nel template")
+                body_src = raw[i + len("@start-client"):k]
+                out.append(compile_island(body_src))
                 i = k + len(island_end)
-                out.append("<!-- isola client: eseguita nel browser come WASM, non resa dal server -->")
             else:
                 out.append(c)
                 i += 1
