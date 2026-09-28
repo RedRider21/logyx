@@ -1,0 +1,171 @@
+# Manuale di Logyx
+
+- **Autore:** Daniele Deplano (RedRider21) · **Licenza:** AGPL-3.0 · **Aggiornato:** 2026-09-28
+
+Manuale di riferimento del linguaggio **Logyx** e delle sue funzioni, aggiornato via via che il progetto
+cresce. Descrive ciò che il prototipo esegue davvero oggi; le parti non ancora fatte sono elencate in fondo.
+
+Legenda stato: ✅ implementato · 🟡 parziale · ⏳ previsto.
+
+---
+
+## 1. Eseguire un programma
+
+Dal prototipo Python (cartella `prototype/`, serve solo Python 3.8+):
+
+| Comando | Cosa fa |
+| --- | --- |
+| `python3 main.py <file>.logyx` | Esegue il programma (chiama `main()` se presente) |
+| `python3 main.py render <file> <percorso>` | Stampa l'HTML reso da una route |
+| `python3 main.py serve <file> [porta]` | Avvia un server HTTP |
+| `python3 main.py build <file>` | Transpila un sottoinsieme tipizzato in Rust (compila se c'è `rustc`) |
+
+## 2. Sintassi di base ✅
+
+- **Non posizionale**: i blocchi usano le graffe `{ }`; l'indentazione è solo estetica.
+- **Punto e virgola opzionale**: fine riga o `;`.
+- **Commenti**: `//` a riga singola, `/* ... */` a blocco.
+- **Poche parentesi tonde**: nei costrutti di controllo NON si usano `()` attorno alla condizione.
+
+```
+if x > 0 { print("positivo") }      // non:  if (x > 0)
+```
+
+## 3. Tipi e valori ✅
+
+| Tipo | Esempi | Note |
+| --- | --- | --- |
+| `int` | `42`, `-7` | interi |
+| `float` | `3.14` | virgola mobile |
+| `bool` | `true`, `false` | |
+| `string` | `"ciao"` | con interpolazione `"{...}"` |
+| `nil` | `nil` | assenza di valore |
+| lista `[T]` | `[1, 2, 3]` | vedi §7 |
+| mappa `{K: V}` | `{"nome": "Ada"}` | vedi §7 |
+
+I tipi sono **opzionali** (gradual typing): si annotano dove servono, con `nome: tipo`.
+
+## 4. Variabili, costanti, operatori ✅
+
+```
+x = 10                 // dichiarazione + assegnazione
+nome: string = "Ada"   // con tipo esplicito
+const PI = 3.14159     // costante (non riassegnabile)
+```
+
+- Aritmetici: `+  -  *  /  %`
+- Confronto: `==  !=  <  <=  >  >=`
+- Logici: `and  or  not`
+- `+` fra stringhe (o stringa e numero) concatena.
+
+## 5. Controllo di flusso ✅
+
+```
+if x > 0 { ... } else if x == 0 { ... } else { ... }
+while x > 0 { x = x - 1 }
+for n in numeri { print(n) }
+```
+
+## 6. Funzioni ✅
+
+```
+fn saluta(nome: string) -> string {
+    return "Ciao " + nome
+}
+
+fn doppio(n) { return n * 2 }   // tipi opzionali
+
+fn main() { print(saluta("mondo")) }
+```
+
+Se esiste `main()`, viene chiamata automaticamente.
+
+## 7. Collezioni 🟡
+
+Liste e mappe: letterali, indicizzazione, `len`, iterazione con `for`.
+
+```
+xs = [3, 1, 2]
+xs[0]            // 3
+len(xs)          // 3
+for x in xs { ... }
+
+m = {"nome": "Ada"}
+m["nome"]        // "Ada"
+```
+
+Non ancora disponibili: metodi/mutazioni (`append`, `remove`), slicing, iterazione su valori di mappa. ⏳
+
+## 8. Stringhe e interpolazione ✅
+
+```
+nome = "Logyx"
+print("Ciao da {nome}!")     // Ciao da Logyx!
+```
+
+## 9. Funzioni builtin ✅
+
+| Funzione | Descrizione |
+| --- | --- |
+| `print(x)` | Stampa `x` (con conversione leggibile) |
+| `len(x)` | Lunghezza di lista, mappa o stringa |
+| `str(x)` | Converte in stringa |
+| `range(n)` | Lista `0 .. n-1` |
+
+## 10. Web lato server ✅
+
+- `route "/percorso" { ... }` definisce un endpoint; il corpo gira sul server.
+- `render <html>...</html>` produce HTML con:
+  - **interpolazione** `{espressione}` e **escaping automatico** dei valori;
+  - **blocchi di controllo**: `{ for x in xs { ... } }` e `{ if cond { ... } else { ... } }`.
+
+```
+route "/todo" {
+    voci = ["pane", "latte"]
+    render <html><body>
+      <ul>{ for v in voci { <li>{v}</li> } }</ul>
+    </body></html>
+}
+```
+
+Nota: i tag void vanno auto-chiusi (`<br/>`). 🟡
+
+## 11. Isole client (→ JavaScript) ✅
+
+Il codice fra `@start-client` e `@end-client` è compilato a JavaScript ed emesso in uno `<script>`.
+
+DSL client v0:
+
+| Costrutto | Effetto |
+| --- | --- |
+| `nome = <espr>` | stato / assegnazione |
+| `on "<evento>" of "<sel>" { ... }` | gestore di evento (`addEventListener`) |
+| `set text of "<sel>" to <espr>` | aggiorna `textContent` |
+| `set html of "<sel>" to <espr>` | aggiorna `innerHTML` |
+| `if` / `for` / `while` | controllo di flusso (tradotto in JS) |
+
+Un piccolo runtime rende disponibili anche nel client `range`, `len`, `str`, `print`.
+Target WASM: previsto. ⏳
+
+## 12. Compilazione nativa (transpiler Rust) 🟡
+
+`build` traduce un **sottoinsieme tipizzato** in Rust, che `rustc` compila a eseguibile nativo.
+
+- Supporta: funzioni con tipi espliciti (`int`/`float`/`bool`/`string`), aritmetica, confronti, logica,
+  `if`/`else`, `while`, `for x in range(n)`, `return`, `print`, ricorsione.
+- Non ancora: liste/mappe, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
+
+```
+fn fib(n: int) -> int {
+    if n < 2 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+```
+→ genera `fn fib(n: i64) -> i64 { ... }` in Rust.
+
+## 13. Cosa non c'è ancora ⏳
+
+- Mutazioni/metodi su liste, mappe e stringhe; libreria standard.
+- Moduli / import; gestione degli errori nel linguaggio.
+- Lettura input nella DSL client (`value of ...`); target WASM del client.
+- Transpiler Rust completo (oltre il sottoinsieme tipizzato).

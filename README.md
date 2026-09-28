@@ -23,12 +23,25 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## Com'è organizzata questa cartella
 
-| File | Contenuto |
+| File / cartella | Contenuto |
 | --- | --- |
 | `README.md` | Questo file: cos'è Logyx e come riprendere |
-| `DESIGN.md` | Tutti gli appunti di design in forma completa e portabile |
-| `CONTEXT.md` | Punto di ripresa: dove siamo e qual è il prossimo passo |
+| `MANUAL.md` | Manuale del linguaggio e delle funzioni (aggiornato) |
+| `GRAMMAR.md` | Grammatica v0 (EBNF) |
+| `DESIGN.md` | Appunti di design completi e portabili |
+| `CONTEXT.md` | Punto di ripresa: dove siamo e prossimo passo |
+| `prototype/` | Interprete/transpiler in Python (lexer, parser, interprete, rustgen) |
+| `examples/` | Programmi di esempio `.logyx` |
+| `docs/` | Documenti esportati (es. il documento di design in `.md`/`.pdf`) |
 | `LICENSE` | Testo completo della licenza AGPL-3.0 |
+
+## Prerequisiti
+
+Il progetto è tutto qui dentro; sulla macchina servono solo gli strumenti standard:
+
+- **Python 3.8+** — per eseguire il prototipo (nessuna dipendenza esterna).
+- **Rust** (`rustc`) — *opzionale*, solo per compilare a nativo con `build`. Senza Rust, `build` genera
+  comunque il codice `.rs` da compilare altrove.
 
 ## Come continuare il lavoro (anche su un altro PC)
 

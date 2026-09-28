@@ -85,6 +85,8 @@ class FunctionDef:
     name: str
     params: List[str]
     body: List[Any]
+    param_types: Optional[List[Optional[str]]] = None
+    ret_type: Optional[str] = None
 
 
 @dataclass

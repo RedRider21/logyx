@@ -33,10 +33,10 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-Opzioni: (a) compilatore vero in Rust (transpiling → `rustc`) per la compilazione nativa; (b) moduli/import
-e gestione errori nel linguaggio; (c) arricchire ancora la DSL client (lettura input `value of`, altri eventi)
-e in prospettiva il target WASM.
-(Fatto: nucleo, render lato server con `{for}`/`{if}`, isole `@start-client` compilate a JavaScript.)
+Ampliare il **transpiler Rust** oltre il sottoinsieme tipizzato (liste, stringhe, più tipi, inferenza), oppure
+moduli/import e gestione errori nel linguaggio, o il target WASM del client. Vedi `MANUAL.md` §13.
+(Fatto: nucleo, render lato server con `{for}`/`{if}`, isole client → JavaScript, transpiler Rust su un
+sottoinsieme tipizzato con comando `build`.)
 
 ## Questioni aperte da decidere
 

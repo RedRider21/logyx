@@ -7,6 +7,7 @@ Uso:
   python main.py <file.logyx>              esegue il programma (chiama main())
   python main.py render <file> <percorso>  stampa l'HTML reso da una route
   python main.py serve  <file> [porta]     avvia un server HTTP (default 8080)
+  python main.py build  <file>             transpila in Rust (e compila se c'e' rustc)
 """
 
 import os
@@ -86,6 +87,33 @@ def cmd_serve(path, port):
     return 0
 
 
+def cmd_build(path):
+    import shutil
+    import subprocess
+    from logyx.rustgen import RustTranspiler
+
+    _, items = _load(path)
+    rust = RustTranspiler().transpile(items)
+    out_rs = os.path.splitext(path)[0] + ".rs"
+    with open(out_rs, "w", encoding="utf-8") as f:
+        f.write(rust)
+    print(f"// Rust generato in {out_rs}\n")
+    print(rust)
+    if shutil.which("rustc"):
+        binp = os.path.splitext(path)[0] + "_bin"
+        comp = subprocess.run(["rustc", "-O", out_rs, "-o", binp], capture_output=True, text=True)
+        if comp.returncode != 0:
+            print("rustc ha segnalato errori:\n" + comp.stderr, file=sys.stderr)
+            return 1
+        print("──── esecuzione del binario nativo ────")
+        run = subprocess.run([binp], capture_output=True, text=True)
+        sys.stdout.write(run.stdout)
+        return run.returncode
+    print("──── rustc non installato ────")
+    print(f"Per compilare dove Rust e' presente:  rustc -O {out_rs} -o app && ./app")
+    return 0
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__.strip(), file=sys.stderr)
@@ -102,6 +130,11 @@ def main(argv):
                 return 2
             port = int(argv[3]) if len(argv) > 3 and argv[3].isdigit() else 8080
             return cmd_serve(argv[2], port)
+        if argv[1] == "build":
+            if len(argv) < 3:
+                print("uso: python main.py build <file>", file=sys.stderr)
+                return 2
+            return cmd_build(argv[2])
         return cmd_run(argv[1])
     except LogyxError as e:
         print(f"Errore: {e}", file=sys.stderr)

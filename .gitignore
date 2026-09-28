@@ -4,6 +4,10 @@ dist/
 build/
 *.wasm
 
+# Artefatti generati dal transpiler
+examples/*.rs
+*_bin
+
 # Python
 __pycache__/
 *.pyc

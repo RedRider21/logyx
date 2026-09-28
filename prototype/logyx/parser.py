@@ -69,44 +69,50 @@ class Parser:
         self.expect(T.FN)
         name = self.expect(T.IDENT, "nome di funzione").value
         self.expect(T.LPAREN)
-        params = []
+        params, ptypes = [], []
         if not self.at(T.RPAREN):
-            params.append(self.param())
+            n, t = self.param()
+            params.append(n)
+            ptypes.append(t)
             while self.at(T.COMMA):
                 self.advance()
-                params.append(self.param())
+                n, t = self.param()
+                params.append(n)
+                ptypes.append(t)
         self.expect(T.RPAREN)
+        ret = None
         if self.at(T.ARROW):
             self.advance()
-            self.type_ref()
+            ret = self.type_ref()
         body = self.block()
-        return N.FunctionDef(name, params, body)
+        return N.FunctionDef(name, params, body, ptypes, ret)
 
     def param(self):
         name = self.expect(T.IDENT, "nome di parametro").value
+        ptype = None
         if self.at(T.COLON):
             self.advance()
-            self.type_ref()
-        return name
+            ptype = self.type_ref()
+        return name, ptype
 
     def type_ref(self):
-        # I tipi sono opzionali (gradual typing): li analizziamo e li ignoriamo.
+        # I tipi sono opzionali (gradual typing): li conserviamo come stringa.
         if self.at(T.LBRACK):
             self.advance()
-            self.type_ref()
+            inner = self.type_ref()
             self.expect(T.RBRACK)
-            return
+            return "[" + inner + "]"
         if self.at(T.LBRACE):
             self.advance()
-            self.type_ref()
+            k = self.type_ref()
             self.expect(T.COLON)
-            self.type_ref()
+            v = self.type_ref()
             self.expect(T.RBRACE)
-            return
+            return "{" + k + ": " + v + "}"
         if self.at(T.NIL):
             self.advance()
-            return
-        self.expect(T.IDENT, "tipo")
+            return "nil"
+        return self.expect(T.IDENT, "tipo").value
 
     def block(self):
         self.expect(T.LBRACE)
