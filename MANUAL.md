@@ -80,6 +80,25 @@ fn main() { print(saluta("mondo")) }
 
 Se esiste `main()`, viene chiamata automaticamente.
 
+## 6b. Moduli e import ✅
+
+`import "file.logyx"` porta nel programma le definizioni (funzioni) di un altro file. Il percorso è
+relativo al file che importa; l'estensione `.logyx` può essere omessa.
+
+```
+// lib_math.logyx
+fn quadrato(n) { return n * n }
+
+// main.logyx
+import "lib_math.logyx"
+fn main() { print(quadrato(9)) }     // 81
+```
+
+- Ogni file è caricato **una sola volta** (import ripetuti o ciclici sono gestiti).
+- Un nome di funzione definito in più moduli dà un errore chiaro (niente collisioni silenziose).
+- Vale sia per l'interprete sia per la compilazione nativa (`build`): l'inferenza dei tipi funziona
+  anche fra le funzioni importate. Vedi `examples/use_import.logyx` e `examples/lib_math.logyx`.
+
 ## 7. Collezioni 🟡
 
 Liste e mappe: letterali, indicizzazione, `len`, iterazione con `for`.

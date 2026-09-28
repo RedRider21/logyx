@@ -15,17 +15,13 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from logyx.lexer import Lexer
-from logyx.parser import Parser
 from logyx.interpreter import Interpreter
+from logyx.modules import load_program
 from logyx.errors import LogyxError
 
 
 def _load(path):
-    with open(path, encoding="utf-8") as f:
-        src = f.read()
-    tokens = Lexer(src, path).tokenize()
-    items = Parser(tokens, path).parse()
+    items = load_program(path)  # legge il file ed espande gli import
     interp = Interpreter()
     return interp, items
 

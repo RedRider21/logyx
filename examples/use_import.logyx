@@ -1,0 +1,14 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Moduli/import: usa le funzioni definite in un altro file .logyx.
+//   python3 main.py       ../examples/use_import.logyx     (interprete)
+//   python3 main.py build ../examples/use_import.logyx     (nativo via Rust)
+
+import "lib_math.logyx"
+
+fn main() {
+    for i in range(1, 6) {
+        print("{i}: quadrato={quadrato(i)}, cubo={cubo(i)}")
+    }
+}

@@ -120,6 +120,11 @@ class ExprStmt:
 
 
 @dataclass
+class Import:
+    path: str
+
+
+@dataclass
 class RouteDef:
     path: str
     body: List[Any]

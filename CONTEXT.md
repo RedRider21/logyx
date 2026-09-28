@@ -36,22 +36,22 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-Bivio strategico (vedi discussione 2026-09-28): il sottoinsieme tipizzato del transpiler è ormai
-espressivo (scalari, stringhe, controllo di flusso, funzioni con inferenza, liste e mappe di scalari).
-Due strade:
-- **A) Ampliare ancora il prototipo Python**: collezioni di stringhe, iterazione su mappa, moduli/import,
-  gestione errori, poi il target WASM del client.
-- **B) Iniziare il compilatore in Rust** (passo verso il self-hosting): riscrivere lexer+parser+checker
-  in Rust, riusando la semantica già fissata dal prototipo e questi esempi come test di conformità.
+Piano deciso (2026-09-28): **congelare la semantica del nucleo** con 2 tacche, poi passare a Rust.
+Tacca 1 — moduli/import: **FATTA**. Tacca 2 — **gestione degli errori nel linguaggio**: DA FARE.
 
-Proposta: chiudere ancora 1–2 tacche di espressività (moduli/import e gestione errori) per congelare la
-semantica, poi passare a B.
+RIPRENDI DA QUI → **gestione degli errori**: scegliere il modello (proposta: valori risultato / `try`
+con propagazione, in stile Rust `Result` ma con sintassi Logyx) e implementarlo nell'interprete e nel
+transpiler. È l'ultima tacca prima di iniziare il compilatore in Rust.
 
-In coda: collezioni di stringhe, iterazione su mappa, moduli/import, gestione errori, target WASM.
+Dopo, come da bivio scelto: **iniziare il compilatore in Rust** (lexer+parser+AST+type-checker),
+riusando gli esempi `native_*`/`use_import` come test di conformità; il transpiler-a-Rust resta il
+backend trampolino. Poi self-hosting (compilatore in Logyx), e Python/Rust escono di scena.
+
+In coda dopo gli errori: collezioni di stringhe, iterazione su mappa, target WASM del client.
 (Fatto: nucleo; render lato server con `{for}`/`{if}`; isole client → JavaScript; transpiler Rust con `build`
 su sottoinsieme tipizzato — stringhe e concatenazione, `range(a,b)`, divisione intera `i64`, inferenza del
-tipo di ritorno **e dei tipi dei parametri**, **liste** e **mappe** di scalari; esempi
-`native_infer.logyx`, `native_list.logyx`, `native_map.logyx`.)
+tipo di ritorno **e dei tipi dei parametri**, **liste** e **mappe** di scalari; **moduli/import** con
+risoluzione a caricamento; esempi `native_infer/list/map.logyx`, `use_import.logyx` + `lib_math.logyx`.)
 
 ## Questioni aperte da decidere
 

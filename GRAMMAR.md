@@ -28,7 +28,7 @@ Booleano       := "true" | "false"
 Nullo          := "nil"
 ```
 
-Parole chiave riservate (v0): `fn return if else while for in const and or not true false nil route render`
+Parole chiave riservate (v0): `fn return if else while for in const import and or not true false nil route render`
 più i marcatori di confine `@server @client @start-client @end-client`.
 
 ## Dichiarazioni e tipi
@@ -118,7 +118,8 @@ route "/" {
 
 ```
 programma    := elemento*
-elemento     := funzione | route | dichiarazione
+elemento     := funzione | route | dichiarazione | import
+import       := "import" STRINGA           // percorso di un file .logyx
 
 funzione     := "fn" IDENT "(" parametri? ")" ("->" tipo)? blocco
 parametri    := parametro ("," parametro)*

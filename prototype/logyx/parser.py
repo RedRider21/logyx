@@ -43,13 +43,23 @@ class Parser:
     def parse(self):
         items = []
         while not self.at(T.EOF):
-            if self.at(T.FN):
+            if self.at(T.IMPORT):
+                items.append(self.import_stmt())
+            elif self.at(T.FN):
                 items.append(self.function())
             elif self.at(T.IDENT) and self.peek().value == "route":
                 items.append(self.route_def())
             else:
                 items.append(self.statement())
         return items
+
+    def import_stmt(self):
+        self.expect(T.IMPORT)
+        tok = self.expect(T.STRING, "percorso del modulo da importare")
+        parts = tok.value
+        if len(parts) != 1 or parts[0][0] != "lit":
+            self.error("il percorso di 'import' deve essere una stringa semplice (senza interpolazione)")
+        return N.Import(parts[0][1])
 
     def route_def(self):
         self.advance()  # 'route'

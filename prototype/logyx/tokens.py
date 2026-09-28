@@ -26,6 +26,7 @@ class T:
     FOR = "FOR"
     IN = "IN"
     CONST = "CONST"
+    IMPORT = "IMPORT"
     AND = "AND"
     OR = "OR"
     NOT = "NOT"
@@ -57,6 +58,7 @@ class T:
 KEYWORDS = {
     "fn": T.FN, "return": T.RETURN, "if": T.IF, "else": T.ELSE,
     "while": T.WHILE, "for": T.FOR, "in": T.IN, "const": T.CONST,
+    "import": T.IMPORT,
     "and": T.AND, "or": T.OR, "not": T.NOT,
     "true": T.TRUE, "false": T.FALSE, "nil": T.NIL,
 }

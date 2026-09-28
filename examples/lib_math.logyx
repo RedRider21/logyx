@@ -1,0 +1,12 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Piccola libreria importabile con `import "lib_math.logyx"`.
+
+fn quadrato(n) {
+    return n * n
+}
+
+fn cubo(n) {
+    return n * quadrato(n)
+}
