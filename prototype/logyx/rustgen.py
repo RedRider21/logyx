@@ -27,15 +27,103 @@ class RustTranspiler:
             )
         if not any(f.name == "main" for f in funcs):
             raise LogyxError("manca 'fn main()': serve un punto d'ingresso")
+        self.param_types = {
+            f.name: dict(zip(f.params, f.param_types or [None] * len(f.params))) for f in funcs
+        }
+        self.func_rets = {f.name: f.ret_type for f in funcs}
+        self._infer_returns(funcs)
         return "\n\n".join(self.func(f) for f in funcs) + "\n"
 
     def func(self, f):
         ptypes = f.param_types or [None] * len(f.params)
         params = ", ".join(f"{n}: {self.ty(t)}" for n, t in zip(f.params, ptypes))
-        ret = f" -> {self.ty(f.ret_type)}" if f.ret_type else ""
+        ret = self.func_rets.get(f.name)
+        if ret is None:
+            raise LogyxError(
+                f"non riesco a inferire il tipo di ritorno di '{f.name}'; "
+                "aggiungi l'annotazione '-> tipo'"
+            )
+        ret_str = "" if ret == "__void__" else f" -> {self.ty(ret)}"
         declared = set(f.params)
         body = self.block(f.body, declared, 1)
-        return f"fn {f.name}({params}){ret} {{\n{body}\n}}"
+        return f"fn {f.name}({params}){ret_str} {{\n{body}\n}}"
+
+    # --- inferenza del tipo di ritorno ---
+
+    def _infer_returns(self, funcs):
+        changed = True
+        while changed:
+            changed = False
+            for f in funcs:
+                if self.func_rets[f.name] is not None:
+                    continue
+                inferred = self._infer_func_ret(f)
+                if inferred is not None:
+                    self.func_rets[f.name] = inferred
+                    changed = True
+
+    def _infer_func_ret(self, f):
+        ptypes = self.param_types[f.name]
+        value_rets = [r for r in self._returns(f.body) if r.value is not None]
+        if not value_rets:
+            return "__void__"
+        for r in value_rets:
+            t = self._type_of(r.value, ptypes)
+            if t is not None:
+                return t
+        return None
+
+    def _returns(self, stmts):
+        for s in stmts:
+            t = type(s).__name__
+            if t == "Return":
+                yield s
+            elif t == "If":
+                yield from self._returns(s.then_block)
+                if s.else_block:
+                    yield from self._returns(s.else_block)
+            elif t in ("While", "For"):
+                yield from self._returns(s.body)
+
+    def _type_of(self, e, ptypes):
+        t = type(e).__name__
+        if t == "StringLit":
+            return "string"
+        if t == "Literal":
+            v = e.value
+            if isinstance(v, bool):
+                return "bool"
+            if isinstance(v, int):
+                return "int"
+            if isinstance(v, float):
+                return "float"
+            return None
+        if t == "Identifier":
+            return ptypes.get(e.name)
+        if t == "Unary":
+            return "bool" if e.op == "not" else self._type_of(e.operand, ptypes)
+        if t == "Logical":
+            return "bool"
+        if t == "Binary":
+            if e.op in ("==", "!=", "<", "<=", ">", ">="):
+                return "bool"
+            lt = self._type_of(e.left, ptypes)
+            rt = self._type_of(e.right, ptypes)
+            if e.op == "+" and (lt == "string" or rt == "string"):
+                return "string"
+            if "float" in (lt, rt):
+                return "float"
+            if lt == "int" and rt == "int":
+                return "int"
+            return None
+        if t == "Call" and isinstance(e.callee, N.Identifier):
+            name = e.callee.name
+            if name == "str":
+                return "string"
+            if name == "len":
+                return "int"
+            return self.func_rets.get(name)
+        return None
 
     def ty(self, t):
         if t is None:

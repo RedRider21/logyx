@@ -4,7 +4,7 @@
 // Sottoinsieme tipizzato: questo file si compila a codice nativo via Rust.
 //   python3 main.py build ../examples/native_fib.logyx
 
-fn fib(n: int) -> int {
+fn fib(n: int) {          // tipo di ritorno dedotto (int)
     if n < 2 {
         return n
     }

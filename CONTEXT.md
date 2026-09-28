@@ -33,10 +33,12 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-Ampliare il **transpiler Rust** oltre il sottoinsieme tipizzato (liste, stringhe, più tipi, inferenza), oppure
-moduli/import e gestione errori nel linguaggio, o il target WASM del client. Vedi `MANUAL.md` §13.
-(Fatto: nucleo, render lato server con `{for}`/`{if}`, isole client → JavaScript, transpiler Rust su un
-sottoinsieme tipizzato con comando `build`.)
+Ampliare ancora il **transpiler Rust**: inferenza dei tipi dei parametri (ora solo il ritorno è dedotto),
+liste/mappe, chiamate a builtin. Oppure: moduli/import, gestione errori nel linguaggio, target WASM del
+client. Vedi `MANUAL.md` §13.
+(Fatto: nucleo; render lato server con `{for}`/`{if}`; isole client → JavaScript; transpiler Rust con `build`
+su sottoinsieme tipizzato — stringhe e concatenazione, `range(a,b)`, divisione intera `i64`, inferenza del
+tipo di ritorno.)
 
 ## Questioni aperte da decidere
 

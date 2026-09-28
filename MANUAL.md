@@ -154,6 +154,7 @@ Target WASM: previsto. ⏳
 - Supporta: funzioni con tipi espliciti (`int`/`float`/`bool`/`string`), aritmetica, confronti, logica,
   concatenazione di stringhe con `+`, `if`/`else`, `while`, `for x in range(n)` o `range(a, b)`, `return`,
   `print`, ricorsione. Gli interi sono `i64`; `/` è divisione intera.
+- Il **tipo di ritorno può essere omesso**: viene dedotto dal corpo (i tipi dei parametri restano da annotare).
 - Non ancora: liste/mappe, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```

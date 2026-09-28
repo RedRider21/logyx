@@ -4,7 +4,7 @@
 // Sottoinsieme tipizzato con stringhe: compilabile a nativo via Rust.
 //   python3 main.py build ../examples/native_hello.logyx
 
-fn saluta(nome: string) -> string {
+fn saluta(nome: string) {     // tipo di ritorno dedotto (string)
     return "Ciao " + nome + "!"
 }
 
