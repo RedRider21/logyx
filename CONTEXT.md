@@ -10,9 +10,11 @@ Aggiornato: 2026-09-28
 
 ## Dove siamo
 
-Fase di **design**, avanzata. Definiti: nome, licenza, autore, scelte architetturali (vedi `DESIGN.md`),
-**grammatica v0** (`GRAMMAR.md`) e i primi esempi in `examples/` (`hello.logyx`, `hello_web.logyx`).
-Nessun codice del compilatore ancora scritto.
+Definiti: nome, licenza, autore, scelte architetturali (`DESIGN.md`), **grammatica v0** (`GRAMMAR.md`),
+esempi in `examples/`, e un **prototipo del frontend in Python** funzionante in `prototype/`
+(lexer + parser + interprete). Esegue il nucleo del linguaggio; i costrutti web arriveranno dopo.
+
+Prova: `cd prototype && python3 main.py ../examples/demo.logyx`.
 
 ## Deciso e bloccato
 
@@ -27,8 +29,9 @@ Nessun codice del compilatore ancora scritto.
 
 ## Prossimo passo
 
-Scrivere il **prototipo del frontend** (lexer + parser + interprete tree-walking) in Python o TypeScript,
-capace di eseguire `examples/hello.logyx`. Serve a "sentire" il linguaggio prima del compilatore Rust.
+Estendere il prototipo: primo abbozzo del template `render` (solo lato server), poi moduli/import e una
+gestione errori nel linguaggio. In parallelo, formalizzare le precedenze complete degli operatori.
+Più avanti: il compilatore vero in Rust (transpiling → `rustc`).
 
 ## Questioni aperte da decidere
 

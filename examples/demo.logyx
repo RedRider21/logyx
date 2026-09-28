@@ -1,0 +1,33 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Dimostra il nucleo del linguaggio eseguibile dal prototipo:
+// funzioni, ricorsione, cicli, liste, condizioni e interpolazione di stringhe.
+
+fn fib(n) {
+    if n < 2 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+
+fn main() {
+    nome = "Logyx"
+    print("Ciao da {nome}!")
+
+    for i in range(8) {
+        print("fib({i}) = {fib(i)}")
+    }
+
+    numeri = [10, 20, 30, 40]
+    somma = 0
+    for x in numeri {
+        somma = somma + x
+    }
+    print("somma = {somma}, elementi = {len(numeri)}")
+
+    const SOGLIA = 50
+    if somma > SOGLIA {
+        print("sopra la soglia")
+    } else {
+        print("sotto la soglia")
+    }
+}

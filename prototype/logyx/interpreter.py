@@ -1,0 +1,272 @@
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+from . import nodes as N
+from .errors import LogyxError
+
+
+class _Return(Exception):
+    def __init__(self, value):
+        self.value = value
+
+
+class LogyxFunction:
+    def __init__(self, decl, closure):
+        self.decl = decl
+        self.closure = closure
+
+    @property
+    def arity(self):
+        return len(self.decl.params)
+
+
+class Environment:
+    """Ambito con catena verso il genitore."""
+
+    def __init__(self, parent=None):
+        self.vars = {}
+        self.consts = set()
+        self.parent = parent
+
+    def define(self, name, value, const=False):
+        self.vars[name] = value
+        if const:
+            self.consts.add(name)
+
+    def _holder(self, name):
+        env = self
+        while env is not None:
+            if name in env.vars:
+                return env
+            env = env.parent
+        return None
+
+    def get(self, name):
+        env = self._holder(name)
+        if env is None:
+            raise LogyxError(f"nome non definito: '{name}'")
+        return env.vars[name]
+
+    def assign(self, name, value):
+        env = self._holder(name)
+        if env is None:
+            self.vars[name] = value
+            return
+        if name in env.consts:
+            raise LogyxError(f"non si puo' riassegnare la costante '{name}'")
+        env.vars[name] = value
+
+
+def logyx_str(v):
+    if v is True:
+        return "true"
+    if v is False:
+        return "false"
+    if v is None:
+        return "nil"
+    if isinstance(v, str):
+        return v
+    if isinstance(v, float):
+        return str(int(v)) if v.is_integer() else repr(v)
+    if isinstance(v, list):
+        return "[" + ", ".join(logyx_str(x) for x in v) + "]"
+    if isinstance(v, dict):
+        return "{" + ", ".join(f"{logyx_str(k)}: {logyx_str(val)}" for k, val in v.items()) + "}"
+    if isinstance(v, LogyxFunction):
+        return f"<fn {v.decl.name}>"
+    return str(v)
+
+
+def truthy(v):
+    if v is None or v is False:
+        return False
+    if v is True:
+        return True
+    return bool(v)
+
+
+class Interpreter:
+    def __init__(self):
+        self.globals = Environment()
+        self._install_builtins()
+
+    def _install_builtins(self):
+        g = self.globals
+        g.define("print", lambda *a: print(" ".join(logyx_str(x) for x in a)))
+        g.define("len", lambda x: len(x))
+        g.define("str", logyx_str)
+        g.define("range", lambda n: list(range(int(n))))
+
+    def run(self, items):
+        main = None
+        for item in items:
+            if isinstance(item, N.FunctionDef):
+                fn = LogyxFunction(item, self.globals)
+                self.globals.define(item.name, fn)
+                if item.name == "main":
+                    main = fn
+            else:
+                self.exec(item, self.globals)
+        if main is not None:
+            self.call(main, [])
+
+    # --- istruzioni ---
+
+    def exec(self, stmt, env):
+        method = getattr(self, "st_" + type(stmt).__name__, None)
+        if method is None:
+            raise LogyxError(f"istruzione non gestita: {type(stmt).__name__}")
+        return method(stmt, env)
+
+    def exec_block(self, stmts, env):
+        self._exec_all(stmts, Environment(env))
+
+    def _exec_all(self, stmts, env):
+        for stmt in stmts:
+            self.exec(stmt, env)
+
+    def st_FunctionDef(self, s, env):
+        env.define(s.name, LogyxFunction(s, env))
+
+    def st_Decl(self, s, env):
+        env.define(s.name, self.eval(s.value, env), s.is_const)
+
+    def st_Assign(self, s, env):
+        value = self.eval(s.value, env)
+        target = s.target
+        if isinstance(target, N.Identifier):
+            env.assign(target.name, value)
+        elif isinstance(target, N.Index):
+            coll = self.eval(target.target, env)
+            coll[self.eval(target.index, env)] = value
+        else:
+            raise LogyxError("bersaglio di assegnazione non valido")
+
+    def st_ExprStmt(self, s, env):
+        self.eval(s.expr, env)
+
+    def st_If(self, s, env):
+        if truthy(self.eval(s.cond, env)):
+            self.exec_block(s.then_block, env)
+        elif s.else_block is not None:
+            self.exec_block(s.else_block, env)
+
+    def st_While(self, s, env):
+        while truthy(self.eval(s.cond, env)):
+            self.exec_block(s.body, env)
+
+    def st_For(self, s, env):
+        iterable = self.eval(s.iterable, env)
+        if isinstance(iterable, dict):
+            iterable = list(iterable.keys())
+        for value in iterable:
+            child = Environment(env)
+            child.define(s.var, value)
+            self._exec_all(s.body, child)
+
+    def st_Return(self, s, env):
+        raise _Return(self.eval(s.value, env) if s.value is not None else None)
+
+    # --- espressioni ---
+
+    def eval(self, node, env):
+        method = getattr(self, "ex_" + type(node).__name__, None)
+        if method is None:
+            raise LogyxError(f"espressione non gestita: {type(node).__name__}")
+        return method(node, env)
+
+    def ex_Literal(self, n, env):
+        return n.value
+
+    def ex_StringLit(self, n, env):
+        out = []
+        for kind, val in n.parts:
+            out.append(val if kind == "lit" else logyx_str(self.eval(val, env)))
+        return "".join(out)
+
+    def ex_Identifier(self, n, env):
+        return env.get(n.name)
+
+    def ex_ListLit(self, n, env):
+        return [self.eval(e, env) for e in n.elements]
+
+    def ex_MapLit(self, n, env):
+        return {self.eval(k, env): self.eval(v, env) for k, v in n.pairs}
+
+    def ex_Unary(self, n, env):
+        v = self.eval(n.operand, env)
+        if n.op == "not":
+            return not truthy(v)
+        if n.op == "-":
+            return -v
+        raise LogyxError(f"operatore unario sconosciuto: {n.op}")
+
+    def ex_Logical(self, n, env):
+        left = self.eval(n.left, env)
+        if n.op == "and":
+            return self.eval(n.right, env) if truthy(left) else left
+        return left if truthy(left) else self.eval(n.right, env)
+
+    def ex_Binary(self, n, env):
+        a = self.eval(n.left, env)
+        b = self.eval(n.right, env)
+        op = n.op
+        if op == "+":
+            if isinstance(a, str) or isinstance(b, str):
+                return logyx_str(a) + logyx_str(b)
+            return a + b
+        if op == "-":
+            return a - b
+        if op == "*":
+            return a * b
+        if op == "/":
+            if b == 0:
+                raise LogyxError("divisione per zero")
+            return a / b
+        if op == "%":
+            return a % b
+        if op == "==":
+            return a == b
+        if op == "!=":
+            return a != b
+        if op == "<":
+            return a < b
+        if op == "<=":
+            return a <= b
+        if op == ">":
+            return a > b
+        if op == ">=":
+            return a >= b
+        raise LogyxError(f"operatore sconosciuto: {op}")
+
+    def ex_Index(self, n, env):
+        coll = self.eval(n.target, env)
+        idx = self.eval(n.index, env)
+        try:
+            return coll[idx]
+        except Exception:
+            raise LogyxError("indice non valido")
+
+    def ex_Call(self, n, env):
+        callee = self.eval(n.callee, env)
+        args = [self.eval(a, env) for a in n.args]
+        return self.call(callee, args)
+
+    def call(self, callee, args):
+        if isinstance(callee, LogyxFunction):
+            if len(args) != callee.arity:
+                raise LogyxError(
+                    f"la funzione '{callee.decl.name}' attende {callee.arity} "
+                    f"argomenti, ricevuti {len(args)}"
+                )
+            env = Environment(callee.closure)
+            for name, value in zip(callee.decl.params, args):
+                env.define(name, value)
+            try:
+                self._exec_all(callee.decl.body, env)
+            except _Return as r:
+                return r.value
+            return None
+        if callable(callee):
+            return callee(*args)
+        raise LogyxError("valore non chiamabile")

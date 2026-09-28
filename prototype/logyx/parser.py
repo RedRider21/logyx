@@ -1,0 +1,312 @@
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+from .tokens import T
+from . import nodes as N
+from .errors import LogyxError
+from .lexer import Lexer
+
+
+class Parser:
+    """Discesa ricorsiva: dai token all'AST."""
+
+    def __init__(self, tokens, filename="<input>"):
+        self.toks = tokens
+        self.i = 0
+        self.filename = filename
+
+    # --- utilita' ---
+
+    def peek(self, k=0):
+        return self.toks[self.i + k]
+
+    def at(self, ttype):
+        return self.peek().type == ttype
+
+    def advance(self):
+        t = self.toks[self.i]
+        self.i += 1
+        return t
+
+    def expect(self, ttype, what=None):
+        if not self.at(ttype):
+            t = self.peek()
+            self.error(f"atteso {what or ttype}, trovato {t.type} ({t.value!r})", t)
+        return self.advance()
+
+    def error(self, msg, tok=None):
+        tok = tok or self.peek()
+        raise LogyxError(f"{self.filename}:{tok.line}:{tok.col}: errore di sintassi: {msg}")
+
+    # --- programma ---
+
+    def parse(self):
+        items = []
+        while not self.at(T.EOF):
+            items.append(self.function() if self.at(T.FN) else self.statement())
+        return items
+
+    def function(self):
+        self.expect(T.FN)
+        name = self.expect(T.IDENT, "nome di funzione").value
+        self.expect(T.LPAREN)
+        params = []
+        if not self.at(T.RPAREN):
+            params.append(self.param())
+            while self.at(T.COMMA):
+                self.advance()
+                params.append(self.param())
+        self.expect(T.RPAREN)
+        if self.at(T.ARROW):
+            self.advance()
+            self.type_ref()
+        body = self.block()
+        return N.FunctionDef(name, params, body)
+
+    def param(self):
+        name = self.expect(T.IDENT, "nome di parametro").value
+        if self.at(T.COLON):
+            self.advance()
+            self.type_ref()
+        return name
+
+    def type_ref(self):
+        # I tipi sono opzionali (gradual typing): li analizziamo e li ignoriamo.
+        if self.at(T.LBRACK):
+            self.advance()
+            self.type_ref()
+            self.expect(T.RBRACK)
+            return
+        if self.at(T.LBRACE):
+            self.advance()
+            self.type_ref()
+            self.expect(T.COLON)
+            self.type_ref()
+            self.expect(T.RBRACE)
+            return
+        if self.at(T.NIL):
+            self.advance()
+            return
+        self.expect(T.IDENT, "tipo")
+
+    def block(self):
+        self.expect(T.LBRACE)
+        stmts = []
+        while not self.at(T.RBRACE) and not self.at(T.EOF):
+            stmts.append(self.function() if self.at(T.FN) else self.statement())
+        self.expect(T.RBRACE)
+        return stmts
+
+    # --- istruzioni ---
+
+    def statement(self):
+        t = self.peek()
+        if t.type == T.IF:
+            return self.if_stmt()
+        if t.type == T.WHILE:
+            return self.while_stmt()
+        if t.type == T.FOR:
+            return self.for_stmt()
+        if t.type == T.RETURN:
+            return self.return_stmt()
+        if t.type == T.CONST:
+            return self.const_decl()
+        if t.type == T.IDENT and t.value in ("route", "render"):
+            self.error(
+                f"costrutto web '{t.value}' non supportato dal prototipo v0 "
+                "(usa il nucleo: vedi examples/hello.logyx)", t
+            )
+        # dichiarazione tipizzata:  IDENT ':' tipo '=' espressione
+        if t.type == T.IDENT and self.peek(1).type == T.COLON:
+            name = self.advance().value
+            self.advance()  # ':'
+            self.type_ref()
+            self.expect(T.ASSIGN)
+            return N.Decl(name, self.expression(), False)
+        expr = self.expression()
+        if self.at(T.ASSIGN):
+            self.advance()
+            value = self.expression()
+            if isinstance(expr, (N.Identifier, N.Index)):
+                return N.Assign(expr, value)
+            self.error("assegnazione a un bersaglio non valido")
+        return N.ExprStmt(expr)
+
+    def if_stmt(self):
+        self.expect(T.IF)
+        cond = self.expression()
+        then_block = self.block()
+        else_block = None
+        if self.at(T.ELSE):
+            self.advance()
+            else_block = [self.if_stmt()] if self.at(T.IF) else self.block()
+        return N.If(cond, then_block, else_block)
+
+    def while_stmt(self):
+        self.expect(T.WHILE)
+        cond = self.expression()
+        return N.While(cond, self.block())
+
+    def for_stmt(self):
+        self.expect(T.FOR)
+        var = self.expect(T.IDENT, "variabile di ciclo").value
+        self.expect(T.IN)
+        iterable = self.expression()
+        return N.For(var, iterable, self.block())
+
+    def return_stmt(self):
+        self.expect(T.RETURN)
+        if self.at(T.RBRACE) or self.at(T.EOF):
+            return N.Return(None)
+        return N.Return(self.expression())
+
+    def const_decl(self):
+        self.expect(T.CONST)
+        name = self.expect(T.IDENT, "nome costante").value
+        if self.at(T.COLON):
+            self.advance()
+            self.type_ref()
+        self.expect(T.ASSIGN)
+        return N.Decl(name, self.expression(), True)
+
+    # --- espressioni (per precedenza crescente) ---
+
+    def expression(self):
+        return self.or_expr()
+
+    def or_expr(self):
+        left = self.and_expr()
+        while self.at(T.OR):
+            self.advance()
+            left = N.Logical("or", left, self.and_expr())
+        return left
+
+    def and_expr(self):
+        left = self.equality()
+        while self.at(T.AND):
+            self.advance()
+            left = N.Logical("and", left, self.equality())
+        return left
+
+    def equality(self):
+        left = self.comparison()
+        while self.peek().type in (T.EQ, T.NE):
+            op = self.advance().value
+            left = N.Binary(op, left, self.comparison())
+        return left
+
+    def comparison(self):
+        left = self.term()
+        while self.peek().type in (T.LT, T.LE, T.GT, T.GE):
+            op = self.advance().value
+            left = N.Binary(op, left, self.term())
+        return left
+
+    def term(self):
+        left = self.factor()
+        while self.peek().type in (T.PLUS, T.MINUS):
+            op = self.advance().value
+            left = N.Binary(op, left, self.factor())
+        return left
+
+    def factor(self):
+        left = self.unary()
+        while self.peek().type in (T.STAR, T.SLASH, T.PERCENT):
+            op = self.advance().value
+            left = N.Binary(op, left, self.unary())
+        return left
+
+    def unary(self):
+        if self.at(T.NOT):
+            self.advance()
+            return N.Unary("not", self.unary())
+        if self.at(T.MINUS):
+            self.advance()
+            return N.Unary("-", self.unary())
+        return self.postfix()
+
+    def postfix(self):
+        e = self.primary()
+        while True:
+            if self.at(T.LPAREN):
+                self.advance()
+                args = []
+                if not self.at(T.RPAREN):
+                    args.append(self.expression())
+                    while self.at(T.COMMA):
+                        self.advance()
+                        args.append(self.expression())
+                self.expect(T.RPAREN)
+                e = N.Call(e, args)
+            elif self.at(T.LBRACK):
+                self.advance()
+                idx = self.expression()
+                self.expect(T.RBRACK)
+                e = N.Index(e, idx)
+            else:
+                break
+        return e
+
+    def primary(self):
+        t = self.peek()
+        if t.type in (T.INT, T.FLOAT, T.TRUE, T.FALSE):
+            self.advance()
+            return N.Literal(t.value)
+        if t.type == T.NIL:
+            self.advance()
+            return N.Literal(None)
+        if t.type == T.STRING:
+            self.advance()
+            return self.build_string(t.value)
+        if t.type == T.IDENT:
+            self.advance()
+            return N.Identifier(t.value)
+        if t.type == T.LPAREN:
+            self.advance()
+            e = self.expression()
+            self.expect(T.RPAREN)
+            return e
+        if t.type == T.LBRACK:
+            self.advance()
+            elements = []
+            if not self.at(T.RBRACK):
+                elements.append(self.expression())
+                while self.at(T.COMMA):
+                    self.advance()
+                    if self.at(T.RBRACK):
+                        break
+                    elements.append(self.expression())
+            self.expect(T.RBRACK)
+            return N.ListLit(elements)
+        if t.type == T.LBRACE:
+            self.advance()
+            pairs = []
+            if not self.at(T.RBRACE):
+                pairs.append(self.map_pair())
+                while self.at(T.COMMA):
+                    self.advance()
+                    if self.at(T.RBRACE):
+                        break
+                    pairs.append(self.map_pair())
+            self.expect(T.RBRACE)
+            return N.MapLit(pairs)
+        self.error(f"espressione attesa, trovato {t.type} ({t.value!r})", t)
+
+    def map_pair(self):
+        key = self.expression()
+        self.expect(T.COLON)
+        return (key, self.expression())
+
+    def build_string(self, parts):
+        out = []
+        for kind, val in parts:
+            if kind == "lit":
+                out.append(("lit", val))
+            else:
+                sub = Lexer(val, self.filename).tokenize()
+                p = Parser(sub, self.filename)
+                node = p.expression()
+                if not p.at(T.EOF):
+                    self.error(f"interpolazione con espressione non valida: {{{val}}}")
+                out.append(("expr", node))
+        return N.StringLit(out)

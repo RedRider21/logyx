@@ -1,0 +1,117 @@
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
+# SPDX-License-Identifier: AGPL-3.0-or-later
+"""Nodi dell'albero sintattico (AST)."""
+
+from dataclasses import dataclass
+from typing import Any, List, Optional, Tuple
+
+
+# --- espressioni ---
+
+@dataclass
+class Literal:
+    value: Any
+
+
+@dataclass
+class StringLit:
+    parts: List[Tuple[str, Any]]  # ("lit", str) | ("expr", nodo)
+
+
+@dataclass
+class Identifier:
+    name: str
+
+
+@dataclass
+class Unary:
+    op: str
+    operand: Any
+
+
+@dataclass
+class Binary:
+    op: str
+    left: Any
+    right: Any
+
+
+@dataclass
+class Logical:
+    op: str
+    left: Any
+    right: Any
+
+
+@dataclass
+class Call:
+    callee: Any
+    args: List[Any]
+
+
+@dataclass
+class Index:
+    target: Any
+    index: Any
+
+
+@dataclass
+class ListLit:
+    elements: List[Any]
+
+
+@dataclass
+class MapLit:
+    pairs: List[Tuple[Any, Any]]
+
+
+# --- istruzioni ---
+
+@dataclass
+class Assign:
+    target: Any
+    value: Any
+
+
+@dataclass
+class Decl:
+    name: str
+    value: Any
+    is_const: bool = False
+
+
+@dataclass
+class FunctionDef:
+    name: str
+    params: List[str]
+    body: List[Any]
+
+
+@dataclass
+class If:
+    cond: Any
+    then_block: List[Any]
+    else_block: Optional[List[Any]]
+
+
+@dataclass
+class While:
+    cond: Any
+    body: List[Any]
+
+
+@dataclass
+class For:
+    var: str
+    iterable: Any
+    body: List[Any]
+
+
+@dataclass
+class Return:
+    value: Any
+
+
+@dataclass
+class ExprStmt:
+    expr: Any
