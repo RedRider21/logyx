@@ -19,6 +19,21 @@ L'obiettivo è cancellare la divisione tra "linguaggio server" e "linguaggio cli
 servono due linguaggi diversi; qui un solo sorgente, con una sola sintassi, gira nativo sul server e come
 WebAssembly nel browser, con deploy semplice come PHP e velocità vicina al C.
 
+## Versione 0 e piano di bootstrap
+
+Logyx è alla **versione 0**. Python e Rust, che compaiono in questa fase, sono **impalcature
+temporanee**, non parti del linguaggio finito:
+
+- **Python** è il prototipo con cui "sentiamo" la semantica e iteriamo in fretta (lexer, parser,
+  interprete, primo transpiler). È usa-e-getta.
+- **Rust** è il trampolino di compilazione della v0: transpilare a Rust regala quasi gratis nativo,
+  WASM, desktop e mobile prima di avere un backend nostro.
+
+L'orizzonte è un Logyx **self-hosted**: il compilatore definitivo sarà scritto in Logyx stesso e
+genererà direttamente codice macchina. A quel punto **né Python né Rust resteranno una dipendenza**.
+Il percorso è quello classico del bootstrap: prototipo → compilatore che transpila → compilatore
+self-hosted con backend proprio.
+
 ## Principi guida
 
 Regole non negoziabili che decidono i dubbi di design futuri.
@@ -154,9 +169,10 @@ vince il nativo; l'ecosistema Python resta un'opzione futura via ponte, non un f
 
 ## Architettura del compilatore
 
-Non un compilatore monolitico, ma un frontend unico con più backend. Consiglio pratico: **prototipo in
-Python o TypeScript** (lexer, parser, interprete: programmi veri in pochi giorni), poi **compilatore vero
-in Rust** per il controllo della memoria e il pattern matching sugli AST.
+Non un compilatore monolitico, ma un frontend unico con più backend. Consiglio pratico per la **v0**: **prototipo in
+Python** (lexer, parser, interprete: programmi veri in pochi giorni), poi un backend che **transpila a
+Rust** per raggiungere subito nativo e WASM. È un trampolino: l'obiettivo è arrivare a un **compilatore
+self-hosted**, scritto in Logyx, con backend proprio e senza dipendere da Python né da Rust.
 
 Pipeline:
 
@@ -181,8 +197,8 @@ dalla stessa toolchain.
 | --- | --- |
 | Nome | Logyx (estensione `.logyx`) |
 | Ecosistema | FFI con C + interop con le crates Rust |
-| Backend | Transpiling verso Rust (poi `rustc`), non LLVM diretto all'inizio |
-| Host del compilatore | Prototipo in Python/TypeScript, compilatore vero in Rust |
+| Backend | v0: transpiling verso Rust (poi `rustc`). Orizzonte: backend proprio self-hosted (niente Rust) |
+| Host del compilatore | v0: prototipo in Python. Poi compilatore self-hosted in Logyx, senza dipendere da Python né Rust |
 | Sintassi | Non posizionale, delimitatori espliciti, `;` opzionale |
 | Isole client | Blocchi `@start-client / @end-client`; default server |
 | Confine server/client | Server-driven di default; RPC/idratazione come seconda marcia |

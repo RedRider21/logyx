@@ -26,8 +26,11 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 - **Autore:** Daniele Deplano (RedRider21). Nessuna firma di terzi nei sorgenti o nei commit.
 - **Licenza:** AGPL-3.0. Header su ogni file di programma:
   `Copyright (C) 2026 Daniele Deplano (RedRider21)` + `SPDX-License-Identifier: AGPL-3.0-or-later`.
-- **Backend:** transpiling verso Rust, poi `rustc` (nativo + WASM). Non LLVM diretto all'inizio.
-- **Host del compilatore:** prototipo in Python/TypeScript, compilatore vero in Rust.
+- **Versione 0:** Python e Rust sono impalcature temporanee. Python = prototipo usa-e-getta;
+  Rust = trampolino di compilazione. L'obiettivo è un Logyx **self-hosted** (compilatore scritto in
+  Logyx, backend proprio) in cui né Python né Rust restano una dipendenza.
+- **Backend (v0):** transpiling verso Rust, poi `rustc` (nativo + WASM). Poi backend proprio.
+- **Host del compilatore:** v0 prototipo in Python; poi compilatore self-hosted in Logyx.
 - **Confine server/client:** modello server-driven di default.
 - **Ecosistema:** FFI con C + interop crates Rust.
 
