@@ -1,0 +1,17 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Mappe nel transpiler: letterale {k: v} -> HashMap, accesso m[k], len.
+// Compilabile a nativo:  python3 main.py build ../examples/native_map.logyx
+
+fn main() {
+    prezzi = {"pane": 2, "latte": 1, "uova": 3}
+
+    print("voci in listino: {len(prezzi)}")
+
+    pane = prezzi["pane"]
+    print("il pane costa {pane}")
+
+    tot = prezzi["pane"] + prezzi["latte"] + prezzi["uova"]
+    print("totale spesa = {tot}")
+}

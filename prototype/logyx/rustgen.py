@@ -31,6 +31,7 @@ class RustTranspiler:
             f.name: dict(zip(f.params, f.param_types or [None] * len(f.params))) for f in funcs
         }
         self.func_rets = {f.name: f.ret_type for f in funcs}
+        self._tmp = 0
         self._infer(funcs)
         return "\n\n".join(self.func(f) for f in funcs) + "\n"
 
@@ -51,8 +52,18 @@ class RustTranspiler:
             )
         ret_str = "" if ret == "__void__" else f" -> {self.ty(ret)}"
         declared = set(f.params)
+        self.kinds = {}  # nome -> "list" | "map" (categoria delle variabili locali)
         body = self.block(f.body, declared, 1)
         return f"fn {f.name}({params}){ret_str} {{\n{body}\n}}"
+
+    @staticmethod
+    def _value_kind(v):
+        t = type(v).__name__
+        if t == "ListLit":
+            return "list"
+        if t == "MapLit":
+            return "map"
+        return None
 
     # --- inferenza (punto fisso su parametri e tipi di ritorno) ---
 
@@ -312,12 +323,18 @@ class RustTranspiler:
             return self.for_stmt(s, declared, indent)
         if t == "Decl":
             declared.add(s.name)
+            k = self._value_kind(s.value)
+            if k:
+                self.kinds[s.name] = k
             kw = "let" if s.is_const else "let mut"
             return pad + f"{kw} {s.name} = {self.expr(s.value)};"
         if t == "Assign":
             if not isinstance(s.target, N.Identifier):
                 raise LogyxError("il transpiler v0 assegna solo a variabili semplici")
             name = s.target.name
+            k = self._value_kind(s.value)
+            if k:
+                self.kinds[name] = k
             val = self.expr(s.value)
             if name in declared:
                 return pad + f"{name} = {val};"
@@ -419,7 +436,26 @@ class RustTranspiler:
                     "le liste di stringhe non sono ancora supportate"
                 )
             return "vec![" + ", ".join(self.expr(x) for x in e.elements) + "]"
+        if t == "MapLit":
+            if not e.pairs:
+                raise LogyxError(
+                    "il transpiler v0 non deduce il tipo di una mappa vuota; "
+                    "usa una mappa con almeno una coppia"
+                )
+            if any(self._stringish(v) for _, v in e.pairs):
+                raise LogyxError(
+                    "il transpiler v0 gestisce mappe con valori scalari (int/float/bool); "
+                    "i valori stringa non sono ancora supportati"
+                )
+            name = f"__m{self._tmp}"
+            self._tmp += 1
+            inserts = " ".join(
+                f"{name}.insert({self.expr(k)}, {self.expr(v)});" for k, v in e.pairs
+            )
+            return f"{{ let mut {name} = std::collections::HashMap::new(); {inserts} {name} }}"
         if t == "Index":
+            if isinstance(e.target, N.Identifier) and getattr(self, "kinds", {}).get(e.target.name) == "map":
+                return f"(*{self.expr(e.target)}.get(&({self.expr(e.index)})).unwrap())"
             return f"{self.expr(e.target)}[({self.expr(e.index)}) as usize]"
         if t == "Call":
             if isinstance(e.callee, N.Identifier):

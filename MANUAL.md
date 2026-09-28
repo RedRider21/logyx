@@ -161,8 +161,10 @@ Target WASM: previsto. ⏳
 - **Liste di scalari** (`int`/`float`/`bool`): letterale `[...]` → `Vec<T>`, indicizzazione `xs[i]`,
   `len(xs)`, e `for x in xs` (elementi presi per valore). Usale come variabili locali. Vedi
   `examples/native_list.logyx`.
-- Non ancora: mappe, liste di stringhe, liste come parametro/ritorno di funzione, `route`/`render`,
-  codice dinamico senza tipi. In quei casi dà un errore chiaro.
+- **Mappe con valori scalari**: letterale `{k: v}` → `HashMap<K, V>`, accesso `m[k]`, `len(m)`.
+  Le chiavi possono essere stringhe o scalari; i valori scalari. Vedi `examples/native_map.logyx`.
+- Non ancora: liste/mappe di stringhe, iterazione su mappa, collezioni come parametro/ritorno di
+  funzione, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```
 fn fib(n) {                       // nessuna annotazione

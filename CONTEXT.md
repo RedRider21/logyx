@@ -36,16 +36,22 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-RIPRENDI DA QUI → **mappe nel transpiler Rust**: tradurre i letterali di mappa `{k: v}`, l'accesso `m[k]`
-e (in prospettiva) l'iterazione verso `HashMap<K, V>`, deducendo `K`/`V`. Oggi le liste di scalari sono
-supportate; le mappe esistono solo nell'interprete.
+Bivio strategico (vedi discussione 2026-09-28): il sottoinsieme tipizzato del transpiler è ormai
+espressivo (scalari, stringhe, controllo di flusso, funzioni con inferenza, liste e mappe di scalari).
+Due strade:
+- **A) Ampliare ancora il prototipo Python**: collezioni di stringhe, iterazione su mappa, moduli/import,
+  gestione errori, poi il target WASM del client.
+- **B) Iniziare il compilatore in Rust** (passo verso il self-hosting): riscrivere lexer+parser+checker
+  in Rust, riusando la semantica già fissata dal prototipo e questi esempi come test di conformità.
 
-Dopo, in coda: liste di stringhe / liste come parametro-ritorno, moduli/import, gestione errori nel
-linguaggio, target WASM del client. Vedi `MANUAL.md` §13.
+Proposta: chiudere ancora 1–2 tacche di espressività (moduli/import e gestione errori) per congelare la
+semantica, poi passare a B.
+
+In coda: collezioni di stringhe, iterazione su mappa, moduli/import, gestione errori, target WASM.
 (Fatto: nucleo; render lato server con `{for}`/`{if}`; isole client → JavaScript; transpiler Rust con `build`
 su sottoinsieme tipizzato — stringhe e concatenazione, `range(a,b)`, divisione intera `i64`, inferenza del
-tipo di ritorno **e dei tipi dei parametri**, e **liste di scalari** (letterale/`len`/index/`for`); esempi
-`native_infer.logyx` e `native_list.logyx`.)
+tipo di ritorno **e dei tipi dei parametri**, **liste** e **mappe** di scalari; esempi
+`native_infer.logyx`, `native_list.logyx`, `native_map.logyx`.)
 
 ## Questioni aperte da decidere
 
