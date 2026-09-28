@@ -166,6 +166,8 @@ class RustTranspiler:
                 if kind != "lit":
                     self._scan_expr(val, pt, ev)
         elif t == "Index":
+            if isinstance(e.index, N.Identifier) and e.index.name in ev:
+                ev[e.index.name].add("int")
             self._scan_expr(e.target, pt, ev)
             self._scan_expr(e.index, pt, ev)
 
@@ -331,16 +333,19 @@ class RustTranspiler:
     def for_stmt(self, s, declared, indent):
         pad = "    " * indent
         it = s.iterable
-        if not (isinstance(it, N.Call) and isinstance(it.callee, N.Identifier)
-                and it.callee.name == "range" and len(it.args) in (1, 2)):
-            raise LogyxError("il transpiler v0 supporta solo 'for x in range(n)' o 'range(a, b)'")
+        is_range = (isinstance(it, N.Call) and isinstance(it.callee, N.Identifier)
+                    and it.callee.name == "range" and len(it.args) in (1, 2))
         declared.add(s.var)
-        if len(it.args) == 1:
-            lo, hi = "0i64", self.expr(it.args[0])
-        else:
-            lo, hi = self.expr(it.args[0]), self.expr(it.args[1])
+        if is_range:
+            if len(it.args) == 1:
+                lo, hi = "0i64", self.expr(it.args[0])
+            else:
+                lo, hi = self.expr(it.args[0]), self.expr(it.args[1])
+            body = self.block(s.body, declared, indent + 1)
+            return pad + f"for {s.var} in ({lo})..({hi}) {{\n" + body + "\n" + pad + "}"
+        # iterazione su lista: elementi Copy (int/float/bool), presi per valore
         body = self.block(s.body, declared, indent + 1)
-        return pad + f"for {s.var} in ({lo})..({hi}) {{\n" + body + "\n" + pad + "}"
+        return pad + f"for {s.var} in ({self.expr(it)}).iter().copied() {{\n" + body + "\n" + pad + "}"
 
     def print_call(self, args):
         if len(args) != 1:
@@ -402,9 +407,33 @@ class RustTranspiler:
             return f"({self.expr(e.left)} {e.op} {self.expr(e.right)})"
         if t == "Logical":
             return f"({self.expr(e.left)} {'&&' if e.op == 'and' else '||'} {self.expr(e.right)})"
+        if t == "ListLit":
+            if not e.elements:
+                raise LogyxError(
+                    "il transpiler v0 non deduce il tipo di una lista vuota; "
+                    "usa una lista con almeno un elemento"
+                )
+            if any(self._stringish(x) for x in e.elements):
+                raise LogyxError(
+                    "il transpiler v0 gestisce liste di scalari (int/float/bool); "
+                    "le liste di stringhe non sono ancora supportate"
+                )
+            return "vec![" + ", ".join(self.expr(x) for x in e.elements) + "]"
+        if t == "Index":
+            return f"{self.expr(e.target)}[({self.expr(e.index)}) as usize]"
         if t == "Call":
-            if isinstance(e.callee, N.Identifier) and e.callee.name == "print":
-                raise LogyxError("usa print come istruzione, non dentro un'espressione")
+            if isinstance(e.callee, N.Identifier):
+                nm = e.callee.name
+                if nm == "print":
+                    raise LogyxError("usa print come istruzione, non dentro un'espressione")
+                if nm == "len":
+                    if len(e.args) != 1:
+                        raise LogyxError("len accetta un solo argomento")
+                    return f"(({self.expr(e.args[0])}).len() as i64)"
+                if nm == "str":
+                    if len(e.args) != 1:
+                        raise LogyxError("str accetta un solo argomento")
+                    return f'format!("{{}}", {self.expr(e.args[0])})'
             args = ", ".join(self.expr(a) for a in e.args)
             return f"{self.expr(e.callee)}({args})"
         raise LogyxError(f"espressione non supportata dal transpiler v0: {t}")

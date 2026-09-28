@@ -36,15 +36,16 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-RIPRENDI DA QUI → **liste nel transpiler Rust**: tradurre i letterali di lista, l'indicizzazione, `len` e
-`for x in lista` verso `Vec<T>` in Rust, deducendo `T` dagli elementi (oggi il transpiler supporta solo i
-tipi scalari; le liste esistono solo nell'interprete). Poi le mappe (`HashMap`).
+RIPRENDI DA QUI → **mappe nel transpiler Rust**: tradurre i letterali di mappa `{k: v}`, l'accesso `m[k]`
+e (in prospettiva) l'iterazione verso `HashMap<K, V>`, deducendo `K`/`V`. Oggi le liste di scalari sono
+supportate; le mappe esistono solo nell'interprete.
 
-Dopo, in coda: mappe nel transpiler, moduli/import, gestione errori nel linguaggio, target WASM del
-client. Vedi `MANUAL.md` §13.
+Dopo, in coda: liste di stringhe / liste come parametro-ritorno, moduli/import, gestione errori nel
+linguaggio, target WASM del client. Vedi `MANUAL.md` §13.
 (Fatto: nucleo; render lato server con `{for}`/`{if}`; isole client → JavaScript; transpiler Rust con `build`
 su sottoinsieme tipizzato — stringhe e concatenazione, `range(a,b)`, divisione intera `i64`, inferenza del
-tipo di ritorno **e dei tipi dei parametri** dall'uso; esempio `examples/native_infer.logyx`.)
+tipo di ritorno **e dei tipi dei parametri**, e **liste di scalari** (letterale/`len`/index/`for`); esempi
+`native_infer.logyx` e `native_list.logyx`.)
 
 ## Questioni aperte da decidere
 

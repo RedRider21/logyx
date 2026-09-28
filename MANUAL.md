@@ -158,7 +158,11 @@ Target WASM: previsto. ⏳
   aritmetica → `int`/`float`, concatenazione con `+` → `string`, `not`/`and`/`or` o uso come condizione
   → `bool`, confronti e chiamate propagano il tipo dell'altro lato. L'annotazione resta possibile e serve
   solo quando l'uso non basta (es. un parametro che compare unicamente in un'interpolazione).
-- Non ancora: liste/mappe, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
+- **Liste di scalari** (`int`/`float`/`bool`): letterale `[...]` → `Vec<T>`, indicizzazione `xs[i]`,
+  `len(xs)`, e `for x in xs` (elementi presi per valore). Usale come variabili locali. Vedi
+  `examples/native_list.logyx`.
+- Non ancora: mappe, liste di stringhe, liste come parametro/ritorno di funzione, `route`/`render`,
+  codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```
 fn fib(n) {                       // nessuna annotazione

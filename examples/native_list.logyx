@@ -1,0 +1,26 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Liste nel transpiler: letterale, len, indicizzazione, for su lista.
+// Compilabile a nativo:  python3 main.py build ../examples/native_list.logyx
+
+fn main() {
+    nums = [3, 1, 2, 5, 4]
+    print("quanti  = {len(nums)}")
+    print("primo   = {nums[0]}")
+    print("terzo   = {nums[2]}")
+
+    somma = 0
+    for x in nums {
+        somma = somma + x
+    }
+    print("somma   = {somma}")
+
+    massimo = nums[0]
+    for x in nums {
+        if x > massimo {
+            massimo = x
+        }
+    }
+    print("massimo = {massimo}")
+}
