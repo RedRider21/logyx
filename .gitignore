@@ -4,5 +4,9 @@ dist/
 build/
 *.wasm
 
+# Python
+__pycache__/
+*.pyc
+
 # Sistema
 .DS_Store
