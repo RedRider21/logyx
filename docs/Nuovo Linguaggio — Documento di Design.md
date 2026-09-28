@@ -152,10 +152,47 @@ Domande ancora aperte:
 - La grammatica precisa: parole chiave, blocchi (`{}` o `end`), regole del `;` automatico.
 - Come viaggiano i dati oltre il confine: formato di serializzazione e trasporto (WebSocket per il modello server-driven).
 
+## Grammatica v0 e ciao mondo multi-target
+
+Prima bozza della grammatica (spec completa in `GRAMMAR.md` nel repo). Scelte v0:
+
+- Blocchi con graffe `{ }` (sintassi non posizionale); `;` opzionale; indentazione solo cosmetica.
+- Commenti `//` e `/* */`; logici `and` `or` `not`; `true` / `false` / `nil`.
+- Stringhe con interpolazione: `"Ciao {nome}"`. Funzioni con `fn`, tipi opzionali (gradual typing).
+- Web: `route` (server), `render` con template HTML, isole client fra `@start-client` e `@end-client`.
+
+Ciao mondo multi-target — un solo file per server e client:
+
+```
+route "/" {
+    saluto = "Ciao, mondo!"              // SERVER (nativo)
+
+    render <html>
+      <body>
+        <h1>{saluto}</h1>
+        <button id="btn">Cliccami</button>
+        <p id="out">—</p>
+
+        @start-client                     // CLIENT (WASM)
+          clic = 0
+          on "click" of "#btn" {
+              clic = clic + 1
+              set text of "#out" to "Premuto {clic} volte"
+          }
+        @end-client
+      </body>
+    </html>
+}
+```
+
+Il calcolo di `saluto` e la route girano sul server (nativo); il blocco client viene compilato a WASM. Nessun secondo linguaggio, nessun secondo file.
+
+**Stato del prototipo (Python).** Nel repo `logyx/prototype/` c'è un interprete funzionante (lexer + parser + interprete tree-walking, senza dipendenze). Esegue il nucleo del linguaggio e il **render lato server**: interpolazione `{expr}` con escaping automatico e blocchi di controllo `{ for x in xs { ... } }` e `{ if cond { ... } }` nel template. Le isole `@start-client` sono rese come segnaposto (diventeranno WASM). Comandi: `render` (stampa l'HTML di una route) e `serve` (server HTTP).
+
 ## Prossimi passi
 
-1. **Scegliere il nome** tra le proposte (o proporne un altro): sblocca cartella di progetto, estensione e titolo.
-2. **Creare la cartella di progetto locale** con questi appunti in forma portabile (Markdown + un file di ripresa), così il lavoro si può copiare su un altro PC e continuare in una nuova sessione.
-3. **Definire la grammatica** di un programma minimo: parole chiave, forma dei blocchi, regole del `;` automatico.
-4. **Scrivere il primo "ciao mondo" multi-target**: lo stesso sorgente che risponde a una route sul server e mostra qualcosa di interattivo nel client.
-5. **Prototipo del frontend** (lexer + parser + interprete) in Python o TypeScript, per "sentire" il linguaggio prima di scrivere il compilatore Rust.
+1. **Fatto** — prototipo del frontend in Python: nucleo del linguaggio + render lato server (route, `render`, interpolazione con escaping, blocchi `{for}`/`{if}`).
+2. **Lato client vero**: isole `@start-client` compilate a WASM.
+3. **Moduli/import** e gestione errori nel linguaggio.
+4. **Formato del confine**: serializzazione e trasporto server/client (WebSocket per il server-driven).
+5. **Compilatore vero in Rust**: transpiling verso Rust, poi `rustc` per nativo e WASM.

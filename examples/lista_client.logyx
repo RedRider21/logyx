@@ -1,0 +1,30 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Isola client con controllo di flusso: for, if/else, set html.
+// Al clic costruisce una lista direttamente nel browser (JavaScript).
+
+route "/lista" {
+    render <html>
+      <head><title>Lista client</title></head>
+      <body>
+        <h1>Lista generata nel browser</h1>
+        <button id="gen">Genera 5 righe</button>
+        <ul id="out"></ul>
+
+        @start-client
+          on "click" of "#gen" {
+            righe = ""
+            for i in range(5) {
+              righe = righe + "<li>riga " + str(i + 1) + "</li>"
+            }
+            if len(righe) == 0 {
+              set html of "#out" to "<li>vuoto</li>"
+            } else {
+              set html of "#out" to righe
+            }
+          }
+        @end-client
+      </body>
+    </html>
+}

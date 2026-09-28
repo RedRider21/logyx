@@ -33,16 +33,18 @@ Convenzione: se il programma definisce `fn main()`, viene chiamata automaticamen
 - `route "/percorso" { ... }` definisce un endpoint; il corpo gira sul server.
 - `render <html>...</html>` produce HTML con interpolazione `{espressione}` e **escaping automatico** dei
   valori interpolati, e **blocchi di controllo** nel template: `{ for x in xs { ... } }` e `{ if cond { ... } else { ... } }`.
-- I blocchi `@start-client ... @end-client` sono resi come un segnaposto (commento HTML): il loro codice
-  diventerà WASM quando ci sarà il runtime client.
+- I blocchi `@start-client ... @end-client` sono **compilati a JavaScript** ed emessi in un `<script>`: DSL
+  client v0 con `on "<evento>" of "<sel>" { }`, `set text|html of "<sel>" to <expr>`, stato/assegnazioni e
+  controllo di flusso (`if`/`for`/`while`); un piccolo runtime fornisce `range`/`len`/`str`/`print`. Il target
+  WASM verrà dopo (JavaScript è la tappa intermedia).
 
 Comandi `render` (stampa l'HTML) e `serve` (server HTTP) qui sopra.
 
 ## Cosa NON esegue ancora
 
-- Il lato client vero (isole `@start-client` compilate a WASM): per ora sono un segnaposto.
+- Compilazione a WASM del lato client (per ora il client è JavaScript) e compilazione nativa (compilatore Rust).
 - Moduli/import e gestione errori nel linguaggio.
-- Tag void non chiusi nel template (usare `<br/>`).
+- Tag void non chiusi nel template (usare `<br/>`); nella DSL client, leggere valori di input (`value of ...`).
 
 ## Struttura
 

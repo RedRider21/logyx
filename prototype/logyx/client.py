@@ -41,7 +41,13 @@ class ClientCompiler:
         if t.type == T.IDENT and t.value == "on":
             return self.on_handler()
         if t.type == T.IDENT and t.value == "set":
-            return self.set_text()
+            return self.set_stmt()
+        if t.type == T.IF:
+            return self.client_if()
+        if t.type == T.FOR:
+            return self.client_for()
+        if t.type == T.WHILE:
+            return self.client_while()
         if t.type == T.IDENT and self.p.peek(1).type == T.ASSIGN:
             name = self.p.advance().value
             self.p.advance()  # '='
@@ -63,14 +69,41 @@ class ClientCompiler:
             f".addEventListener({json.dumps(event)}, function() {{\n{body}\n}});"
         )
 
-    def set_text(self):
+    def set_stmt(self):
         self.p.advance()  # 'set'
-        self.expect_word("text")
+        prop = self.p.advance()
+        if not (prop.type == T.IDENT and prop.value in ("text", "html")):
+            self.p.error(f"atteso 'text' o 'html' dopo 'set', trovato {prop.value!r}", prop)
         self.expect_word("of")
         selector = self.literal_string()
         self.expect_word("to")
         js = self.js_expr(self.p.expression())
-        return f"document.querySelector({json.dumps(selector)}).textContent = {js};"
+        attr = "textContent" if prop.value == "text" else "innerHTML"
+        return f"document.querySelector({json.dumps(selector)}).{attr} = {js};"
+
+    def client_if(self):
+        self.p.advance()  # if
+        cond = self.js_expr(self.p.expression())
+        js = f"if ({cond}) {{\n{self.block()}\n}}"
+        if self.p.at(T.ELSE):
+            self.p.advance()
+            if self.p.at(T.IF):
+                js += " else " + self.client_if()
+            else:
+                js += f" else {{\n{self.block()}\n}}"
+        return js
+
+    def client_for(self):
+        self.p.advance()  # for
+        var = self.p.expect(T.IDENT, "variabile di ciclo").value
+        self.p.expect(T.IN)
+        iterable = self.js_expr(self.p.expression())
+        return f"for (const {var} of {iterable}) {{\n{self.block()}\n}}"
+
+    def client_while(self):
+        self.p.advance()  # while
+        cond = self.js_expr(self.p.expression())
+        return f"while ({cond}) {{\n{self.block()}\n}}"
 
     def block(self):
         self.p.expect(T.LBRACE)
@@ -141,7 +174,16 @@ class ClientCompiler:
         return "{" + pairs + "}"
 
 
+# Piccolo runtime JS: rende disponibili nel client gli stessi builtin del nucleo.
+_PRELUDE = (
+    "function range(n){return Array.from({length: n}, function(_, i){return i;});}\n"
+    "function len(x){return x.length;}\n"
+    "function str(x){return String(x);}\n"
+    "function print(){console.log.apply(console, arguments);}"
+)
+
+
 def compile_island(src):
     """Compila il corpo di un'isola client in un blocco <script> (IIFE)."""
     js = ClientCompiler(src).compile()
-    return "<script>\n(function() {\n" + js + "\n})();\n</script>"
+    return "<script>\n(function() {\n" + _PRELUDE + "\n" + js + "\n})();\n</script>"

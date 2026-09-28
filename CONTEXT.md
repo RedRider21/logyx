@@ -33,9 +33,10 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-Iniziare l'abbozzo del **lato client** vero (isole `@start-client` → WASM), oppure moduli/import e gestione
-errori nel linguaggio. Più avanti: il compilatore vero in Rust (transpiling → `rustc`).
-(Fatto: nucleo, render lato server, blocchi di controllo `{for}`/`{if}` nel template.)
+Opzioni: (a) compilatore vero in Rust (transpiling → `rustc`) per la compilazione nativa; (b) moduli/import
+e gestione errori nel linguaggio; (c) arricchire ancora la DSL client (lettura input `value of`, altri eventi)
+e in prospettiva il target WASM.
+(Fatto: nucleo, render lato server con `{for}`/`{if}`, isole `@start-client` compilate a JavaScript.)
 
 ## Questioni aperte da decidere
 
