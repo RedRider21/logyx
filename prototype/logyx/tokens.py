@@ -15,6 +15,8 @@ class T:
     FALSE = "FALSE"
     NIL = "NIL"
     IDENT = "IDENT"
+    RENDER = "RENDER"
+    TEMPLATE = "TEMPLATE"
     # parole chiave
     FN = "FN"
     RETURN = "RETURN"

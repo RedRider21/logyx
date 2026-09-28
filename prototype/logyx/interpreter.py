@@ -2,12 +2,27 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 from . import nodes as N
+from .tokens import T
 from .errors import LogyxError
 
 
 class _Return(Exception):
     def __init__(self, value):
         self.value = value
+
+
+class _Response(Exception):
+    def __init__(self, html):
+        self.html = html
+
+
+def html_escape(s):
+    return (
+        s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
 
 
 class LogyxFunction:
@@ -88,6 +103,7 @@ def truthy(v):
 class Interpreter:
     def __init__(self):
         self.globals = Environment()
+        self.routes = {}
         self._install_builtins()
 
     def _install_builtins(self):
@@ -97,7 +113,12 @@ class Interpreter:
         g.define("str", logyx_str)
         g.define("range", lambda n: list(range(int(n))))
 
-    def run(self, items):
+    def load(self, items):
+        """Registra funzioni e route ed esegue le istruzioni di primo livello.
+
+        Non chiama main(): serve anche per rendere una route o avviare il server.
+        Restituisce la funzione main se definita.
+        """
         main = None
         for item in items:
             if isinstance(item, N.FunctionDef):
@@ -105,10 +126,66 @@ class Interpreter:
                 self.globals.define(item.name, fn)
                 if item.name == "main":
                     main = fn
+            elif isinstance(item, N.RouteDef):
+                self.routes[item.path] = item
             else:
                 self.exec(item, self.globals)
+        return main
+
+    def run(self, items):
+        main = self.load(items)
         if main is not None:
             self.call(main, [])
+
+    def render_route(self, path):
+        route = self.routes.get(path)
+        if route is None:
+            raise LogyxError(f"nessuna route definita per il percorso '{path}'")
+        env = Environment(self.globals)
+        try:
+            self._exec_all(route.body, env)
+        except _Response as r:
+            return r.html
+        return ""
+
+    def eval_source(self, src, env):
+        from .lexer import Lexer
+        from .parser import Parser
+        tokens = Lexer(src, "<template>").tokenize()
+        p = Parser(tokens, "<template>")
+        node = p.expression()
+        if not p.at(T.EOF):
+            raise LogyxError(f"espressione non valida nel template: {src!r}")
+        return self.eval(node, env)
+
+    def render_template(self, raw, env):
+        out = []
+        i, n = 0, len(raw)
+        island_end = "@end-client"
+        while i < n:
+            c = raw[i]
+            if c == "{":
+                depth, j = 1, i + 1
+                while j < n and depth > 0:
+                    if raw[j] == "{":
+                        depth += 1
+                    elif raw[j] == "}":
+                        depth -= 1
+                    j += 1
+                expr_src = raw[i + 1:j - 1].strip()
+                value = self.eval_source(expr_src, env)
+                out.append(html_escape(logyx_str(value)))
+                i = j
+            elif raw.startswith("@start-client", i):
+                k = raw.find(island_end, i)
+                if k == -1:
+                    raise LogyxError("isola client non terminata nel template")
+                i = k + len(island_end)
+                out.append("<!-- isola client: eseguita nel browser come WASM, non resa dal server -->")
+            else:
+                out.append(c)
+                i += 1
+        return "".join(out)
 
     # --- istruzioni ---
 
@@ -166,6 +243,9 @@ class Interpreter:
 
     def st_Return(self, s, env):
         raise _Return(self.eval(s.value, env) if s.value is not None else None)
+
+    def st_Render(self, s, env):
+        raise _Response(self.render_template(s.raw, env))
 
     # --- espressioni ---
 

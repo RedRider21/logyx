@@ -115,3 +115,14 @@ class Return:
 @dataclass
 class ExprStmt:
     expr: Any
+
+
+@dataclass
+class RouteDef:
+    path: str
+    body: List[Any]
+
+
+@dataclass
+class Render:
+    raw: str

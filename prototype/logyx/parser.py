@@ -43,8 +43,27 @@ class Parser:
     def parse(self):
         items = []
         while not self.at(T.EOF):
-            items.append(self.function() if self.at(T.FN) else self.statement())
+            if self.at(T.FN):
+                items.append(self.function())
+            elif self.at(T.IDENT) and self.peek().value == "route":
+                items.append(self.route_def())
+            else:
+                items.append(self.statement())
         return items
+
+    def route_def(self):
+        self.advance()  # 'route'
+        tok = self.expect(T.STRING, "percorso della route")
+        parts = tok.value
+        if len(parts) != 1 or parts[0][0] != "lit":
+            self.error("il percorso della route deve essere una stringa semplice (senza interpolazione)")
+        path = parts[0][1]
+        return N.RouteDef(path, self.block())
+
+    def render_stmt(self):
+        self.expect(T.RENDER)
+        tok = self.expect(T.TEMPLATE, "template dopo 'render'")
+        return N.Render(tok.value)
 
     def function(self):
         self.expect(T.FN)
@@ -111,11 +130,8 @@ class Parser:
             return self.return_stmt()
         if t.type == T.CONST:
             return self.const_decl()
-        if t.type == T.IDENT and t.value in ("route", "render"):
-            self.error(
-                f"costrutto web '{t.value}' non supportato dal prototipo v0 "
-                "(usa il nucleo: vedi examples/hello.logyx)", t
-            )
+        if t.type == T.RENDER:
+            return self.render_stmt()
         # dichiarazione tipizzata:  IDENT ':' tipo '=' espressione
         if t.type == T.IDENT and self.peek(1).type == T.COLON:
             name = self.advance().value

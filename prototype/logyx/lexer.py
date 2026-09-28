@@ -98,11 +98,10 @@ class Lexer:
         while self.peek().isalnum() or self.peek() == "_":
             self.advance()
         text = self.src[start:self.i]
-        if text in ("route", "render"):
-            self.error(
-                f"costrutto web '{text}' non supportato dal prototipo v0; il prototipo "
-                "esegue il nucleo del linguaggio (vedi examples/hello.logyx, examples/demo.logyx)"
-            )
+        if text == "render":
+            self.tokens.append(Token(T.RENDER, "render", sl, sc))
+            self._template()
+            return
         ttype = KEYWORDS.get(text, T.IDENT)
         if ttype == T.TRUE:
             self.tokens.append(Token(T.TRUE, True, sl, sc))
@@ -173,3 +172,79 @@ class Lexer:
             self.tokens.append(Token(singles[c], c, sl, sc))
             return
         self.error(f"carattere inatteso {c!r}")
+
+    # --- cattura del template dopo 'render' ---
+
+    def _template(self):
+        """Cattura in modo grezzo il template HTML che segue 'render'.
+
+        Delimita il template contando la profondita' dei tag, saltando i buchi
+        di interpolazione {...} e le isole @start-client ... @end-client.
+        """
+        while self.peek() in " \t\r\n":
+            self.advance()
+        if self.peek() != "<":
+            self.error("dopo 'render' e' atteso un template che inizia con '<'")
+        sl, sc = self.line, self.col
+        start = self.i
+        depth = 0
+        started = False
+        while self.i < len(self.src):
+            c = self.peek()
+            if c == "{":
+                self._skip_braces()
+                continue
+            if c == "@" and self.src.startswith("@start-client", self.i):
+                self._skip_island()
+                continue
+            if c == "<":
+                closing, selfclose = self._consume_tag()
+                if closing:
+                    depth -= 1
+                elif not selfclose:
+                    depth += 1
+                    started = True
+                elif selfclose and depth == 0:
+                    started = True
+                if started and depth == 0:
+                    break
+                continue
+            self.advance()
+        raw = self.src[start:self.i]
+        self.tokens.append(Token(T.TEMPLATE, raw, sl, sc))
+
+    def _consume_tag(self):
+        self.advance()  # '<'
+        closing = self.peek() == "/"
+        last = ""
+        while self.i < len(self.src) and self.peek() != ">":
+            last = self.advance()
+        if self.i >= len(self.src):
+            self.error("tag del template non terminato (manca '>')")
+        self.advance()  # '>'
+        return closing, last == "/"
+
+    def _skip_braces(self):
+        self.advance()  # '{'
+        depth = 1
+        while self.i < len(self.src) and depth > 0:
+            c = self.advance()
+            if c == "{":
+                depth += 1
+            elif c == "}":
+                depth -= 1
+        if depth > 0:
+            self.error("interpolazione non terminata nel template (manca '}')")
+
+    def _skip_island(self):
+        self._consume_literal("@start-client")
+        end = "@end-client"
+        while self.i < len(self.src) and not self.src.startswith(end, self.i):
+            self.advance()
+        if self.i >= len(self.src):
+            self.error("isola client non terminata (manca @end-client)")
+        self._consume_literal(end)
+
+    def _consume_literal(self, lit):
+        for _ in range(len(lit)):
+            self.advance()

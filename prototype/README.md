@@ -7,11 +7,12 @@ puro (nessuna dipendenza). Serve a "sentire" il linguaggio prima di scrivere il 
 
 ```
 cd prototype
-python3 main.py ../examples/hello.logyx
-python3 main.py ../examples/demo.logyx
+python3 main.py ../examples/demo.logyx                 # esegue il nucleo (chiama main())
+python3 main.py render ../examples/web_demo.logyx /    # stampa l'HTML reso da una route
+python3 main.py serve  ../examples/web_demo.logyx 8137 # server HTTP su 127.0.0.1:8137
 ```
 
-Richiede solo Python 3.8+.
+Richiede solo Python 3.8+ (nessuna dipendenza).
 
 ## Cosa esegue (v0)
 
@@ -27,11 +28,20 @@ Il nucleo del linguaggio:
 
 Convenzione: se il programma definisce `fn main()`, viene chiamata automaticamente al termine.
 
+## Web lato server (render)
+
+- `route "/percorso" { ... }` definisce un endpoint; il corpo gira sul server.
+- `render <html>...</html>` produce HTML con interpolazione `{espressione}` e **escaping automatico** dei
+  valori interpolati.
+- I blocchi `@start-client ... @end-client` sono resi come un segnaposto (commento HTML): il loro codice
+  diventerà WASM quando ci sarà il runtime client.
+
+Comandi `render` (stampa l'HTML) e `serve` (server HTTP) qui sopra.
+
 ## Cosa NON esegue ancora
 
-I costrutti web/client (`route`, `render`, `@start-client`): richiedono il runtime server/WASM, che arriverà
-più avanti. Su quei file il prototipo dà un messaggio chiaro. Vedi `examples/hello_web.logyx` per la forma
-prevista.
+- Nel template: blocchi di controllo (`{ for x in xs { ... } }`) — per ora solo interpolazione `{expr}`.
+- Il lato client vero (isole `@start-client` compilate a WASM) e i tag void non chiusi (usare `<br/>`).
 
 ## Struttura
 
@@ -46,6 +56,6 @@ prevista.
 
 ## Prossimi passi del prototipo
 
-- Precedenze complete e messaggi d'errore ancora più precisi.
-- Moduli / import, gestione degli errori nel linguaggio.
-- Un primo abbozzo del template `render` (solo lato server) per avvicinarsi al modello web.
+- Blocchi di controllo nel template (`{ for ... }`, `{ if ... }`).
+- Moduli / import e gestione degli errori nel linguaggio.
+- Primo abbozzo del lato client (isole `@start-client`) verso WASM.

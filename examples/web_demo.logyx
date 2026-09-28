@@ -1,0 +1,30 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Render server-side con valori calcolati sul server e HTML-escaping automatico.
+
+fn saluto(nome) {
+    return "Ciao, " + nome + "!"
+}
+
+fn pow2(n) {
+    r = 1
+    for i in range(n) {
+        r = r * 2
+    }
+    return r
+}
+
+route "/" {
+    titolo = saluto("mondo")
+    n = 10
+
+    render <html>
+      <head><title>Logyx web demo</title></head>
+      <body>
+        <h1>{titolo}</h1>
+        <p>2 elevato a {n} = {pow2(n)}</p>
+        <p>Escaping automatico: {"<script>alert(1)</script>"}</p>
+      </body>
+    </html>
+}

@@ -14,7 +14,11 @@ Definiti: nome, licenza, autore, scelte architetturali (`DESIGN.md`), **grammati
 esempi in `examples/`, e un **prototipo del frontend in Python** funzionante in `prototype/`
 (lexer + parser + interprete). Esegue il nucleo del linguaggio; i costrutti web arriveranno dopo.
 
-Prova: `cd prototype && python3 main.py ../examples/demo.logyx`.
+Il prototipo esegue il nucleo e ora anche il **render lato server**: `route` + `render` con interpolazione
+`{expr}` ed escaping automatico; le isole `@start-client` sono rese come segnaposto. Comandi `render` e
+`serve` (server HTTP) in `prototype/main.py`.
+
+Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e apri http://127.0.0.1:8137/
 
 ## Deciso e bloccato
 
@@ -29,8 +33,8 @@ Prova: `cd prototype && python3 main.py ../examples/demo.logyx`.
 
 ## Prossimo passo
 
-Estendere il prototipo: primo abbozzo del template `render` (solo lato server), poi moduli/import e una
-gestione errori nel linguaggio. In parallelo, formalizzare le precedenze complete degli operatori.
+Estendere il template con i blocchi di controllo (`{ for x in xs { ... } }`, `{ if ... }`), poi moduli/import
+e gestione errori nel linguaggio. Iniziare l'abbozzo del lato client (isole `@start-client` → WASM).
 Più avanti: il compilatore vero in Rust (transpiling → `rustc`).
 
 ## Questioni aperte da decidere
