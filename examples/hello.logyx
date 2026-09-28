@@ -1,0 +1,9 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Il minimo assoluto. Lo stesso sorgente si compila a eseguibile nativo
+// (server/desktop) e a WebAssembly, senza cambiare una riga.
+
+fn main() {
+    print("Ciao, mondo!")
+}

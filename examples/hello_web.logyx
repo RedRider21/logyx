@@ -1,0 +1,29 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Ciao mondo multi-target: un solo file per server e client.
+// - la route e il calcolo di "saluto" girano sul SERVER (compilati a nativo)
+// - il blocco @start-client ... @end-client gira nel CLIENT (compilato a WASM)
+// Nessun secondo linguaggio, nessun secondo file.
+
+route "/" {
+    saluto = "Ciao, mondo!"              // SERVER (nativo)
+
+    render <html>
+      <head><title>Ciao da Logyx</title></head>
+      <body>
+        <h1>{saluto}</h1>
+
+        <button id="btn">Cliccami</button>
+        <p id="out">—</p>
+
+        @start-client                     // CLIENT (WASM)
+          clic = 0
+          on "click" of "#btn" {
+              clic = clic + 1
+              set text of "#out" to "Premuto {clic} volte"
+          }
+        @end-client
+      </body>
+    </html>
+}
