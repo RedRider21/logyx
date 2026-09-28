@@ -36,16 +36,15 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-RIPRENDI DA QUI → **inferenza dei tipi dei parametri** nel transpiler Rust: dedurre il tipo dei parametri
-dall'uso (aritmetica → int/float, concatenazione/interpolazione → string, confronti/logica → bool, chiamate
-ad altre funzioni), così da non doverli più annotare. Oggi è dedotto solo il tipo di ritorno; i parametri
-vanno ancora annotati (`rustgen.py`, `ty()` solleva errore se il tipo è assente).
+RIPRENDI DA QUI → **liste nel transpiler Rust**: tradurre i letterali di lista, l'indicizzazione, `len` e
+`for x in lista` verso `Vec<T>` in Rust, deducendo `T` dagli elementi (oggi il transpiler supporta solo i
+tipi scalari; le liste esistono solo nell'interprete). Poi le mappe (`HashMap`).
 
-Dopo, in coda: liste/mappe nel transpiler, moduli/import, gestione errori nel linguaggio, target WASM del
+Dopo, in coda: mappe nel transpiler, moduli/import, gestione errori nel linguaggio, target WASM del
 client. Vedi `MANUAL.md` §13.
 (Fatto: nucleo; render lato server con `{for}`/`{if}`; isole client → JavaScript; transpiler Rust con `build`
 su sottoinsieme tipizzato — stringhe e concatenazione, `range(a,b)`, divisione intera `i64`, inferenza del
-tipo di ritorno.)
+tipo di ritorno **e dei tipi dei parametri** dall'uso; esempio `examples/native_infer.logyx`.)
 
 ## Questioni aperte da decidere
 

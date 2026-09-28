@@ -1,0 +1,31 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Inferenza dei tipi dei parametri: nessuna annotazione, eppure compila a nativo.
+//   python3 main.py build ../examples/native_infer.logyx
+
+fn doppio(n) {                 // n dedotto int (aritmetica con interi)
+    return n * 2
+}
+
+fn saluta(nome) {              // nome dedotto string (concatenazione con "...")
+    return "Ciao " + nome + "!"
+}
+
+fn somma(a, b) {               // a, b dedotti int (aritmetica, nessuna stringa)
+    return a + b
+}
+
+fn maggiore(a, b) {            // a, b dedotti int; ritorno dedotto bool
+    if a > b {
+        return true
+    }
+    return false
+}
+
+fn main() {
+    print(doppio(21))
+    print(saluta("mondo"))
+    print("somma(3, 4) = {somma(3, 4)}")
+    print("3 > 4 ? {maggiore(3, 4)}")
+}

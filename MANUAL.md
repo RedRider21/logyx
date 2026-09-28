@@ -151,19 +151,23 @@ Target WASM: previsto. ⏳
 
 `build` traduce un **sottoinsieme tipizzato** in Rust, che `rustc` compila a eseguibile nativo.
 
-- Supporta: funzioni con tipi espliciti (`int`/`float`/`bool`/`string`), aritmetica, confronti, logica,
+- Supporta: funzioni con tipi (`int`/`float`/`bool`/`string`), aritmetica, confronti, logica,
   concatenazione di stringhe con `+`, `if`/`else`, `while`, `for x in range(n)` o `range(a, b)`, `return`,
   `print`, ricorsione. Gli interi sono `i64`; `/` è divisione intera.
-- Il **tipo di ritorno può essere omesso**: viene dedotto dal corpo (i tipi dei parametri restano da annotare).
+- **Tipi di ritorno e dei parametri possono essere omessi**: vengono dedotti dall'uso —
+  aritmetica → `int`/`float`, concatenazione con `+` → `string`, `not`/`and`/`or` o uso come condizione
+  → `bool`, confronti e chiamate propagano il tipo dell'altro lato. L'annotazione resta possibile e serve
+  solo quando l'uso non basta (es. un parametro che compare unicamente in un'interpolazione).
 - Non ancora: liste/mappe, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```
-fn fib(n: int) -> int {
+fn fib(n) {                       // nessuna annotazione
     if n < 2 { return n }
     return fib(n - 1) + fib(n - 2)
 }
 ```
-→ genera `fn fib(n: i64) -> i64 { ... }` in Rust.
+→ genera `fn fib(n: i64) -> i64 { ... }` in Rust: `n` è dedotto `int` dall'uso (`n < 2`, `n - 1`),
+il ritorno `int` dal corpo. Vedi `examples/native_infer.logyx`.
 
 ## 13. Cosa non c'è ancora ⏳
 

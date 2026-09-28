@@ -31,12 +31,18 @@ class RustTranspiler:
             f.name: dict(zip(f.params, f.param_types or [None] * len(f.params))) for f in funcs
         }
         self.func_rets = {f.name: f.ret_type for f in funcs}
-        self._infer_returns(funcs)
+        self._infer(funcs)
         return "\n\n".join(self.func(f) for f in funcs) + "\n"
 
     def func(self, f):
-        ptypes = f.param_types or [None] * len(f.params)
-        params = ", ".join(f"{n}: {self.ty(t)}" for n, t in zip(f.params, ptypes))
+        pt = self.param_types[f.name]
+        missing = [n for n in f.params if pt.get(n) is None]
+        if missing:
+            raise LogyxError(
+                f"non riesco a inferire il tipo del parametro '{missing[0]}' di '{f.name}'; "
+                f"aggiungi l'annotazione '{missing[0]}: tipo'"
+            )
+        params = ", ".join(f"{n}: {self.ty(pt[n])}" for n in f.params)
         ret = self.func_rets.get(f.name)
         if ret is None:
             raise LogyxError(
@@ -48,19 +54,166 @@ class RustTranspiler:
         body = self.block(f.body, declared, 1)
         return f"fn {f.name}({params}){ret_str} {{\n{body}\n}}"
 
-    # --- inferenza del tipo di ritorno ---
+    # --- inferenza (punto fisso su parametri e tipi di ritorno) ---
 
-    def _infer_returns(self, funcs):
+    def _infer(self, funcs):
         changed = True
         while changed:
             changed = False
-            for f in funcs:
-                if self.func_rets[f.name] is not None:
-                    continue
-                inferred = self._infer_func_ret(f)
-                if inferred is not None:
-                    self.func_rets[f.name] = inferred
+            if self._infer_params_once(funcs):
+                changed = True
+            if self._infer_returns_once(funcs):
+                changed = True
+
+    def _infer_returns_once(self, funcs):
+        changed = False
+        for f in funcs:
+            if self.func_rets[f.name] is not None:
+                continue
+            inferred = self._infer_func_ret(f)
+            if inferred is not None:
+                self.func_rets[f.name] = inferred
+                changed = True
+        return changed
+
+    # --- inferenza dei tipi dei parametri dall'uso nel corpo ---
+
+    def _infer_params_once(self, funcs):
+        changed = False
+        for f in funcs:
+            pt = self.param_types[f.name]
+            ev = {p: set() for p in f.params if pt.get(p) is None}
+            if not ev:
+                continue
+            self._scan_stmts(f.body, pt, ev, f.name)
+            for p, e in ev.items():
+                t = self._resolve_ev(e)
+                if t is not None:
+                    pt[p] = t
                     changed = True
+        return changed
+
+    @staticmethod
+    def _resolve_ev(e):
+        # priorita': string > float > int/num > bool
+        if "string" in e:
+            return "string"
+        if "float" in e:
+            return "float"
+        if "int" in e or "num" in e:
+            return "int"
+        if "bool" in e:
+            return "bool"
+        return None
+
+    def _scan_stmts(self, stmts, pt, ev, fname):
+        for s in stmts:
+            self._scan_stmt(s, pt, ev, fname)
+
+    def _scan_stmt(self, s, pt, ev, fname):
+        t = type(s).__name__
+        if t == "If":
+            self._cond_bool(s.cond, ev)
+            self._scan_expr(s.cond, pt, ev)
+            self._scan_stmts(s.then_block, pt, ev, fname)
+            if s.else_block:
+                self._scan_stmts(s.else_block, pt, ev, fname)
+        elif t == "While":
+            self._cond_bool(s.cond, ev)
+            self._scan_expr(s.cond, pt, ev)
+            self._scan_stmts(s.body, pt, ev, fname)
+        elif t == "For":
+            self._scan_expr(s.iterable, pt, ev)
+            self._scan_stmts(s.body, pt, ev, fname)
+        elif t == "Return":
+            if s.value is not None:
+                rt = self.func_rets.get(fname)
+                if isinstance(s.value, N.Identifier) and s.value.name in ev and rt in _TYPES:
+                    ev[s.value.name].add(rt)
+                self._scan_expr(s.value, pt, ev)
+        elif t in ("Decl", "Assign"):
+            self._scan_expr(s.value, pt, ev)
+        elif t == "ExprStmt":
+            self._scan_expr(s.expr, pt, ev)
+
+    @staticmethod
+    def _cond_bool(cond, ev):
+        if isinstance(cond, N.Identifier) and cond.name in ev:
+            ev[cond.name].add("bool")
+
+    def _scan_expr(self, e, pt, ev):
+        t = type(e).__name__
+        if t == "Binary":
+            self._binary_ev(e, pt, ev)
+            self._scan_expr(e.left, pt, ev)
+            self._scan_expr(e.right, pt, ev)
+        elif t == "Logical":
+            for side in (e.left, e.right):
+                if isinstance(side, N.Identifier) and side.name in ev:
+                    ev[side.name].add("bool")
+            self._scan_expr(e.left, pt, ev)
+            self._scan_expr(e.right, pt, ev)
+        elif t == "Unary":
+            if isinstance(e.operand, N.Identifier) and e.operand.name in ev:
+                ev[e.operand.name].add("bool" if e.op == "not" else "num")
+            self._scan_expr(e.operand, pt, ev)
+        elif t == "Call":
+            self._call_ev(e, pt, ev)
+            for a in e.args:
+                self._scan_expr(a, pt, ev)
+        elif t == "StringLit":
+            for kind, val in e.parts:
+                if kind != "lit":
+                    self._scan_expr(val, pt, ev)
+        elif t == "Index":
+            self._scan_expr(e.target, pt, ev)
+            self._scan_expr(e.index, pt, ev)
+
+    def _binary_ev(self, e, pt, ev):
+        op, L, R = e.op, e.left, e.right
+        if op in ("==", "!=", "<", "<=", ">", ">="):
+            self._compare_ev(L, R, pt, ev)
+            self._compare_ev(R, L, pt, ev)
+        elif op in ("-", "*", "/", "%"):
+            self._arith_ev(L, R, pt, ev)
+            self._arith_ev(R, L, pt, ev)
+        elif op == "+":
+            lt, rt = self._type_of(L, pt), self._type_of(R, pt)
+            if "string" in (lt, rt) or self._stringish(L) or self._stringish(R):
+                for side in (L, R):
+                    if isinstance(side, N.Identifier) and side.name in ev:
+                        ev[side.name].add("string")
+            else:
+                self._arith_ev(L, R, pt, ev)
+                self._arith_ev(R, L, pt, ev)
+
+    def _compare_ev(self, x, other, pt, ev):
+        if isinstance(x, N.Identifier) and x.name in ev:
+            ot = self._type_of(other, pt)
+            ev[x.name].add(ot if ot in _TYPES else "num")
+
+    def _arith_ev(self, x, other, pt, ev):
+        if isinstance(x, N.Identifier) and x.name in ev:
+            ot = self._type_of(other, pt)
+            ev[x.name].add(ot if ot in ("int", "float") else "num")
+
+    def _call_ev(self, e, pt, ev):
+        if not isinstance(e.callee, N.Identifier):
+            return
+        name = e.callee.name
+        if name == "range":
+            for a in e.args:
+                if isinstance(a, N.Identifier) and a.name in ev:
+                    ev[a.name].add("int")
+            return
+        if name in self.param_types:
+            pnames = list(self.param_types[name].keys())
+            for i, a in enumerate(e.args):
+                if i >= len(pnames):
+                    break
+                target_t = self.param_types[name][pnames[i]]
+                if target_t in _TYPES and isinstance(a, N.Identifier) and a.name in ev:
+                    ev[a.name].add(target_t)
 
     def _infer_func_ret(self, f):
         ptypes = self.param_types[f.name]
