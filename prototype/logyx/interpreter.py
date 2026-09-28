@@ -172,9 +172,7 @@ class Interpreter:
                     elif raw[j] == "}":
                         depth -= 1
                     j += 1
-                expr_src = raw[i + 1:j - 1].strip()
-                value = self.eval_source(expr_src, env)
-                out.append(html_escape(logyx_str(value)))
+                self._render_hole(raw[i + 1:j - 1], env, out)
                 i = j
             elif raw.startswith("@start-client", i):
                 k = raw.find(island_end, i)
@@ -186,6 +184,61 @@ class Interpreter:
                 out.append(c)
                 i += 1
         return "".join(out)
+
+    def _render_hole(self, hole, env, out):
+        s = hole.strip()
+        if s.startswith("for ") or s.startswith("for\t"):
+            self._render_for(s, env, out)
+        elif s.startswith("if ") or s.startswith("if\t"):
+            self._render_if(s, env, out)
+        else:
+            out.append(html_escape(logyx_str(self.eval_source(s, env))))
+
+    def _split_block(self, s, keyword):
+        """Da 'keyword <header> { <inner> } <rest>' restituisce (header, inner, rest)."""
+        brace = s.index("{")
+        header = s[len(keyword):brace].strip()
+        depth, i = 1, brace + 1
+        while i < len(s) and depth > 0:
+            if s[i] == "{":
+                depth += 1
+            elif s[i] == "}":
+                depth -= 1
+            i += 1
+        return header, s[brace + 1:i - 1], s[i:].strip()
+
+    def _render_for(self, s, env, out):
+        header, inner, _ = self._split_block(s, "for")
+        idx = header.find(" in ")
+        if idx == -1:
+            raise LogyxError("ciclo 'for' nel template: manca 'in'")
+        var = header[:idx].strip()
+        iterable = self.eval_source(header[idx + 4:].strip(), env)
+        if isinstance(iterable, dict):
+            iterable = list(iterable.keys())
+        for item in iterable:
+            child = Environment(env)
+            child.define(var, item)
+            out.append(self.render_template(inner, child))
+
+    def _render_if(self, s, env, out):
+        header, inner, rest = self._split_block(s, "if")
+        if truthy(self.eval_source(header, env)):
+            out.append(self.render_template(inner, env))
+            return
+        if rest.startswith("else"):
+            after = rest[4:].strip()
+            if after.startswith("if"):
+                self._render_hole(after, env, out)
+            elif after.startswith("{"):
+                depth, i = 1, 1
+                while i < len(after) and depth > 0:
+                    if after[i] == "{":
+                        depth += 1
+                    elif after[i] == "}":
+                        depth -= 1
+                    i += 1
+                out.append(self.render_template(after[1:i - 1], env))
 
     # --- istruzioni ---
 

@@ -32,7 +32,7 @@ Convenzione: se il programma definisce `fn main()`, viene chiamata automaticamen
 
 - `route "/percorso" { ... }` definisce un endpoint; il corpo gira sul server.
 - `render <html>...</html>` produce HTML con interpolazione `{espressione}` e **escaping automatico** dei
-  valori interpolati.
+  valori interpolati, e **blocchi di controllo** nel template: `{ for x in xs { ... } }` e `{ if cond { ... } else { ... } }`.
 - I blocchi `@start-client ... @end-client` sono resi come un segnaposto (commento HTML): il loro codice
   diventerà WASM quando ci sarà il runtime client.
 
@@ -40,8 +40,9 @@ Comandi `render` (stampa l'HTML) e `serve` (server HTTP) qui sopra.
 
 ## Cosa NON esegue ancora
 
-- Nel template: blocchi di controllo (`{ for x in xs { ... } }`) — per ora solo interpolazione `{expr}`.
-- Il lato client vero (isole `@start-client` compilate a WASM) e i tag void non chiusi (usare `<br/>`).
+- Il lato client vero (isole `@start-client` compilate a WASM): per ora sono un segnaposto.
+- Moduli/import e gestione errori nel linguaggio.
+- Tag void non chiusi nel template (usare `<br/>`).
 
 ## Struttura
 

@@ -33,9 +33,9 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-Estendere il template con i blocchi di controllo (`{ for x in xs { ... } }`, `{ if ... }`), poi moduli/import
-e gestione errori nel linguaggio. Iniziare l'abbozzo del lato client (isole `@start-client` → WASM).
-Più avanti: il compilatore vero in Rust (transpiling → `rustc`).
+Iniziare l'abbozzo del **lato client** vero (isole `@start-client` → WASM), oppure moduli/import e gestione
+errori nel linguaggio. Più avanti: il compilatore vero in Rust (transpiling → `rustc`).
+(Fatto: nucleo, render lato server, blocchi di controllo `{for}`/`{if}` nel template.)
 
 ## Questioni aperte da decidere
 

@@ -1,0 +1,23 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Render lato server con blocchi di controllo nel template: { for } e { if }.
+
+route "/todo" {
+    voci = ["comprare il pane", "chiamare Anna", "studiare Logyx"]
+
+    render <html>
+      <head><title>Lista</title></head>
+      <body>
+        <h1>Cose da fare ({len(voci)})</h1>
+        <ul>
+          { for v in voci {
+            <li>{v}</li>
+          } }
+        </ul>
+        { if len(voci) == 0 {
+          <p>Niente da fare!</p>
+        } }
+      </body>
+    </html>
+}
