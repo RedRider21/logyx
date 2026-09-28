@@ -152,7 +152,7 @@ Target WASM: previsto. ⏳
 `build` traduce un **sottoinsieme tipizzato** in Rust, che `rustc` compila a eseguibile nativo.
 
 - Supporta: funzioni con tipi espliciti (`int`/`float`/`bool`/`string`), aritmetica, confronti, logica,
-  `if`/`else`, `while`, `for x in range(n)`, `return`, `print`, ricorsione.
+  concatenazione di stringhe con `+`, `if`/`else`, `while`, `for x in range(n)`, `return`, `print`, ricorsione.
 - Non ancora: liste/mappe, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```

@@ -119,6 +119,16 @@ class RustTranspiler:
                 fargs.append(self.expr(val))
         return fmt, "".join(", " + x for x in fargs)
 
+    def _stringish(self, e):
+        """Euristica v0: l'espressione produce (probabilmente) una stringa."""
+        if isinstance(e, N.StringLit):
+            return True
+        if isinstance(e, N.Literal) and isinstance(e.value, str):
+            return True
+        if isinstance(e, N.Binary) and e.op == "+":
+            return self._stringish(e.left) or self._stringish(e.right)
+        return False
+
     def expr(self, e):
         t = type(e).__name__
         if t == "Literal":
@@ -131,6 +141,9 @@ class RustTranspiler:
                 return json.dumps(v) + ".to_string()"
             return str(v)
         if t == "StringLit":
+            if all(kind == "lit" for kind, _ in e.parts):
+                text = "".join(val for _, val in e.parts)
+                return json.dumps(text) + ".to_string()"
             fmt, fargs = self._format(e)
             return f"format!({json.dumps(fmt)}{fargs})"
         if t == "Identifier":
@@ -138,6 +151,8 @@ class RustTranspiler:
         if t == "Unary":
             return ("!" if e.op == "not" else "-") + self.expr(e.operand)
         if t == "Binary":
+            if e.op == "+" and (self._stringish(e.left) or self._stringish(e.right)):
+                return f'format!("{{}}{{}}", {self.expr(e.left)}, {self.expr(e.right)})'
             return f"({self.expr(e.left)} {e.op} {self.expr(e.right)})"
         if t == "Logical":
             return f"({self.expr(e.left)} {'&&' if e.op == 'and' else '||'} {self.expr(e.right)})"

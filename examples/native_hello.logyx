@@ -1,0 +1,13 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Sottoinsieme tipizzato con stringhe: compilabile a nativo via Rust.
+//   python3 main.py build ../examples/native_hello.logyx
+
+fn saluta(nome: string) -> string {
+    return "Ciao " + nome + "!"
+}
+
+fn main() {
+    print(saluta("mondo"))
+}
