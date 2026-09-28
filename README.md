@@ -9,7 +9,7 @@ Il nome unisce la radice greca **λόγος** (parola, ragione, linguaggio) al s
 - **Estensione dei file:** `.logyx` (breve: `.lgx`)
 - **Autore:** Daniele Deplano (RedRider21)
 - **Licenza:** AGPL-3.0 (vedi `LICENSE`)
-- **Stato:** prototipo funzionante in Python (interprete + render web + transpiler Rust su sottoinsieme tipizzato)
+- **Stato:** **versione 0** — prototipo funzionante in Python (interprete + render web + transpiler Rust su sottoinsieme tipizzato)
 - **Sito:** https://redrider21.github.io/logyx/
 - **Documento di design online:** https://claude.ai/code/artifact/0aa46f19-cef5-4728-8e26-4b83867259cd
 
@@ -19,6 +19,13 @@ Logyx nasce per **cancellare la divisione tra linguaggio server e linguaggio cli
 sorgente, una sola sintassi, che gira nativo sul server e come WebAssembly nel browser. Deploy
 semplice come PHP, velocità vicina al C, concisione di Python. Il backend **transpila verso Rust**
 e da lì `rustc` raggiunge nativo, WASM, desktop e mobile.
+
+## Siamo alla versione 0
+
+Logyx è alla **versione 0**. Il prototipo in **Python** e la transpilazione verso **Rust** sono
+impalcature temporanee per far nascere il linguaggio e sperimetrarne la semantica. L'orizzonte è un
+Logyx **self-hosted** — un compilatore scritto in Logyx stesso, che genera direttamente codice
+macchina — in cui **né Python né Rust resteranno una dipendenza**. Sono i ponteggi, non l'edificio.
 
 ## Cosa funziona già (prototipo)
 
@@ -65,11 +72,20 @@ Il progetto è tutto qui dentro; sulla macchina servono solo gli strumenti stand
 - **Rust** (`rustc`) — *opzionale*, solo per compilare a nativo con `build`. Senza Rust, `build` genera
   comunque il codice `.rs` da compilare altrove.
 
-## Come continuare il lavoro (anche su un altro PC)
+## Come iniziare
 
-1. Copia questa cartella `logyx/` dove vuoi (chiavetta, altro computer, oppure `git push` su GitHub).
-2. Sull'altro PC, apri Claude Code **dentro questa cartella**.
-3. Fai leggere `CONTEXT.md` e `DESIGN.md`: contengono tutto il contesto per proseguire senza perdere nulla.
+Il prototipo gira con il solo Python 3.8+ (Rust è opzionale, solo per compilare a nativo):
 
-La cartella è autosufficiente e versionata con git: non dipende da servizi esterni.
-Il documento online è una comodità in più per consultare e commentare; la copia portabile è questa.
+```bash
+git clone https://github.com/RedRider21/logyx.git
+cd logyx/prototype
+
+# esegui un programma
+python3 main.py ../examples/hello.logyx
+
+# avvia un server web
+python3 main.py serve ../examples/web_demo.logyx 8137
+
+# transpila a Rust e compila a nativo
+python3 main.py build ../examples/native_fib.logyx
+```
