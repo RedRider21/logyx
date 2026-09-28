@@ -1,15 +1,13 @@
-<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logyx">
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Copyright (C) 2026 Daniele Deplano (RedRider21) - SPDX-License-Identifier: AGPL-3.0-or-later -->
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logyx">
   <defs>
-    <linearGradient id="lgx-bg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+    <linearGradient id="g" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
       <stop offset="0" stop-color="#6D5EF6"/>
       <stop offset="1" stop-color="#5B4BE1"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="8" width="240" height="240" rx="60" fill="url(#lgx-bg)"/>
-  <!-- lambda: sorgente unico in alto, due percorsi (server / client) -->
-  <path d="M96 74 L150 190" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M96 74 L60 190" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M120 122 L196 74" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- nodo sorgente -->
-  <circle cx="96" cy="74" r="19" fill="#22D3EE"/>
+  <circle cx="128" cy="128" r="120" fill="url(#g)"/>
+  <path d="M494 1020 432 1188Q404 1265 366.5 1293.0Q329 1321 235 1321H123V1556H330Q512 1556 610.5 1479.0Q709 1402 777 1220L1235 0H877L654 588L419 0H61Z" transform="translate(64.70,216.00) scale(0.0977,-0.0977)" fill="#FFFFFF"/>
+  <circle cx="128" cy="44" r="15" fill="#22C3DD"/>
 </svg>
