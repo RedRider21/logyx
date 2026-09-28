@@ -99,6 +99,40 @@ fn main() { print(quadrato(9)) }     // 81
 - Vale sia per l'interprete sia per la compilazione nativa (`build`): l'inferenza dei tipi funziona
   anche fra le funzioni importate. Vedi `examples/use_import.logyx` e `examples/lib_math.logyx`.
 
+## 6c. Gestione degli errori ✅
+
+Gli errori sono **valori** (modello Result), non eccezioni. Una funzione che può fallire lo dichiara con
+`-> T | error` (o lo si lascia dedurre): restituisce un valore di tipo `T` **oppure** un errore.
+
+| Costrutto | Effetto |
+| --- | --- |
+| `fail "messaggio"` | Esce dalla funzione restituendo un errore con quel messaggio |
+| `espr?` | Se `espr` è un errore, lo propaga (esce dalla funzione); altrimenti dà il valore |
+| `match espr { ok v { … } err e { … } }` | Gestisce i due casi: `v` è il valore, `e` è il messaggio d'errore |
+
+```
+fn dividi(a, b) -> int | error {
+    if b == 0 { fail "divisione per zero" }
+    return a / b
+}
+
+fn meta(x) -> int | error {
+    return dividi(x, 2)?          // propaga se dividi fallisce
+}
+
+fn main() {
+    match dividi(10, 0) {
+        ok v  { print("risultato = {v}") }
+        err e { print("errore: {e}") }
+    }
+}
+```
+
+Vale sia per l'interprete sia per `build`: in Rust `-> T | error` diventa `Result<T, String>`, `fail`
+diventa `return Err(...)`, `?` è l'omonimo operatore di Rust e `match ok/err` diventa `match Ok/Err`.
+Il tipo fallibile è **dedotto** anche senza annotazione, se il corpo usa `fail` o `?`. Vedi
+`examples/errori.logyx`.
+
 ## 7. Collezioni 🟡
 
 Liste e mappe: letterali, indicizzazione, `len`, iterazione con `for`.

@@ -30,10 +30,69 @@ class RustTranspiler:
         self.param_types = {
             f.name: dict(zip(f.params, f.param_types or [None] * len(f.params))) for f in funcs
         }
-        self.func_rets = {f.name: f.ret_type for f in funcs}
+        self.func_rets = {}
+        self.fallible = {}
+        for f in funcs:
+            rt, fal = f.ret_type, False
+            if rt and rt.endswith("|error"):
+                rt, fal = rt[: -len("|error")], True
+            if self._body_has_fail_or_try(f.body):
+                fal = True
+            self.func_rets[f.name] = rt or None
+            self.fallible[f.name] = fal
         self._tmp = 0
         self._infer(funcs)
         return "\n\n".join(self.func(f) for f in funcs) + "\n"
+
+    # --- rilevazione di fallibilità (presenza di `fail` o `?`) ---
+
+    def _body_has_fail_or_try(self, stmts):
+        for s in stmts:
+            t = type(s).__name__
+            if t == "Fail":
+                return True
+            if t == "Return":
+                if s.value is not None and self._expr_has_try(s.value):
+                    return True
+            elif t in ("Decl", "Assign"):
+                if self._expr_has_try(s.value):
+                    return True
+            elif t == "ExprStmt":
+                if self._expr_has_try(s.expr):
+                    return True
+            elif t == "If":
+                if self._body_has_fail_or_try(s.then_block):
+                    return True
+                if s.else_block and self._body_has_fail_or_try(s.else_block):
+                    return True
+            elif t in ("While", "For"):
+                if self._body_has_fail_or_try(s.body):
+                    return True
+            elif t == "Match":
+                if self._expr_has_try(s.subject) or self._body_has_fail_or_try(s.ok_block) \
+                        or self._body_has_fail_or_try(s.err_block):
+                    return True
+        return False
+
+    def _expr_has_try(self, e):
+        t = type(e).__name__
+        if t == "Try":
+            return True
+        if t in ("Binary", "Logical"):
+            return self._expr_has_try(e.left) or self._expr_has_try(e.right)
+        if t == "Unary":
+            return self._expr_has_try(e.operand)
+        if t == "Call":
+            return any(self._expr_has_try(a) for a in e.args)
+        if t == "Index":
+            return self._expr_has_try(e.target) or self._expr_has_try(e.index)
+        if t == "StringLit":
+            return any(self._expr_has_try(v) for k, v in e.parts if k != "lit")
+        if t == "ListLit":
+            return any(self._expr_has_try(x) for x in e.elements)
+        if t == "MapLit":
+            return any(self._expr_has_try(k) or self._expr_has_try(v) for k, v in e.pairs)
+        return False
 
     def func(self, f):
         pt = self.param_types[f.name]
@@ -50,7 +109,12 @@ class RustTranspiler:
                 f"non riesco a inferire il tipo di ritorno di '{f.name}'; "
                 "aggiungi l'annotazione '-> tipo'"
             )
-        ret_str = "" if ret == "__void__" else f" -> {self.ty(ret)}"
+        self.cur_fallible = self.fallible.get(f.name, False)
+        if self.cur_fallible:
+            inner = "()" if ret == "__void__" else self.ty(ret)
+            ret_str = f" -> Result<{inner}, String>"
+        else:
+            ret_str = "" if ret == "__void__" else f" -> {self.ty(ret)}"
         declared = set(f.params)
         self.kinds = {}  # nome -> "list" | "map" (categoria delle variabili locali)
         body = self.block(f.body, declared, 1)
@@ -146,6 +210,12 @@ class RustTranspiler:
             self._scan_expr(s.value, pt, ev)
         elif t == "ExprStmt":
             self._scan_expr(s.expr, pt, ev)
+        elif t == "Fail":
+            self._scan_expr(s.value, pt, ev)
+        elif t == "Match":
+            self._scan_expr(s.subject, pt, ev)
+            self._scan_stmts(s.ok_block, pt, ev, fname)
+            self._scan_stmts(s.err_block, pt, ev, fname)
 
     @staticmethod
     def _cond_bool(cond, ev):
@@ -167,6 +237,8 @@ class RustTranspiler:
         elif t == "Unary":
             if isinstance(e.operand, N.Identifier) and e.operand.name in ev:
                 ev[e.operand.name].add("bool" if e.op == "not" else "num")
+            self._scan_expr(e.operand, pt, ev)
+        elif t == "Try":
             self._scan_expr(e.operand, pt, ev)
         elif t == "Call":
             self._call_ev(e, pt, ev)
@@ -250,9 +322,14 @@ class RustTranspiler:
                     yield from self._returns(s.else_block)
             elif t in ("While", "For"):
                 yield from self._returns(s.body)
+            elif t == "Match":
+                yield from self._returns(s.ok_block)
+                yield from self._returns(s.err_block)
 
     def _type_of(self, e, ptypes):
         t = type(e).__name__
+        if t == "Try":
+            return self._type_of(e.operand, ptypes)
         if t == "StringLit":
             return "string"
         if t == "Literal":
@@ -307,7 +384,26 @@ class RustTranspiler:
         pad = "    " * indent
         t = type(s).__name__
         if t == "Return":
+            if self.cur_fallible:
+                inner = "()" if s.value is None else self.expr(s.value)
+                return pad + f"return Ok({inner});"
             return pad + ("return;" if s.value is None else f"return {self.expr(s.value)};")
+        if t == "Fail":
+            return pad + f"return Err({self.expr(s.value)});"
+        if t == "Match":
+            subj = self.expr(s.subject)
+            ok_decl, err_decl = set(declared), set(declared)
+            ok_decl.add(s.ok_var)
+            err_decl.add(s.err_var)
+            okb = self.block(s.ok_block, ok_decl, indent + 2)
+            errb = self.block(s.err_block, err_decl, indent + 2)
+            arm = "    " * (indent + 1)
+            return (
+                pad + f"match {subj} {{\n"
+                + arm + f"Ok({s.ok_var}) => {{\n" + okb + "\n" + arm + "}\n"
+                + arm + f"Err({s.err_var}) => {{\n" + errb + "\n" + arm + "}\n"
+                + pad + "}"
+            )
         if t == "If":
             out = pad + f"if {self.expr(s.cond)} {{\n"
             out += self.block(s.then_block, declared, indent + 1) + "\n" + pad + "}"
@@ -453,6 +549,8 @@ class RustTranspiler:
                 f"{name}.insert({self.expr(k)}, {self.expr(v)});" for k, v in e.pairs
             )
             return f"{{ let mut {name} = std::collections::HashMap::new(); {inserts} {name} }}"
+        if t == "Try":
+            return f"({self.expr(e.operand)})?"
         if t == "Index":
             if isinstance(e.target, N.Identifier) and getattr(self, "kinds", {}).get(e.target.name) == "map":
                 return f"(*{self.expr(e.target)}.get(&({self.expr(e.index)})).unwrap())"

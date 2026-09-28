@@ -28,8 +28,9 @@ Booleano       := "true" | "false"
 Nullo          := "nil"
 ```
 
-Parole chiave riservate (v0): `fn return if else while for in const import and or not true false nil route render`
-più i marcatori di confine `@server @client @start-client @end-client`.
+Parole chiave riservate (v0): `fn return if else while for in const import fail match and or not true false nil route render`
+più i marcatori di confine `@server @client @start-client @end-client`. Dentro `match` i rami sono
+etichettati da `ok` ed `err` (parole contestuali), e `error` compare nei tipi fallibili `T | error`.
 
 ## Dichiarazioni e tipi
 
@@ -131,17 +132,22 @@ dichiarazione:= ("const")? IDENT (":" tipo)? "=" espressione
 
 blocco       := "{" istruzione* "}"
 istruzione   := dichiarazione | assegnazione | if | while | for
-              | "return" espressione? | espressione | render | isolaClient
+              | "return" espressione? | "fail" espressione | match
+              | espressione | render | isolaClient
 isolaClient  := "@start-client" istruzione* "@end-client"
+
+match        := "match" espressione "{" "ok" IDENT blocco "err" IDENT blocco "}"
 
 if           := "if" espressione blocco ("else" "if" espressione blocco)* ("else" blocco)?
 while        := "while" espressione blocco
 for          := "for" IDENT "in" espressione blocco
 
 render       := "render" template
-espressione  := ... (letterali, chiamate, operatori aritmetici/confronto/logici)
-tipo         := "int" | "float" | "bool" | "string" | "nil"
-              | "[" tipo "]" | "{" tipo ":" tipo "}"
+espressione  := ... (letterali, chiamate, operatori aritmetici/confronto/logici, postfisso "?")
+                // e? propaga l'errore: se e è un errore, esce dalla funzione; altrimenti dà il valore
+tipo         := tipoBase ("|" "error")?          // "T | error" = fallibile (Result in Rust)
+tipoBase     := "int" | "float" | "bool" | "string" | "nil"
+              | "[" tipoBase "]" | "{" tipoBase ":" tipoBase "}"
 ```
 
 Le parti marcate `...` (precedenze degli operatori, template dettagliato) saranno formalizzate quando

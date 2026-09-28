@@ -241,8 +241,8 @@
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r1.h">Nucleo del linguaggio</b><span data-i18n="status.r1.p">Variabili, funzioni, if/while/for, liste e mappe, stringhe con interpolazione, builtin.</span></div></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r2.h">Web lato server</b><span data-i18n="status.r2.p">route + render con interpolazione, escaping e blocchi { for } / { if }.</span></div></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r3.h">Isole client → JavaScript</b><span data-i18n="status.r3.p">Blocchi @start-client compilati a JS: eventi, stato, aggiornamento del DOM.</span></div></div>
-        <div class="row"><div class="st">🟡</div><div class="tx"><b data-i18n="status.r4.h">Transpiler Rust (sottoinsieme tipizzato)</b><span data-i18n="status.r4.p">Aritmetica, stringhe, controllo di flusso, ricorsione, inferenza del tipo di ritorno.</span></div></div>
-        <div class="row"><div class="st">⏳</div><div class="tx"><b data-i18n="status.r5.h">Prossimi passi</b><span data-i18n="status.r5.p">Inferenza dei tipi dei parametri, liste/mappe nel transpiler, moduli, target WASM del client, compilatore vero in Rust.</span></div></div>
+        <div class="row"><div class="st">🟡</div><div class="tx"><b data-i18n="status.r4.h">Transpiler Rust (sottoinsieme tipizzato)</b><span data-i18n="status.r4.p">Aritmetica, stringhe, controllo di flusso, funzioni con inferenza dei tipi, liste e mappe, moduli e gestione errori (→ Result).</span></div></div>
+        <div class="row"><div class="st">⏳</div><div class="tx"><b data-i18n="status.r5.h">Prossimo passo: il compilatore in Rust</b><span data-i18n="status.r5.p">Semantica del nucleo congelata; ora si riscrive lexer + parser + type-checker in Rust, verso il self-hosting.</span></div></div>
       </div>
     </div>
   </section>
@@ -308,8 +308,8 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "status.r1.h":"Nucleo del linguaggio","status.r1.p":"Variabili, funzioni, if/while/for, liste e mappe, stringhe con interpolazione, builtin.",
       "status.r2.h":"Web lato server","status.r2.p":"route + render con interpolazione, escaping e blocchi { for } / { if }.",
       "status.r3.h":"Isole client → JavaScript","status.r3.p":"Blocchi @start-client compilati a JS: eventi, stato, aggiornamento del DOM.",
-      "status.r4.h":"Transpiler Rust (sottoinsieme tipizzato)","status.r4.p":"Aritmetica, stringhe, controllo di flusso, ricorsione, inferenza del tipo di ritorno.",
-      "status.r5.h":"Prossimi passi","status.r5.p":"Inferenza dei tipi dei parametri, liste/mappe nel transpiler, moduli, target WASM del client, compilatore vero in Rust.",
+      "status.r4.h":"Transpiler Rust (sottoinsieme tipizzato)","status.r4.p":"Aritmetica, stringhe, controllo di flusso, funzioni con inferenza dei tipi, liste e mappe, moduli e gestione errori (→ Result).",
+      "status.r5.h":"Prossimo passo: il compilatore in Rust","status.r5.p":"Semantica del nucleo congelata; ora si riscrive lexer + parser + type-checker in Rust, verso il self-hosting.",
       "start.h":"Come iniziare","start.sub":"Il prototipo gira con il solo Python 3.8+ (nessuna dipendenza). Rust serve solo, in opzione, per compilare a nativo.",
       "footer.author":"di Daniele Deplano (RedRider21)","footer.license":"Licenza AGPL-3.0. Software libero.",
       "a11y.top":"Torna su"
@@ -336,8 +336,8 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "status.r1.h":"Language core","status.r1.p":"Variables, functions, if/while/for, lists and maps, string interpolation, builtins.",
       "status.r2.h":"Server-side web","status.r2.p":"route + render with interpolation, escaping and { for } / { if } blocks.",
       "status.r3.h":"Client islands → JavaScript","status.r3.p":"@start-client blocks compiled to JS: events, state, DOM updates.",
-      "status.r4.h":"Rust transpiler (typed subset)","status.r4.p":"Arithmetic, strings, control flow, recursion, return-type inference.",
-      "status.r5.h":"Next steps","status.r5.p":"Parameter-type inference, lists/maps in the transpiler, modules, client WASM target, the real compiler in Rust.",
+      "status.r4.h":"Rust transpiler (typed subset)","status.r4.p":"Arithmetic, strings, control flow, functions with type inference, lists and maps, modules and error handling (→ Result).",
+      "status.r5.h":"Next step: the compiler in Rust","status.r5.p":"Core semantics frozen; now rewriting lexer + parser + type-checker in Rust, toward self-hosting.",
       "start.h":"Getting started","start.sub":"The prototype runs on Python 3.8+ alone (no dependencies). Rust is optional, only to compile to native.",
       "footer.author":"by Daniele Deplano (RedRider21)","footer.license":"AGPL-3.0 licensed. Free software.",
       "a11y.top":"Back to top"

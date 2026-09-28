@@ -27,6 +27,8 @@ class T:
     IN = "IN"
     CONST = "CONST"
     IMPORT = "IMPORT"
+    FAIL = "FAIL"
+    MATCH = "MATCH"
     AND = "AND"
     OR = "OR"
     NOT = "NOT"
@@ -52,13 +54,15 @@ class T:
     LE = "LE"
     GT = "GT"
     GE = "GE"
+    QUESTION = "QUESTION"
+    PIPE = "PIPE"
     EOF = "EOF"
 
 
 KEYWORDS = {
     "fn": T.FN, "return": T.RETURN, "if": T.IF, "else": T.ELSE,
     "while": T.WHILE, "for": T.FOR, "in": T.IN, "const": T.CONST,
-    "import": T.IMPORT,
+    "import": T.IMPORT, "fail": T.FAIL, "match": T.MATCH,
     "and": T.AND, "or": T.OR, "not": T.NOT,
     "true": T.TRUE, "false": T.FALSE, "nil": T.NIL,
 }

@@ -102,6 +102,17 @@ Due modalità di esecuzione:
 La scelta di transpilare a Rust regala quasi gratis server nativo, client WASM e i target desktop/mobile,
 perché sono tutti bersagli che la toolchain Rust già raggiunge.
 
+## Gestione degli errori
+
+Deciso (2026-09-28): **errori come valori** (modello Result), non eccezioni. È la scelta coerente con la
+compilazione a Rust — dove non esistono le eccezioni — e con il principio "i pericoli sono espliciti".
+
+- Una funzione fallibile ha tipo `-> T | error` (dedotto se il corpo usa `fail`/`?`).
+- `fail "msg"` restituisce un errore; `espr?` lo propaga; `match e { ok v {…} err e {…} }` lo gestisce.
+- Traduzione a Rust uno-a-uno: `T | error` → `Result<T, String>`, `fail` → `Err`, `?` → `?`,
+  `match ok/err` → `match Ok/Err`. La concisione delle eccezioni si recupera con `?`, senza perdere
+  l'esplicitezza. Distinzione sana: errori previsti → Result; bug irrecuperabili → arresto.
+
 ## Confine server/client
 
 Server e client sono due macchine diverse che non condividono memoria e si parlano solo via rete. Il
@@ -204,6 +215,7 @@ dalla stessa toolchain.
 | Confine server/client | Server-driven di default; RPC/idratazione come seconda marcia |
 | Target | Server nativo, browser WASM, desktop, mobile |
 | Tipi | Gradual typing |
+| Errori | Valori (Result): `fail` / `?` / `match ok/err`; transpila a `Result<T, String>` |
 | Autore | Daniele Deplano (RedRider21) — header su ogni sorgente |
 | Licenza | AGPL-3.0 |
 

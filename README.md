@@ -29,14 +29,18 @@ macchina — in cui **né Python né Rust resteranno una dipendenza**. Sono i po
 
 ## Cosa funziona già (prototipo)
 
-- **Nucleo**: variabili, funzioni, `if`/`while`/`for`, liste e mappe base, stringhe con
+- **Nucleo**: variabili, funzioni, `if`/`while`/`for`, liste e mappe, stringhe con
   interpolazione, builtin (`print`, `len`, `str`, `range`).
+- **Moduli**: `import "file.logyx"` per riusare funzioni fra file (dedup e cicli gestiti).
+- **Gestione errori** come valori (modello Result): `fail`, propagazione con `?`,
+  `match { ok v { } err e { } }`.
 - **Web lato server**: `route` + `render` con interpolazione, escaping automatico e blocchi
   di controllo `{ for }` / `{ if }`.
 - **Isole client** `@start-client … @end-client` compilate a **JavaScript**.
 - **Transpiler Rust** (comando `build`) su un sottoinsieme tipizzato: aritmetica, confronti,
-  logica, concatenazione di stringhe, `if`/`while`/`for range`, ricorsione, con inferenza del
-  tipo di ritorno. `rustc` compila il `.rs` prodotto a eseguibile nativo.
+  logica, stringhe, `if`/`while`/`for`, ricorsione, **liste** e **mappe** di scalari, **moduli**
+  e **gestione errori** (`-> T | error` → `Result<T, String>`). I tipi di **ritorno e dei parametri**
+  sono **dedotti** dall'uso. `rustc` compila il `.rs` prodotto a eseguibile nativo.
 
 Il dettaglio aggiornato di ciò che il prototipo esegue è nel `MANUAL.md`; il punto di ripresa
 dello sviluppo è in `CONTEXT.md`.

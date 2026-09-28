@@ -1,0 +1,34 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Gestione degli errori: Result + propagazione con `?` + `match`.
+//   python3 main.py       ../examples/errori.logyx     (interprete)
+//   python3 main.py build ../examples/errori.logyx     (nativo via Rust)
+
+fn dividi(a, b) -> int | error {
+    if b == 0 {
+        fail "divisione per zero"
+    }
+    return a / b
+}
+
+fn meta(x) -> int | error {
+    return dividi(x, 2)?          // se dividi fallisce, meta propaga l'errore
+}
+
+fn main() {
+    match dividi(10, 2) {
+        ok v  { print("10 / 2 = {v}") }
+        err e { print("errore: {e}") }
+    }
+
+    match dividi(10, 0) {
+        ok v  { print("10 / 0 = {v}") }
+        err e { print("errore: {e}") }
+    }
+
+    match meta(8) {
+        ok v  { print("meta(8) = {v}") }
+        err e { print("errore: {e}") }
+    }
+}

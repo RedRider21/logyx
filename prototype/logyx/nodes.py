@@ -125,6 +125,25 @@ class Import:
 
 
 @dataclass
+class Try:
+    operand: Any  # espressione: propaga l'errore se presente, altrimenti il valore
+
+
+@dataclass
+class Fail:
+    value: Any  # espressione (messaggio dell'errore)
+
+
+@dataclass
+class Match:
+    subject: Any
+    ok_var: str
+    ok_block: List[Any]
+    err_var: str
+    err_block: List[Any]
+
+
+@dataclass
 class RouteDef:
     path: str
     body: List[Any]

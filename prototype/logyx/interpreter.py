@@ -17,6 +17,16 @@ class _Response(Exception):
         self.html = html
 
 
+class ErrValue:
+    """Valore di errore recuperabile (modello Result). Porta un messaggio."""
+
+    def __init__(self, message):
+        self.message = message
+
+    def __eq__(self, other):
+        return isinstance(other, ErrValue) and other.message == self.message
+
+
 def html_escape(s):
     return (
         s.replace("&", "&amp;")
@@ -90,6 +100,8 @@ def logyx_str(v):
         return "{" + ", ".join(f"{logyx_str(k)}: {logyx_str(val)}" for k, val in v.items()) + "}"
     if isinstance(v, LogyxFunction):
         return f"<fn {v.decl.name}>"
+    if isinstance(v, ErrValue):
+        return f"<error: {v.message}>"
     return str(v)
 
 
@@ -313,6 +325,19 @@ class Interpreter:
     def st_Return(self, s, env):
         raise _Return(self.eval(s.value, env) if s.value is not None else None)
 
+    def st_Fail(self, s, env):
+        raise _Return(ErrValue(logyx_str(self.eval(s.value, env))))
+
+    def st_Match(self, s, env):
+        subject = self.eval(s.subject, env)
+        child = Environment(env)
+        if isinstance(subject, ErrValue):
+            child.define(s.err_var, subject.message)
+            self._exec_all(s.err_block, child)
+        else:
+            child.define(s.ok_var, subject)
+            self._exec_all(s.ok_block, child)
+
     def st_Render(self, s, env):
         raise _Response(self.render_template(s.raw, env))
 
@@ -393,6 +418,12 @@ class Interpreter:
         if op == ">=":
             return a >= b
         raise LogyxError(f"operatore sconosciuto: {op}")
+
+    def ex_Try(self, n, env):
+        v = self.eval(n.operand, env)
+        if isinstance(v, ErrValue):
+            raise _Return(v)  # propaga l'errore alla funzione chiamante
+        return v
 
     def ex_Index(self, n, env):
         coll = self.eval(n.target, env)

@@ -106,17 +106,28 @@ class Parser:
         return name, ptype
 
     def type_ref(self):
+        # Un tipo, eventualmente fallibile:  T | error
+        base = self._type_base()
+        if self.at(T.PIPE):
+            self.advance()
+            w = self.expect(T.IDENT, "'error'")
+            if w.value != "error":
+                self.error(f"dopo '|' nel tipo è atteso 'error', trovato '{w.value}'")
+            return base + "|error"
+        return base
+
+    def _type_base(self):
         # I tipi sono opzionali (gradual typing): li conserviamo come stringa.
         if self.at(T.LBRACK):
             self.advance()
-            inner = self.type_ref()
+            inner = self._type_base()
             self.expect(T.RBRACK)
             return "[" + inner + "]"
         if self.at(T.LBRACE):
             self.advance()
-            k = self.type_ref()
+            k = self._type_base()
             self.expect(T.COLON)
-            v = self.type_ref()
+            v = self._type_base()
             self.expect(T.RBRACE)
             return "{" + k + ": " + v + "}"
         if self.at(T.NIL):
@@ -144,6 +155,10 @@ class Parser:
             return self.for_stmt()
         if t.type == T.RETURN:
             return self.return_stmt()
+        if t.type == T.FAIL:
+            return self.fail_stmt()
+        if t.type == T.MATCH:
+            return self.match_stmt()
         if t.type == T.CONST:
             return self.const_decl()
         if t.type == T.RENDER:
@@ -191,6 +206,30 @@ class Parser:
         if self.at(T.RBRACE) or self.at(T.EOF):
             return N.Return(None)
         return N.Return(self.expression())
+
+    def fail_stmt(self):
+        self.expect(T.FAIL)
+        return N.Fail(self.expression())
+
+    def match_stmt(self):
+        self.expect(T.MATCH)
+        subject = self.expression()
+        self.expect(T.LBRACE)
+        ok_var = ok_block = err_var = err_block = None
+        while not self.at(T.RBRACE) and not self.at(T.EOF):
+            tag = self.expect(T.IDENT, "ramo 'ok' oppure 'err'").value
+            if tag not in ("ok", "err"):
+                self.error(f"in 'match' sono ammessi solo i rami 'ok' e 'err', trovato '{tag}'")
+            var = self.expect(T.IDENT, "nome della variabile del ramo").value
+            block = self.block()
+            if tag == "ok":
+                ok_var, ok_block = var, block
+            else:
+                err_var, err_block = var, block
+        self.expect(T.RBRACE)
+        if ok_block is None or err_block is None:
+            self.error("'match' richiede entrambi i rami 'ok' e 'err'")
+        return N.Match(subject, ok_var, ok_block, err_var, err_block)
 
     def const_decl(self):
         self.expect(T.CONST)
@@ -275,6 +314,9 @@ class Parser:
                 idx = self.expression()
                 self.expect(T.RBRACK)
                 e = N.Index(e, idx)
+            elif self.at(T.QUESTION):
+                self.advance()
+                e = N.Try(e)
             else:
                 break
         return e
