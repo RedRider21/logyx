@@ -33,8 +33,12 @@ Prova: `cd prototype && python3 main.py serve ../examples/web_demo.logyx 8137` e
 
 ## Prossimo passo
 
-Ampliare ancora il **transpiler Rust**: inferenza dei tipi dei parametri (ora solo il ritorno è dedotto),
-liste/mappe, chiamate a builtin. Oppure: moduli/import, gestione errori nel linguaggio, target WASM del
+RIPRENDI DA QUI → **inferenza dei tipi dei parametri** nel transpiler Rust: dedurre il tipo dei parametri
+dall'uso (aritmetica → int/float, concatenazione/interpolazione → string, confronti/logica → bool, chiamate
+ad altre funzioni), così da non doverli più annotare. Oggi è dedotto solo il tipo di ritorno; i parametri
+vanno ancora annotati (`rustgen.py`, `ty()` solleva errore se il tipo è assente).
+
+Dopo, in coda: liste/mappe nel transpiler, moduli/import, gestione errori nel linguaggio, target WASM del
 client. Vedi `MANUAL.md` §13.
 (Fatto: nucleo; render lato server con `{for}`/`{if}`; isole client → JavaScript; transpiler Rust con `build`
 su sottoinsieme tipizzato — stringhe e concatenazione, `range(a,b)`, divisione intera `i64`, inferenza del
