@@ -1,0 +1,16 @@
+# Copyright (C) 2026 Daniele Deplano (RedRider21)
+# SPDX-License-Identifier: AGPL-3.0-or-later
+[package]
+name = "logyxc"
+version = "0.0.1"
+edition = "2021"
+description = "Compilatore di Logyx (Fase 1 del bootstrap): lexer, parser, type-checker, backend Rust."
+authors = ["Daniele Deplano (RedRider21)"]
+license = "AGPL-3.0-or-later"
+
+[[bin]]
+name = "logyxc"
+path = "src/main.rs"
+
+[profile.release]
+opt-level = 3
