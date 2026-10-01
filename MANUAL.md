@@ -168,6 +168,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `push(lista, x)` | Aggiunge `x` in coda alla lista (la muta); usala come istruzione |
 | `abs(x)` | Valore assoluto di `x` (int o float) |
 | `min(a, b)` / `max(a, b)` | Il minore / il maggiore fra due numeri dello stesso tipo |
+| `upper(s)` / `lower(s)` | La stringa `s` in maiuscolo / minuscolo |
 
 ## 10. Web lato server ✅
 

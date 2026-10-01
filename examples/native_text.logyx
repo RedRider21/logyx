@@ -1,0 +1,17 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Builtin di testo: upper, lower. Interprete e nativo.
+//   python3 main.py       ../examples/native_text.logyx
+//   python3 main.py build ../examples/native_text.logyx
+
+fn grida(testo) {
+    return upper(testo)
+}
+
+fn main() {
+    nome = "Logyx"
+    print("maiuscolo: {upper(nome)}")
+    print("minuscolo: {lower(nome)}")
+    print(grida("ciao mondo"))
+}

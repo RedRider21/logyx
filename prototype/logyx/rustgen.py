@@ -296,6 +296,11 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
             return
+        if name in ("upper", "lower"):
+            for a in e.args:
+                if isinstance(a, N.Identifier) and a.name in ev:
+                    ev[a.name].add("string")
+            return
         if name in self.param_types:
             pnames = list(self.param_types[name].keys())
             for i, a in enumerate(e.args):
@@ -378,6 +383,8 @@ class RustTranspiler:
                     if tt is not None:
                         return tt
                 return None
+            if name in ("upper", "lower"):
+                return "string"
             return self.func_rets.get(name)
         return None
 
@@ -601,6 +608,11 @@ class RustTranspiler:
                     if len(e.args) != 2:
                         raise LogyxError(f"{nm} accetta due argomenti")
                     return f"({self.expr(e.args[0])}).{nm}({self.expr(e.args[1])})"
+                if nm in ("upper", "lower"):
+                    if len(e.args) != 1:
+                        raise LogyxError(f"{nm} accetta un solo argomento")
+                    method = "to_uppercase" if nm == "upper" else "to_lowercase"
+                    return f"({self.expr(e.args[0])}).{method}()"
             args = ", ".join(self.expr(a) for a in e.args)
             return f"{self.expr(e.callee)}({args})"
         raise LogyxError(f"espressione non supportata dal transpiler v0: {t}")

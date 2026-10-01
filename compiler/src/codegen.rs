@@ -320,6 +320,9 @@ impl Codegen {
                     if name == "min" || name == "max" {
                         return args.iter().find_map(|a| self.type_of(a, ptypes));
                     }
+                    if name == "upper" || name == "lower" {
+                        return Some("string".into());
+                    }
                     return self.rets.get(name).cloned().flatten();
                 }
                 None
@@ -557,6 +560,16 @@ impl Codegen {
                     if let Expr::Ident(n) = a {
                         if let Some(set) = ev.get_mut(n) {
                             set.insert("num".into());
+                        }
+                    }
+                }
+                return;
+            }
+            if name == "upper" || name == "lower" {
+                for a in args {
+                    if let Expr::Ident(n) = a {
+                        if let Some(set) = ev.get_mut(n) {
+                            set.insert("string".into());
                         }
                     }
                 }
@@ -942,6 +955,13 @@ impl Codegen {
                             name,
                             self.expr(&args[1])?
                         ));
+                    }
+                    if name == "upper" || name == "lower" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(format!("{name} accetta un solo argomento")));
+                        }
+                        let method = if name == "upper" { "to_uppercase" } else { "to_lowercase" };
+                        return Ok(format!("({}).{}()", self.expr(&args[0])?, method));
                     }
                 }
                 let mut a = Vec::new();

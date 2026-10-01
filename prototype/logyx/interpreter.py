@@ -150,6 +150,8 @@ class Interpreter:
         g.define("abs", lambda x: abs(x))
         g.define("min", lambda a, b: a if a <= b else b)
         g.define("max", lambda a, b: a if a >= b else b)
+        g.define("upper", lambda s: s.upper())
+        g.define("lower", lambda s: s.lower())
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.
