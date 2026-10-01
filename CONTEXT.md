@@ -50,14 +50,18 @@ sottoinsieme nativo e conforme al prototipo (8/8 esempi, stesso output):**
 - Nota: il compilatore nativo non gestisce i costrutti web (`@`/route/render danno errore), come il
   transpiler del prototipo.
 
+Rete di sicurezza in piedi: **`tests/conformance.sh`** confronta `python build` e `logyxc build` su
+tutti gli esempi (ora **9/9**). Flusso per ogni nuova feature nativa: implementarla in interprete +
+transpiler Python + compilatore Rust, aggiungere un esempio e lanciare la suite. Primo giro completato
+così col builtin **`push(lista, valore)`** (`examples/native_push.logyx`).
+
 RIPRENDI DA QUI → due strade possibili:
 - **A) Self-hosting (orizzonte v0):** iniziare a riscrivere il compilatore **in Logyx stesso**, così da
   non dipendere più né da Python né da Rust. È il traguardo finale; va pianificato (quali parti per prime,
   come fare il bootstrap del binario).
-- **B) Ampliare il sottoinsieme nativo** (sia nel prototipo sia in `logyxc`, mantenendo la conformità):
-  collezioni di stringhe, iterazione su mappa; più avanti i costrutti web verso WASM.
-Suggerimento: una **suite di conformità automatica** (script che confronta `python build` e `logyxc build`
-su tutti gli esempi) conviene prima di ampliare, per non rompere l'allineamento prototipo↔compilatore.
+- **B) Ampliare il sottoinsieme nativo** (interprete + transpiler + compilatore, mantenendo la suite
+  verde): altre mutazioni (`remove`), collezioni di stringhe, iterazione su mappa; più avanti i costrutti
+  web verso WASM.
 
 In coda (rifiniture del prototipo, opzionali): collezioni di stringhe, iterazione su mappa, target WASM
 del client.
