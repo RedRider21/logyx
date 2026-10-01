@@ -140,6 +140,14 @@ class Interpreter:
 
         g.define("range", _range)
 
+        def _push(lst, value):
+            if not isinstance(lst, list):
+                raise LogyxError("push: il primo argomento deve essere una lista")
+            lst.append(value)
+            return None
+
+        g.define("push", _push)
+
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.
 

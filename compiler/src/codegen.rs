@@ -697,6 +697,9 @@ impl Codegen {
                         if n == "print" {
                             return Ok(format!("{pad}{}", self.print_call(args)?));
                         }
+                        if n == "push" {
+                            return Ok(format!("{pad}{}", self.push_call(args)?));
+                        }
                     }
                 }
                 Ok(format!("{pad}{};", self.expr(e)?))
@@ -735,6 +738,21 @@ impl Codegen {
         let it = self.expr(iterable)?;
         let b = self.block(body, declared, indent + 1)?;
         Ok(format!("{pad}for {var} in ({it}).iter().copied() {{\n{b}\n{pad}}}"))
+    }
+
+    fn push_call(&mut self, args: &[Expr]) -> R<String> {
+        if args.len() != 2 {
+            return Err(LogyxError::new("push accetta due argomenti: push(lista, valore)"));
+        }
+        let name = match &args[0] {
+            Expr::Ident(n) => n.clone(),
+            _ => {
+                return Err(LogyxError::new(
+                    "push richiede una variabile lista come primo argomento",
+                ))
+            }
+        };
+        Ok(format!("{}.push({});", name, self.expr(&args[1])?))
     }
 
     fn print_call(&mut self, args: &[Expr]) -> R<String> {
@@ -873,6 +891,11 @@ impl Codegen {
                     if name == "print" {
                         return Err(LogyxError::new(
                             "usa print come istruzione, non dentro un'espressione",
+                        ));
+                    }
+                    if name == "push" {
+                        return Err(LogyxError::new(
+                            "usa push come istruzione, non dentro un'espressione",
                         ));
                     }
                     if name == "len" {

@@ -1,0 +1,18 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// push(lista, valore): aggiunge un elemento in coda. Interprete e nativo.
+//   python3 main.py       ../examples/native_push.logyx
+//   python3 main.py build ../examples/native_push.logyx
+
+fn main() {
+    xs = [1, 2, 3]
+    push(xs, 4)
+    push(xs, 5)
+
+    somma = 0
+    for x in xs {
+        somma = somma + x
+    }
+    print("len = {len(xs)}, somma = {somma}")
+}

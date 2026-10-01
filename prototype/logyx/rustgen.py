@@ -438,8 +438,11 @@ class RustTranspiler:
             return pad + f"let mut {name} = {val};"
         if t == "ExprStmt":
             e = s.expr
-            if isinstance(e, N.Call) and isinstance(e.callee, N.Identifier) and e.callee.name == "print":
-                return pad + self.print_call(e.args)
+            if isinstance(e, N.Call) and isinstance(e.callee, N.Identifier):
+                if e.callee.name == "print":
+                    return pad + self.print_call(e.args)
+                if e.callee.name == "push":
+                    return pad + self.push_call(e.args)
             return pad + self.expr(e) + ";"
         raise LogyxError(f"istruzione non supportata dal transpiler v0: {t}")
 
@@ -459,6 +462,13 @@ class RustTranspiler:
         # iterazione su lista: elementi Copy (int/float/bool), presi per valore
         body = self.block(s.body, declared, indent + 1)
         return pad + f"for {s.var} in ({self.expr(it)}).iter().copied() {{\n" + body + "\n" + pad + "}"
+
+    def push_call(self, args):
+        if len(args) != 2:
+            raise LogyxError("push accetta due argomenti: push(lista, valore)")
+        if not isinstance(args[0], N.Identifier):
+            raise LogyxError("push nel transpiler v0 richiede una variabile lista come primo argomento")
+        return f"{args[0].name}.push({self.expr(args[1])});"
 
     def print_call(self, args):
         if len(args) != 1:
@@ -560,6 +570,8 @@ class RustTranspiler:
                 nm = e.callee.name
                 if nm == "print":
                     raise LogyxError("usa print come istruzione, non dentro un'espressione")
+                if nm == "push":
+                    raise LogyxError("usa push come istruzione, non dentro un'espressione")
                 if nm == "len":
                     if len(e.args) != 1:
                         raise LogyxError("len accetta un solo argomento")

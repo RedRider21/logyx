@@ -147,7 +147,8 @@ m = {"nome": "Ada"}
 m["nome"]        // "Ada"
 ```
 
-Non ancora disponibili: metodi/mutazioni (`append`, `remove`), slicing, iterazione su valori di mappa. ⏳
+Mutazione: `push(lista, x)` aggiunge `x` in coda alla lista. Non ancora: `remove`, slicing,
+iterazione sui valori di mappa. ⏳
 
 ## 8. Stringhe e interpolazione ✅
 
@@ -164,6 +165,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `len(x)` | Lunghezza di lista, mappa o stringa |
 | `str(x)` | Converte in stringa |
 | `range(n)` / `range(a, b)` | Lista `0 .. n-1`, oppure `a .. b-1` |
+| `push(lista, x)` | Aggiunge `x` in coda alla lista (la muta); usala come istruzione |
 
 ## 10. Web lato server ✅
 
