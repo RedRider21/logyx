@@ -41,6 +41,9 @@ macchina — in cui **né Python né Rust resteranno una dipendenza**. Sono i po
   logica, stringhe, `if`/`while`/`for`, ricorsione, **liste** e **mappe** di scalari, **moduli**
   e **gestione errori** (`-> T | error` → `Result<T, String>`). I tipi di **ritorno e dei parametri**
   sono **dedotti** dall'uso. `rustc` compila il `.rs` prodotto a eseguibile nativo.
+- **Compilatore vero in Rust** (`compiler/`, binario `logyxc`): lexer, parser, inferenza dei tipi e
+  backend scritti in Rust — la **Fase 1 del bootstrap**. Copre lo stesso sottoinsieme nativo del
+  prototipo ed è **verificato conforme** (stesso output) su tutti gli esempi.
 
 Il dettaglio aggiornato di ciò che il prototipo esegue è nel `MANUAL.md`; il punto di ripresa
 dello sviluppo è in `CONTEXT.md`.
@@ -64,6 +67,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | `DESIGN.md` | Appunti di design completi e portabili |
 | `CONTEXT.md` | Punto di ripresa: dove siamo e prossimo passo |
 | `prototype/` | Interprete/transpiler in Python (lexer, parser, interprete, rustgen) |
+| `compiler/` | Il compilatore vero in Rust (`logyxc`): lexer, parser, inferenza, backend |
 | `examples/` | Programmi di esempio `.logyx` |
 | `docs/` | Documenti esportati (es. il documento di design in `.md`/`.pdf`) |
 | `LICENSE` | Testo completo della licenza AGPL-3.0 |

@@ -40,18 +40,24 @@ Piano deciso (2026-09-28): **congelare la semantica del nucleo**, poi passare a 
 Tacca 1 — moduli/import: **FATTA**. Tacca 2 — gestione degli errori: **FATTA**.
 La semantica del nucleo è ora congelata.
 
-Compilatore in Rust (Fase 1) — IN CORSO, crate `compiler/` (`cargo`, binario `logyxc`):
-- **lexer** (`src/lexer.rs`, `src/token.rs`): FATTO — `logyxc tokens <file>`.
-- **AST + parser** (`src/ast.rs`, `src/parser.rs`): FATTO — `logyxc parse <file>`; parsa tutti gli
-  esempi nativi. Nota: il compilatore nativo non gestisce i costrutti web (`@`/route/render danno errore).
+Compilatore in Rust (Fase 1) — crate `compiler/` (`cargo`, binario `logyxc`). **COMPLETO sul
+sottoinsieme nativo e conforme al prototipo (8/8 esempi, stesso output):**
+- **lexer** (`src/lexer.rs`, `src/token.rs`) — `logyxc tokens <file>`.
+- **AST + parser** (`src/ast.rs`, `src/parser.rs`) — `logyxc parse <file>`.
+- **risoluzione import** (`src/modules.rs`) — porting di `modules.py`.
+- **inferenza tipi + backend Rust** (`src/codegen.rs`) — porting di `rustgen.py`; `logyxc gen <file>`
+  stampa il Rust, `logyxc build <file>` genera il `.rs` e invoca `rustc`.
+- Nota: il compilatore nativo non gestisce i costrutti web (`@`/route/render danno errore), come il
+  transpiler del prototipo.
 
-RIPRENDI DA QUI → **type-checker + backend Rust** nel crate `compiler/`: riportare in Rust la logica di
-`prototype/logyx/rustgen.py` (inferenza dei tipi di ritorno e parametri, liste/mappe di scalari, moduli,
-gestione errori → `Result<T,String>`) per generare codice Rust dall'AST, e un comando `logyxc build
-<file>` che invochi `rustc`. Verifica di conformità: stesso output del prototipo sugli esempi
-`examples/native_*`, `use_import`, `errori`. Manca ancora: risoluzione degli `import` in Rust (porting di
-`modules.py`). Il transpiler-a-Rust del prototipo resta il riferimento. Poi, orizzonte v0: self-hosting
-(compilatore in Logyx) e uscita di scena di Python e Rust.
+RIPRENDI DA QUI → due strade possibili:
+- **A) Self-hosting (orizzonte v0):** iniziare a riscrivere il compilatore **in Logyx stesso**, così da
+  non dipendere più né da Python né da Rust. È il traguardo finale; va pianificato (quali parti per prime,
+  come fare il bootstrap del binario).
+- **B) Ampliare il sottoinsieme nativo** (sia nel prototipo sia in `logyxc`, mantenendo la conformità):
+  collezioni di stringhe, iterazione su mappa; più avanti i costrutti web verso WASM.
+Suggerimento: una **suite di conformità automatica** (script che confronta `python build` e `logyxc build`
+su tutti gli esempi) conviene prima di ampliare, per non rompere l'allineamento prototipo↔compilatore.
 
 In coda (rifiniture del prototipo, opzionali): collezioni di stringhe, iterazione su mappa, target WASM
 del client.
