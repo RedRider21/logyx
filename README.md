@@ -68,6 +68,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | `CONTEXT.md` | Punto di ripresa: dove siamo e prossimo passo |
 | `prototype/` | Interprete/transpiler in Python (lexer, parser, interprete, rustgen) |
 | `compiler/` | Il compilatore vero in Rust (`logyxc`): lexer, parser, inferenza, backend |
+| `tests/` | Suite di conformità (`conformance.sh`): prototipo e compilatore danno lo stesso output |
 | `examples/` | Programmi di esempio `.logyx` |
 | `docs/` | Documenti esportati (es. il documento di design in `.md`/`.pdf`) |
 | `LICENSE` | Testo completo della licenza AGPL-3.0 |
