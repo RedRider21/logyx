@@ -306,13 +306,19 @@ impl Codegen {
                 }
                 None
             }
-            Expr::Call { callee, .. } => {
+            Expr::Call { callee, args } => {
                 if let Expr::Ident(name) = &**callee {
                     if name == "str" {
                         return Some("string".into());
                     }
                     if name == "len" {
                         return Some("int".into());
+                    }
+                    if name == "abs" {
+                        return args.first().and_then(|a| self.type_of(a, ptypes));
+                    }
+                    if name == "min" || name == "max" {
+                        return args.iter().find_map(|a| self.type_of(a, ptypes));
                     }
                     return self.rets.get(name).cloned().flatten();
                 }
@@ -541,6 +547,16 @@ impl Codegen {
                     if let Expr::Ident(n) = a {
                         if let Some(set) = ev.get_mut(n) {
                             set.insert("int".into());
+                        }
+                    }
+                }
+                return;
+            }
+            if name == "abs" || name == "min" || name == "max" {
+                for a in args {
+                    if let Expr::Ident(n) = a {
+                        if let Some(set) = ev.get_mut(n) {
+                            set.insert("num".into());
                         }
                     }
                 }
@@ -909,6 +925,23 @@ impl Codegen {
                             return Err(LogyxError::new("str accetta un solo argomento"));
                         }
                         return Ok(format!("format!(\"{{}}\", {})", self.expr(&args[0])?));
+                    }
+                    if name == "abs" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("abs accetta un solo argomento"));
+                        }
+                        return Ok(format!("({}).abs()", self.expr(&args[0])?));
+                    }
+                    if name == "min" || name == "max" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(format!("{name} accetta due argomenti")));
+                        }
+                        return Ok(format!(
+                            "({}).{}({})",
+                            self.expr(&args[0])?,
+                            name,
+                            self.expr(&args[1])?
+                        ));
                     }
                 }
                 let mut a = Vec::new();

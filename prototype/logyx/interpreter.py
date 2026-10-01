@@ -147,6 +147,9 @@ class Interpreter:
             return None
 
         g.define("push", _push)
+        g.define("abs", lambda x: abs(x))
+        g.define("min", lambda a, b: a if a <= b else b)
+        g.define("max", lambda a, b: a if a >= b else b)
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.
