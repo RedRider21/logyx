@@ -40,12 +40,18 @@ Piano deciso (2026-09-28): **congelare la semantica del nucleo**, poi passare a 
 Tacca 1 — moduli/import: **FATTA**. Tacca 2 — gestione degli errori: **FATTA**.
 La semantica del nucleo è ora congelata.
 
-RIPRENDI DA QUI → **iniziare il compilatore in Rust** (Fase 1 del bootstrap): impostare una cartella
-`compiler/` con un crate Rust e riscrivere `lexer + parser + AST + type-checker`, riusando la semantica
-già fissata dal prototipo Python e gli esempi `examples/native_*`, `use_import`, `errori` come **suite di
-test di conformità** (stesso input → stesso output). Il transpiler-a-Rust attuale resta il backend
-trampolino finché non scriviamo il backend proprio. Poi, orizzonte v0: self-hosting (compilatore in
-Logyx) e uscita di scena di Python e Rust.
+Compilatore in Rust (Fase 1) — IN CORSO, crate `compiler/` (`cargo`, binario `logyxc`):
+- **lexer** (`src/lexer.rs`, `src/token.rs`): FATTO — `logyxc tokens <file>`.
+- **AST + parser** (`src/ast.rs`, `src/parser.rs`): FATTO — `logyxc parse <file>`; parsa tutti gli
+  esempi nativi. Nota: il compilatore nativo non gestisce i costrutti web (`@`/route/render danno errore).
+
+RIPRENDI DA QUI → **type-checker + backend Rust** nel crate `compiler/`: riportare in Rust la logica di
+`prototype/logyx/rustgen.py` (inferenza dei tipi di ritorno e parametri, liste/mappe di scalari, moduli,
+gestione errori → `Result<T,String>`) per generare codice Rust dall'AST, e un comando `logyxc build
+<file>` che invochi `rustc`. Verifica di conformità: stesso output del prototipo sugli esempi
+`examples/native_*`, `use_import`, `errori`. Manca ancora: risoluzione degli `import` in Rust (porting di
+`modules.py`). Il transpiler-a-Rust del prototipo resta il riferimento. Poi, orizzonte v0: self-hosting
+(compilatore in Logyx) e uscita di scena di Python e Rust.
 
 In coda (rifiniture del prototipo, opzionali): collezioni di stringhe, iterazione su mappa, target WASM
 del client.
