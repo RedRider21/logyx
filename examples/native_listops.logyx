@@ -1,0 +1,16 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Operazioni su liste: sum (somma) e sort (ordina in place). Interprete e nativo.
+//   python3 main.py       ../examples/native_listops.logyx
+//   python3 main.py build ../examples/native_listops.logyx
+
+fn main() {
+    xs = [5, 3, 8, 1, 9, 2]
+
+    print("somma = {sum(xs)}")                       // 28
+
+    sort(xs)
+    print("ordinata: primo = {xs[0]}, ultimo = {xs[5]}")   // 1, 9
+    print("somma dopo sort = {sum(xs)}")             // 28
+}

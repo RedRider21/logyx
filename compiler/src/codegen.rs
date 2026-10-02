@@ -326,6 +326,9 @@ impl Codegen {
                     if name == "contains" {
                         return Some("bool".into());
                     }
+                    if name == "sum" {
+                        return Some("int".into());
+                    }
                     return self.rets.get(name).cloned().flatten();
                 }
                 None
@@ -745,6 +748,9 @@ impl Codegen {
                         if n == "remove" {
                             return Ok(format!("{pad}{}", self.remove_call(args)?));
                         }
+                        if n == "sort" {
+                            return Ok(format!("{pad}{}", self.sort_call(args)?));
+                        }
                     }
                 }
                 Ok(format!("{pad}{};", self.expr(e)?))
@@ -813,6 +819,18 @@ impl Codegen {
             }
         };
         Ok(format!("{}.remove(({}) as usize);", name, self.expr(&args[1])?))
+    }
+
+    fn sort_call(&mut self, args: &[Expr]) -> R<String> {
+        if args.len() != 1 {
+            return Err(LogyxError::new("sort accetta un solo argomento: sort(lista)"));
+        }
+        match &args[0] {
+            Expr::Ident(n) => Ok(format!("{}.sort();", n)),
+            _ => Err(LogyxError::new(
+                "sort richiede una variabile lista come argomento",
+            )),
+        }
     }
 
     fn print_call(&mut self, args: &[Expr]) -> R<String> {
@@ -1027,6 +1045,17 @@ impl Codegen {
                             "({}).pow(({}) as u32)",
                             self.expr(&args[0])?,
                             self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "sum" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("sum accetta un solo argomento"));
+                        }
+                        return Ok(format!("({}).iter().sum::<i64>()", self.expr(&args[0])?));
+                    }
+                    if name == "sort" {
+                        return Err(LogyxError::new(
+                            "usa sort come istruzione, non dentro un'espressione",
                         ));
                     }
                 }

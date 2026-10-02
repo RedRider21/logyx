@@ -175,6 +175,15 @@ class Interpreter:
         g.define("contains", lambda lst, x: x in lst)
         g.define("trim", lambda s: s.strip())
         g.define("pow", lambda b, e: b ** e)
+        g.define("sum", lambda lst: sum(lst))
+
+        def _sort(lst):
+            if not isinstance(lst, list):
+                raise LogyxError("sort: il primo argomento deve essere una lista")
+            lst.sort()
+            return None
+
+        g.define("sort", _sort)
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.

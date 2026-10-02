@@ -151,8 +151,9 @@ m = {"nome": "Ada"}
 m["nome"]        // "Ada"
 ```
 
-Mutazioni: `push(lista, x)` aggiunge `x` in coda, `remove(lista, i)` toglie l'elemento all'indice `i`.
-Non ancora: slicing, iterazione sui valori di mappa. ⏳
+Mutazioni: `push(lista, x)` aggiunge `x` in coda, `remove(lista, i)` toglie l'elemento all'indice `i`,
+`sort(lista)` ordina in place. Altre operazioni: `sum(lista)`, `contains(lista, x)`.
+Non ancora: `map`/`filter`/`reduce`, slicing, iterazione sui valori di mappa. ⏳
 
 ## 8. Stringhe e interpolazione ✅
 
@@ -177,6 +178,8 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
 | `trim(s)` | La stringa `s` senza gli spazi iniziali e finali |
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
+| `sum(lista)` | Somma degli elementi (lista di interi) |
+| `sort(lista)` | Ordina la lista in ordine crescente (la muta); usala come istruzione |
 
 ## 10. Web lato server ✅
 

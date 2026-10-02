@@ -415,6 +415,8 @@ class RustTranspiler:
                 return "string"
             if name == "contains":
                 return "bool"
+            if name == "sum":
+                return "int"
             return self.func_rets.get(name)
         return None
 
@@ -499,6 +501,8 @@ class RustTranspiler:
                     return pad + self.push_call(e.args)
                 if e.callee.name == "remove":
                     return pad + self.remove_call(e.args)
+                if e.callee.name == "sort":
+                    return pad + self.sort_call(e.args)
             return pad + self.expr(e) + ";"
         raise LogyxError(f"istruzione non supportata dal transpiler v0: {t}")
 
@@ -532,6 +536,13 @@ class RustTranspiler:
         if not isinstance(args[0], N.Identifier):
             raise LogyxError("remove nel transpiler v0 richiede una variabile lista come primo argomento")
         return f"{args[0].name}.remove(({self.expr(args[1])}) as usize);"
+
+    def sort_call(self, args):
+        if len(args) != 1:
+            raise LogyxError("sort accetta un solo argomento: sort(lista)")
+        if not isinstance(args[0], N.Identifier):
+            raise LogyxError("sort nel transpiler v0 richiede una variabile lista come argomento")
+        return f"{args[0].name}.sort();"
 
     def print_call(self, args):
         if len(args) != 1:
@@ -670,6 +681,12 @@ class RustTranspiler:
                     if len(e.args) != 2:
                         raise LogyxError("pow accetta due argomenti: pow(base, esponente)")
                     return f"({self.expr(e.args[0])}).pow(({self.expr(e.args[1])}) as u32)"
+                if nm == "sum":
+                    if len(e.args) != 1:
+                        raise LogyxError("sum accetta un solo argomento")
+                    return f"({self.expr(e.args[0])}).iter().sum::<i64>()"
+                if nm == "sort":
+                    raise LogyxError("usa sort come istruzione, non dentro un'espressione")
             args = ", ".join(self.expr(a) for a in e.args)
             return f"{self.expr(e.callee)}({args})"
         raise LogyxError(f"espressione non supportata dal transpiler v0: {t}")
