@@ -55,21 +55,42 @@ tutti gli esempi (ora **9/9**). Flusso per ogni nuova feature nativa: implementa
 transpiler Python + compilatore Rust, aggiungere un esempio e lanciare la suite. Primo giro completato
 così col builtin **`push(lista, valore)`** (`examples/native_push.logyx`).
 
-RIPRENDI DA QUI → due strade possibili:
-- **A) Self-hosting (orizzonte v0):** iniziare a riscrivere il compilatore **in Logyx stesso**, così da
-  non dipendere più né da Python né da Rust. È il traguardo finale; va pianificato (quali parti per prime,
-  come fare il bootstrap del binario).
-- **B) Ampliare il sottoinsieme nativo** (interprete + transpiler + compilatore, mantenendo la suite
-  verde): altre mutazioni (`remove`), collezioni di stringhe, iterazione su mappa; più avanti i costrutti
-  web verso WASM.
+## ⚠️ Promemoria operativo (disposizione utente, ottobre 2026)
 
-In coda (rifiniture del prototipo, opzionali): collezioni di stringhe, iterazione su mappa, target WASM
-del client.
-(Fatto: nucleo; render lato server con `{for}`/`{if}`; isole client → JavaScript; transpiler Rust con `build`
-su sottoinsieme tipizzato — stringhe e concatenazione, `range(a,b)`, divisione intera `i64`, inferenza del
-tipo di ritorno **e dei tipi dei parametri**, **liste** e **mappe** di scalari; **moduli/import** con
-risoluzione a caricamento; **gestione errori** (`fail`/`?`/`match` → `Result<T,String>`); esempi
-`native_infer/list/map.logyx`, `use_import.logyx`+`lib_math.logyx`, `errori.logyx`.)
+**Committare SOLO in locale. NON pushare su GitHub (né repo né Pages) fino a nuova indicazione esplicita
+dell'utente.** Al momento ci sono **9 commit locali in attesa di push** (`git log origin/main..HEAD`).
+Quando l'utente darà l'ok: `git push origin main` (e le Pages si aggiornano da sole, build da `main`/`docs`).
+
+## RIPRENDI DA QUI — cose da fare
+
+Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
+(interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
+(ora **19/19**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**Già fatto in questa fase:** costrutti `break`/`continue`, operatori composti `+= -= *= /= %=`;
+builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ceil`, `abs/min/max`,
+`upper/lower`. Vedi `ROADMAP.md` per il quadro completo e le priorità.
+
+**Prossimi giri a basso rischio (C):**
+- numerici: `sqrt` (scegliere esempio con risultati puliti), eventuale `round` (⚠️ Python usa arrotondamento
+  bancario, Rust half-away-from-zero: allineare la semantica nei due backend o evitarlo);
+- mappe: `has(mappa, chiave)`, `keys(mappa)`, `values(mappa)`, iterazione `for k in mappa`;
+- stringhe: `index_of`, `substring`.
+
+**Fronti grossi del nucleo (Piano 1 di `ROADMAP.md`), da affrontare con un minimo di design:**
+- **closure / funzioni come valori** (implicazioni ownership/lifetime nel backend Rust);
+- **record/struct** (tipi con campi) → sbloccano JSON e modellazione dati;
+- `enum` e `match` generale (oggi `match` è solo `ok`/`err`).
+
+**Bloccati finché non arrivano i fronti grossi:** `split`/`join`/`map`/`filter`/`reduce` richiedono le
+**collezioni di stringhe** (ownership in Rust) o le **closure**.
+
+**Orizzonte:** completato il nucleo + una libreria standard scritta in Logyx, puntare al **self-hosting**
+(compilatore in Logyx), poi capacità web → WASM.
+
+(Fatto in precedenza: nucleo; render lato server con `{for}`/`{if}`; isole client → JavaScript; compilatore
+Rust `logyxc` conforme al prototipo; inferenza dei tipi di ritorno e parametri; liste e mappe di scalari;
+moduli/import; gestione errori `fail`/`?`/`match` → `Result<T,String>`.)
 
 ## Questioni aperte da decidere
 
