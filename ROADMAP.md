@@ -46,7 +46,7 @@ Da costruire preferibilmente **in Logyx**, non come builtin infiniti nel compila
 | Stringhe | `len`, `upper`, `lower`, `trim` ✅ · `split`, `join`, `replace`, `substring`, `index_of` ⏳ · regex ⏳ | 🟡 |
 | Liste | `len`, `push`, `remove`, `contains`, `sum`, `sort` ✅ · `map`, `filter`, `reduce`, slice ⏳ | 🟡 |
 | Mappe | letterale, accesso, `len` ✅ · `has`, `keys`, `values`, iterazione ⏳ | 🟡 |
-| Numeri | `abs`, `min`, `max`, `pow` ✅ · `sqrt`, `floor`, `ceil`, `round`, `random` ⏳ | 🟡 |
+| Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil` ✅ · `sqrt`, `round`, `random` ⏳ | 🟡 |
 | I/O e sistema | `print` ✅ · lettura input, file, ambiente ⏳ | 🟡 |
 | Dati | **JSON** (parse/serialize), **date/tempo** ⏳ | ⏳ |
 

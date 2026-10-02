@@ -178,6 +178,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
 | `trim(s)` | La stringa `s` senza gli spazi iniziali e finali |
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
+| `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sum(lista)` | Somma degli elementi (lista di interi) |
 | `sort(lista)` | Ordina la lista in ordine crescente (la muta); usala come istruzione |
 

@@ -315,7 +315,7 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("int")
             return
-        if name in ("abs", "min", "max", "pow"):
+        if name in ("abs", "min", "max", "pow", "floor", "ceil"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
@@ -416,6 +416,8 @@ class RustTranspiler:
             if name == "contains":
                 return "bool"
             if name == "sum":
+                return "int"
+            if name in ("floor", "ceil"):
                 return "int"
             return self.func_rets.get(name)
         return None
@@ -685,6 +687,10 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("sum accetta un solo argomento")
                     return f"({self.expr(e.args[0])}).iter().sum::<i64>()"
+                if nm in ("floor", "ceil"):
+                    if len(e.args) != 1:
+                        raise LogyxError(f"{nm} accetta un solo argomento")
+                    return f"(({self.expr(e.args[0])}) as f64).{nm}() as i64"
                 if nm == "sort":
                     raise LogyxError("usa sort come istruzione, non dentro un'espressione")
             args = ", ".join(self.expr(a) for a in e.args)

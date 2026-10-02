@@ -329,6 +329,9 @@ impl Codegen {
                     if name == "sum" {
                         return Some("int".into());
                     }
+                    if name == "floor" || name == "ceil" {
+                        return Some("int".into());
+                    }
                     return self.rets.get(name).cloned().flatten();
                 }
                 None
@@ -561,7 +564,9 @@ impl Codegen {
                 }
                 return;
             }
-            if name == "abs" || name == "min" || name == "max" || name == "pow" {
+            if name == "abs" || name == "min" || name == "max" || name == "pow"
+                || name == "floor" || name == "ceil"
+            {
                 for a in args {
                     if let Expr::Ident(n) = a {
                         if let Some(set) = ev.get_mut(n) {
@@ -1052,6 +1057,12 @@ impl Codegen {
                             return Err(LogyxError::new("sum accetta un solo argomento"));
                         }
                         return Ok(format!("({}).iter().sum::<i64>()", self.expr(&args[0])?));
+                    }
+                    if name == "floor" || name == "ceil" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(format!("{name} accetta un solo argomento")));
+                        }
+                        return Ok(format!("(({}) as f64).{}() as i64", self.expr(&args[0])?, name));
                     }
                     if name == "sort" {
                         return Err(LogyxError::new(
