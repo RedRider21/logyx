@@ -57,6 +57,7 @@ const PI = 3.14159     // costante (non riassegnabile)
 - Confronto: `==  !=  <  <=  >  >=`
 - Logici: `and  or  not`
 - `+` fra stringhe (o stringa e numero) concatena.
+- Assegnazione composta: `+=  -=  *=  /=  %=` — per esempio `x += 1` equivale a `x = x + 1`.
 
 ## 5. Controllo di flusso ✅
 

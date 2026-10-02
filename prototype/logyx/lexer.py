@@ -154,7 +154,10 @@ class Lexer:
     def _operator(self):
         sl, sc = self.line, self.col
         two = self.peek() + self.peek(1)
-        two_map = {"->": T.ARROW, "==": T.EQ, "!=": T.NE, "<=": T.LE, ">=": T.GE}
+        two_map = {
+            "->": T.ARROW, "==": T.EQ, "!=": T.NE, "<=": T.LE, ">=": T.GE,
+            "+=": T.PLUSEQ, "-=": T.MINUSEQ, "*=": T.STAREQ, "/=": T.SLASHEQ, "%=": T.PERCENTEQ,
+        }
         if two in two_map:
             self.advance()
             self.advance()

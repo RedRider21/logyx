@@ -183,6 +183,15 @@ class Parser:
             if isinstance(expr, (N.Identifier, N.Index)):
                 return N.Assign(expr, value)
             self.error("assegnazione a un bersaglio non valido")
+        compound = {
+            T.PLUSEQ: "+", T.MINUSEQ: "-", T.STAREQ: "*", T.SLASHEQ: "/", T.PERCENTEQ: "%",
+        }
+        if self.peek().type in compound:
+            op = compound[self.advance().type]
+            rhs = self.expression()
+            if isinstance(expr, (N.Identifier, N.Index)):
+                return N.Assign(expr, N.Binary(op, expr, rhs))
+            self.error("assegnazione composta a un bersaglio non valido")
         return N.ExprStmt(expr)
 
     def if_stmt(self):

@@ -129,6 +129,8 @@ parametro    := IDENT (":" tipo)?
 route        := "route" STRINGA ("(" IDENT ")")? blocco
 
 dichiarazione:= ("const")? IDENT (":" tipo)? "=" espressione
+assegnazione := bersaglio ("=" | "+=" | "-=" | "*=" | "/=" | "%=") espressione
+bersaglio    := IDENT | IDENT "[" espressione "]"
 
 blocco       := "{" istruzione* "}"
 istruzione   := dichiarazione | assegnazione | if | while | for

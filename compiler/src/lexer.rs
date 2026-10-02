@@ -208,6 +208,11 @@ impl Lexer {
             ['!', '='] => Some(TokenKind::Ne),
             ['<', '='] => Some(TokenKind::Le),
             ['>', '='] => Some(TokenKind::Ge),
+            ['+', '='] => Some(TokenKind::PlusEq),
+            ['-', '='] => Some(TokenKind::MinusEq),
+            ['*', '='] => Some(TokenKind::StarEq),
+            ['/', '='] => Some(TokenKind::SlashEq),
+            ['%', '='] => Some(TokenKind::PercentEq),
             _ => None,
         };
         if let Some(k) = two_kind {

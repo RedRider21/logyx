@@ -227,13 +227,35 @@ impl Parser {
         if self.is(&TokenKind::Assign) {
             self.advance();
             let value = self.expression()?;
-            match &expr {
+            return match &expr {
                 Expr::Ident(_) | Expr::Index { .. } => Ok(Stmt::Assign { target: expr, value }),
                 _ => Err(self.error("assegnazione a un bersaglio non valido")),
-            }
-        } else {
-            Ok(Stmt::Expr(expr))
+            };
         }
+        let compound = match self.kind() {
+            TokenKind::PlusEq => Some(BinOp::Add),
+            TokenKind::MinusEq => Some(BinOp::Sub),
+            TokenKind::StarEq => Some(BinOp::Mul),
+            TokenKind::SlashEq => Some(BinOp::Div),
+            TokenKind::PercentEq => Some(BinOp::Mod),
+            _ => None,
+        };
+        if let Some(op) = compound {
+            self.advance();
+            let rhs = self.expression()?;
+            return match &expr {
+                Expr::Ident(_) | Expr::Index { .. } => {
+                    let value = Expr::Binary {
+                        op,
+                        left: Box::new(expr.clone()),
+                        right: Box::new(rhs),
+                    };
+                    Ok(Stmt::Assign { target: expr, value })
+                }
+                _ => Err(self.error("assegnazione composta a un bersaglio non valido")),
+            };
+        }
+        Ok(Stmt::Expr(expr))
     }
 
     fn if_stmt(&mut self) -> Result<Stmt, LogyxError> {

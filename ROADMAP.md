@@ -29,7 +29,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | Errori come valori (`fail`/`?`/`match ok/err`) | ✅ | — |
 | Moduli (`import`) | ✅ | — |
 | **`break` / `continue`** nei cicli | ✅ | — |
-| **Operatori composti** (`+=`, `-=`, `*=`, …) | ⏳ | **1** |
+| **Operatori composti** (`+=`, `-=`, `*=`, …) | ✅ | — |
 | **Funzioni come valori / closure / lambda** | ⏳ | **1** |
 | Parametri con default; numero variabile di argomenti | ⏳ | 3 |
 | **Record/struct** (tipi con campi) | ⏳ | **2** |
