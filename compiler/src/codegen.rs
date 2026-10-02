@@ -314,7 +314,7 @@ impl Codegen {
                     if name == "len" {
                         return Some("int".into());
                     }
-                    if name == "abs" {
+                    if name == "abs" || name == "pow" {
                         return args.first().and_then(|a| self.type_of(a, ptypes));
                     }
                     if name == "min" || name == "max" {
@@ -558,7 +558,7 @@ impl Codegen {
                 }
                 return;
             }
-            if name == "abs" || name == "min" || name == "max" {
+            if name == "abs" || name == "min" || name == "max" || name == "pow" {
                 for a in args {
                     if let Expr::Ident(n) = a {
                         if let Some(set) = ev.get_mut(n) {
@@ -1014,6 +1014,18 @@ impl Codegen {
                             return Err(LogyxError::new("trim accetta un solo argomento"));
                         }
                         return Ok(format!("({}).trim().to_string()", self.expr(&args[0])?));
+                    }
+                    if name == "pow" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "pow accetta due argomenti: pow(base, esponente)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({}).pow(({}) as u32)",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?
+                        ));
                     }
                 }
                 let mut a = Vec::new();

@@ -172,6 +172,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `upper(s)` / `lower(s)` | La stringa `s` in maiuscolo / minuscolo |
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
 | `trim(s)` | La stringa `s` senza gli spazi iniziali e finali |
+| `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 
 ## 10. Web lato server ✅
 

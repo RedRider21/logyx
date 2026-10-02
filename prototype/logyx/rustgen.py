@@ -315,7 +315,7 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("int")
             return
-        if name in ("abs", "min", "max"):
+        if name in ("abs", "min", "max", "pow"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
@@ -403,7 +403,7 @@ class RustTranspiler:
                 return "string"
             if name == "len":
                 return "int"
-            if name == "abs" and e.args:
+            if name in ("abs", "pow") and e.args:
                 return self._type_of(e.args[0], ptypes)
             if name in ("min", "max"):
                 for a in e.args:
@@ -662,6 +662,10 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("trim accetta un solo argomento")
                     return f"({self.expr(e.args[0])}).trim().to_string()"
+                if nm == "pow":
+                    if len(e.args) != 2:
+                        raise LogyxError("pow accetta due argomenti: pow(base, esponente)")
+                    return f"({self.expr(e.args[0])}).pow(({self.expr(e.args[1])}) as u32)"
             args = ", ".join(self.expr(a) for a in e.args)
             return f"{self.expr(e.callee)}({args})"
         raise LogyxError(f"espressione non supportata dal transpiler v0: {t}")
