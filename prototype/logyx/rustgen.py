@@ -320,7 +320,7 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
             return
-        if name in ("upper", "lower"):
+        if name in ("upper", "lower", "trim"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("string")
@@ -411,7 +411,7 @@ class RustTranspiler:
                     if tt is not None:
                         return tt
                 return None
-            if name in ("upper", "lower"):
+            if name in ("upper", "lower", "trim"):
                 return "string"
             if name == "contains":
                 return "bool"
@@ -658,6 +658,10 @@ class RustTranspiler:
                     if len(e.args) != 2:
                         raise LogyxError("contains accetta due argomenti: contains(lista, valore)")
                     return f"({self.expr(e.args[0])}).contains(&({self.expr(e.args[1])}))"
+                if nm == "trim":
+                    if len(e.args) != 1:
+                        raise LogyxError("trim accetta un solo argomento")
+                    return f"({self.expr(e.args[0])}).trim().to_string()"
             args = ", ".join(self.expr(a) for a in e.args)
             return f"{self.expr(e.callee)}({args})"
         raise LogyxError(f"espressione non supportata dal transpiler v0: {t}")

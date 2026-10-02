@@ -165,6 +165,7 @@ class Interpreter:
         g.define("upper", lambda s: s.upper())
         g.define("lower", lambda s: s.lower())
         g.define("contains", lambda lst, x: x in lst)
+        g.define("trim", lambda s: s.strip())
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.

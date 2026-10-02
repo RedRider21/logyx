@@ -1,0 +1,20 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// trim(s): toglie gli spazi ai bordi di una stringa. Interprete e nativo.
+//   python3 main.py       ../examples/native_trim.logyx
+//   python3 main.py build ../examples/native_trim.logyx
+
+fn ripulisci(testo) {
+    return trim(testo)
+}
+
+fn main() {
+    s = "   ciao mondo   "
+    pulito = trim(s)
+    print("[{pulito}]")
+    print("lunghezza dopo trim = {len(pulito)}")
+
+    grezzo = "  logyx  "
+    print("[{ripulisci(grezzo)}]")
+}

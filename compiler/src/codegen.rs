@@ -320,7 +320,7 @@ impl Codegen {
                     if name == "min" || name == "max" {
                         return args.iter().find_map(|a| self.type_of(a, ptypes));
                     }
-                    if name == "upper" || name == "lower" {
+                    if name == "upper" || name == "lower" || name == "trim" {
                         return Some("string".into());
                     }
                     if name == "contains" {
@@ -568,7 +568,7 @@ impl Codegen {
                 }
                 return;
             }
-            if name == "upper" || name == "lower" {
+            if name == "upper" || name == "lower" || name == "trim" {
                 for a in args {
                     if let Expr::Ident(n) = a {
                         if let Some(set) = ev.get_mut(n) {
@@ -1008,6 +1008,12 @@ impl Codegen {
                             self.expr(&args[0])?,
                             self.expr(&args[1])?
                         ));
+                    }
+                    if name == "trim" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("trim accetta un solo argomento"));
+                        }
+                        return Ok(format!("({}).trim().to_string()", self.expr(&args[0])?));
                     }
                 }
                 let mut a = Vec::new();

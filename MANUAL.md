@@ -171,6 +171,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `min(a, b)` / `max(a, b)` | Il minore / il maggiore fra due numeri dello stesso tipo |
 | `upper(s)` / `lower(s)` | La stringa `s` in maiuscolo / minuscolo |
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
+| `trim(s)` | La stringa `s` senza gli spazi iniziali e finali |
 
 ## 10. Web lato server ✅
 
