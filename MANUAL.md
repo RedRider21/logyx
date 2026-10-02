@@ -147,8 +147,8 @@ m = {"nome": "Ada"}
 m["nome"]        // "Ada"
 ```
 
-Mutazione: `push(lista, x)` aggiunge `x` in coda alla lista. Non ancora: `remove`, slicing,
-iterazione sui valori di mappa. ⏳
+Mutazioni: `push(lista, x)` aggiunge `x` in coda, `remove(lista, i)` toglie l'elemento all'indice `i`.
+Non ancora: slicing, iterazione sui valori di mappa. ⏳
 
 ## 8. Stringhe e interpolazione ✅
 
@@ -166,6 +166,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `str(x)` | Converte in stringa |
 | `range(n)` / `range(a, b)` | Lista `0 .. n-1`, oppure `a .. b-1` |
 | `push(lista, x)` | Aggiunge `x` in coda alla lista (la muta); usala come istruzione |
+| `remove(lista, i)` | Toglie l'elemento all'indice `i` (muta la lista); usala come istruzione |
 | `abs(x)` | Valore assoluto di `x` (int o float) |
 | `min(a, b)` / `max(a, b)` | Il minore / il maggiore fra due numeri dello stesso tipo |
 | `upper(s)` / `lower(s)` | La stringa `s` in maiuscolo / minuscolo |

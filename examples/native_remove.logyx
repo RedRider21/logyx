@@ -1,0 +1,19 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// remove(lista, indice): toglie l'elemento a quell'indice. Interprete e nativo.
+//   python3 main.py       ../examples/native_remove.logyx
+//   python3 main.py build ../examples/native_remove.logyx
+
+fn main() {
+    xs = [10, 20, 30, 40]
+    remove(xs, 1)                 // toglie 20
+
+    print("dopo remove: len = {len(xs)}")
+
+    somma = 0
+    for x in xs {
+        somma = somma + x
+    }
+    print("somma = {somma}")      // 10 + 30 + 40 = 80
+}

@@ -147,6 +147,18 @@ class Interpreter:
             return None
 
         g.define("push", _push)
+
+        def _remove(lst, i):
+            if not isinstance(lst, list):
+                raise LogyxError("remove: il primo argomento deve essere una lista")
+            if not isinstance(i, int) or isinstance(i, bool):
+                raise LogyxError("remove: l'indice deve essere un intero")
+            if i < 0 or i >= len(lst):
+                raise LogyxError("remove: indice fuori dai limiti")
+            lst.pop(i)
+            return None
+
+        g.define("remove", _remove)
         g.define("abs", lambda x: abs(x))
         g.define("min", lambda a, b: a if a <= b else b)
         g.define("max", lambda a, b: a if a >= b else b)

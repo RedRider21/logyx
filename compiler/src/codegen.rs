@@ -575,6 +575,14 @@ impl Codegen {
                 }
                 return;
             }
+            if name == "remove" {
+                if let Some(Expr::Ident(n)) = args.get(1) {
+                    if let Some(set) = ev.get_mut(n) {
+                        set.insert("int".into());
+                    }
+                }
+                return;
+            }
             if let Some(callee_pt) = self.ptype.get(name) {
                 // ordine dei parametri: lo ricaviamo dall'ordine di dichiarazione
                 // (ricostruito sotto in generate tramite funcs); qui usiamo la mappa
@@ -729,6 +737,9 @@ impl Codegen {
                         if n == "push" {
                             return Ok(format!("{pad}{}", self.push_call(args)?));
                         }
+                        if n == "remove" {
+                            return Ok(format!("{pad}{}", self.remove_call(args)?));
+                        }
                     }
                 }
                 Ok(format!("{pad}{};", self.expr(e)?))
@@ -782,6 +793,21 @@ impl Codegen {
             }
         };
         Ok(format!("{}.push({});", name, self.expr(&args[1])?))
+    }
+
+    fn remove_call(&mut self, args: &[Expr]) -> R<String> {
+        if args.len() != 2 {
+            return Err(LogyxError::new("remove accetta due argomenti: remove(lista, indice)"));
+        }
+        let name = match &args[0] {
+            Expr::Ident(n) => n.clone(),
+            _ => {
+                return Err(LogyxError::new(
+                    "remove richiede una variabile lista come primo argomento",
+                ))
+            }
+        };
+        Ok(format!("{}.remove(({}) as usize);", name, self.expr(&args[1])?))
     }
 
     fn print_call(&mut self, args: &[Expr]) -> R<String> {
@@ -925,6 +951,11 @@ impl Codegen {
                     if name == "push" {
                         return Err(LogyxError::new(
                             "usa push come istruzione, non dentro un'espressione",
+                        ));
+                    }
+                    if name == "remove" {
+                        return Err(LogyxError::new(
+                            "usa remove come istruzione, non dentro un'espressione",
                         ));
                     }
                     if name == "len" {

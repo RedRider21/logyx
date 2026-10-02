@@ -301,6 +301,10 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("string")
             return
+        if name == "remove":
+            if len(e.args) == 2 and isinstance(e.args[1], N.Identifier) and e.args[1].name in ev:
+                ev[e.args[1].name].add("int")
+            return
         if name in self.param_types:
             pnames = list(self.param_types[name].keys())
             for i, a in enumerate(e.args):
@@ -463,6 +467,8 @@ class RustTranspiler:
                     return pad + self.print_call(e.args)
                 if e.callee.name == "push":
                     return pad + self.push_call(e.args)
+                if e.callee.name == "remove":
+                    return pad + self.remove_call(e.args)
             return pad + self.expr(e) + ";"
         raise LogyxError(f"istruzione non supportata dal transpiler v0: {t}")
 
@@ -489,6 +495,13 @@ class RustTranspiler:
         if not isinstance(args[0], N.Identifier):
             raise LogyxError("push nel transpiler v0 richiede una variabile lista come primo argomento")
         return f"{args[0].name}.push({self.expr(args[1])});"
+
+    def remove_call(self, args):
+        if len(args) != 2:
+            raise LogyxError("remove accetta due argomenti: remove(lista, indice)")
+        if not isinstance(args[0], N.Identifier):
+            raise LogyxError("remove nel transpiler v0 richiede una variabile lista come primo argomento")
+        return f"{args[0].name}.remove(({self.expr(args[1])}) as usize);"
 
     def print_call(self, args):
         if len(args) != 1:
@@ -592,6 +605,8 @@ class RustTranspiler:
                     raise LogyxError("usa print come istruzione, non dentro un'espressione")
                 if nm == "push":
                     raise LogyxError("usa push come istruzione, non dentro un'espressione")
+                if nm == "remove":
+                    raise LogyxError("usa remove come istruzione, non dentro un'espressione")
                 if nm == "len":
                     if len(e.args) != 1:
                         raise LogyxError("len accetta un solo argomento")
