@@ -66,6 +66,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | `GRAMMAR.md` | Grammatica v0 (EBNF) |
 | `DESIGN.md` | Appunti di design completi e portabili |
 | `CONTEXT.md` | Punto di ripresa: dove siamo e prossimo passo |
+| `ROADMAP.md` | Gap-analysis e priorità: cosa manca verso un linguaggio completo |
 | `prototype/` | Interprete/transpiler in Python (lexer, parser, interprete, rustgen) |
 | `compiler/` | Il compilatore vero in Rust (`logyxc`): lexer, parser, inferenza, backend |
 | `tests/` | Suite di conformità (`conformance.sh`): prototipo e compilatore danno lo stesso output |
