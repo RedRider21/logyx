@@ -159,6 +159,12 @@ class Parser:
             return self.fail_stmt()
         if t.type == T.MATCH:
             return self.match_stmt()
+        if t.type == T.BREAK:
+            self.advance()
+            return N.Break()
+        if t.type == T.CONTINUE:
+            self.advance()
+            return N.Continue()
         if t.type == T.CONST:
             return self.const_decl()
         if t.type == T.RENDER:

@@ -115,6 +115,16 @@ class Return:
 
 
 @dataclass
+class Break:
+    pass
+
+
+@dataclass
+class Continue:
+    pass
+
+
+@dataclass
 class ExprStmt:
     expr: Any
 

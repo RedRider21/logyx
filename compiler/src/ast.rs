@@ -67,6 +67,8 @@ pub enum Stmt {
     While { cond: Expr, body: Vec<Stmt> },
     For { var: String, iterable: Expr, body: Vec<Stmt> },
     Return(Option<Expr>),
+    Break,
+    Continue,
     Fail(Expr),
     Match {
         subject: Expr,

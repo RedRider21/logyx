@@ -17,6 +17,14 @@ class _Response(Exception):
         self.html = html
 
 
+class _Break(Exception):
+    pass
+
+
+class _Continue(Exception):
+    pass
+
+
 class ErrValue:
     """Valore di errore recuperabile (modello Result). Porta un messaggio."""
 
@@ -339,7 +347,12 @@ class Interpreter:
 
     def st_While(self, s, env):
         while truthy(self.eval(s.cond, env)):
-            self.exec_block(s.body, env)
+            try:
+                self.exec_block(s.body, env)
+            except _Break:
+                break
+            except _Continue:
+                continue
 
     def st_For(self, s, env):
         iterable = self.eval(s.iterable, env)
@@ -348,7 +361,18 @@ class Interpreter:
         for value in iterable:
             child = Environment(env)
             child.define(s.var, value)
-            self._exec_all(s.body, child)
+            try:
+                self._exec_all(s.body, child)
+            except _Break:
+                break
+            except _Continue:
+                continue
+
+    def st_Break(self, s, env):
+        raise _Break()
+
+    def st_Continue(self, s, env):
+        raise _Continue()
 
     def st_Return(self, s, env):
         raise _Return(self.eval(s.value, env) if s.value is not None else None)

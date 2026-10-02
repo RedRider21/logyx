@@ -28,7 +28,7 @@ Booleano       := "true" | "false"
 Nullo          := "nil"
 ```
 
-Parole chiave riservate (v0): `fn return if else while for in const import fail match and or not true false nil route render`
+Parole chiave riservate (v0): `fn return if else while for in const import fail match break continue and or not true false nil route render`
 più i marcatori di confine `@server @client @start-client @end-client`. Dentro `match` i rami sono
 etichettati da `ok` ed `err` (parole contestuali), e `error` compare nei tipi fallibili `T | error`.
 
@@ -133,6 +133,7 @@ dichiarazione:= ("const")? IDENT (":" tipo)? "=" espressione
 blocco       := "{" istruzione* "}"
 istruzione   := dichiarazione | assegnazione | if | while | for
               | "return" espressione? | "fail" espressione | match
+              | "break" | "continue"
               | espressione | render | isolaClient
 isolaClient  := "@start-client" istruzione* "@end-client"
 

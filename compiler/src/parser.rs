@@ -198,6 +198,14 @@ impl Parser {
             TokenKind::Return => self.return_stmt(),
             TokenKind::Fail => self.fail_stmt(),
             TokenKind::Match => self.match_stmt(),
+            TokenKind::Break => {
+                self.advance();
+                Ok(Stmt::Break)
+            }
+            TokenKind::Continue => {
+                self.advance();
+                Ok(Stmt::Continue)
+            }
             TokenKind::Const => self.const_decl(),
             _ => self.decl_or_expr(),
         }

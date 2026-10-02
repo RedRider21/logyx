@@ -1,0 +1,28 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// break e continue nei cicli. Interprete e nativo.
+//   python3 main.py       ../examples/native_breakcont.logyx
+//   python3 main.py build ../examples/native_breakcont.logyx
+
+fn main() {
+    // continue: somma solo i dispari sotto 10
+    somma = 0
+    for n in range(10) {
+        if n % 2 == 0 {
+            continue
+        }
+        somma = somma + n
+    }
+    print("somma dispari < 10 = {somma}")       // 1+3+5+7+9 = 25
+
+    // break: primo n con n*n > 20
+    trovato = 0
+    for n in range(100) {
+        if n * n > 20 {
+            trovato = n
+            break
+        }
+    }
+    print("primo n con n^2 > 20 = {trovato}")    // 5
+}

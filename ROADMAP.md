@@ -28,8 +28,8 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | Funzioni con inferenza dei tipi | ✅ | — |
 | Errori come valori (`fail`/`?`/`match ok/err`) | ✅ | — |
 | Moduli (`import`) | ✅ | — |
-| **`break` / `continue`** nei cicli | ⏳ | **1** |
-| **Operatori composti** (`+=`, `-=`, `*=`, …) | ⏳ | 2 |
+| **`break` / `continue`** nei cicli | ✅ | — |
+| **Operatori composti** (`+=`, `-=`, `*=`, …) | ⏳ | **1** |
 | **Funzioni come valori / closure / lambda** | ⏳ | **1** |
 | Parametri con default; numero variabile di argomenti | ⏳ | 3 |
 | **Record/struct** (tipi con campi) | ⏳ | **2** |

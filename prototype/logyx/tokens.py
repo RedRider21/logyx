@@ -29,6 +29,8 @@ class T:
     IMPORT = "IMPORT"
     FAIL = "FAIL"
     MATCH = "MATCH"
+    BREAK = "BREAK"
+    CONTINUE = "CONTINUE"
     AND = "AND"
     OR = "OR"
     NOT = "NOT"
@@ -63,6 +65,7 @@ KEYWORDS = {
     "fn": T.FN, "return": T.RETURN, "if": T.IF, "else": T.ELSE,
     "while": T.WHILE, "for": T.FOR, "in": T.IN, "const": T.CONST,
     "import": T.IMPORT, "fail": T.FAIL, "match": T.MATCH,
+    "break": T.BREAK, "continue": T.CONTINUE,
     "and": T.AND, "or": T.OR, "not": T.NOT,
     "true": T.TRUE, "false": T.FALSE, "nil": T.NIL,
 }

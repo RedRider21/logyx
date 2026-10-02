@@ -66,6 +66,9 @@ while x > 0 { x = x - 1 }
 for n in numeri { print(n) }
 ```
 
+Dentro `while` e `for` si possono usare `break` (esce dal ciclo) e `continue` (passa all'iterazione
+successiva).
+
 ## 6. Funzioni ✅
 
 ```

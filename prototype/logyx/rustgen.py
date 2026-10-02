@@ -467,6 +467,10 @@ class RustTranspiler:
             )
         if t == "For":
             return self.for_stmt(s, declared, indent)
+        if t == "Break":
+            return pad + "break;"
+        if t == "Continue":
+            return pad + "continue;"
         if t == "Decl":
             declared.add(s.name)
             k = self._value_kind(s.value)

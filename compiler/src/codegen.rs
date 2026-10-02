@@ -388,7 +388,7 @@ impl Codegen {
                 self.scan_stmts(ok_block, pt, ev, fname);
                 self.scan_stmts(err_block, pt, ev, fname);
             }
-            Stmt::Func(_) => {}
+            Stmt::Break | Stmt::Continue | Stmt::Func(_) => {}
         }
     }
 
@@ -674,6 +674,8 @@ impl Codegen {
                     }
                 }
             }
+            Stmt::Break => Ok(format!("{pad}break;")),
+            Stmt::Continue => Ok(format!("{pad}continue;")),
             Stmt::Fail(e) => Ok(format!("{pad}return Err({});", self.expr(e)?)),
             Stmt::Match { subject, ok_var, ok_block, err_var, err_block } => {
                 let subj = self.expr(subject)?;
