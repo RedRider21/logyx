@@ -1,0 +1,22 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// contains(lista, valore): vero se la lista contiene il valore. Interprete e nativo.
+//   python3 main.py       ../examples/native_contains.logyx
+//   python3 main.py build ../examples/native_contains.logyx
+
+fn main() {
+    xs = [1, 2, 3, 4]
+
+    if contains(xs, 3) {
+        print("c'è il 3")
+    } else {
+        print("niente 3")
+    }
+
+    if contains(xs, 9) {
+        print("c'è il 9")
+    } else {
+        print("niente 9")
+    }
+}

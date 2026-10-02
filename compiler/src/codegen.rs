@@ -323,6 +323,9 @@ impl Codegen {
                     if name == "upper" || name == "lower" {
                         return Some("string".into());
                     }
+                    if name == "contains" {
+                        return Some("bool".into());
+                    }
                     return self.rets.get(name).cloned().flatten();
                 }
                 None
@@ -993,6 +996,18 @@ impl Codegen {
                         }
                         let method = if name == "upper" { "to_uppercase" } else { "to_lowercase" };
                         return Ok(format!("({}).{}()", self.expr(&args[0])?, method));
+                    }
+                    if name == "contains" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "contains accetta due argomenti: contains(lista, valore)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({}).contains(&({}))",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?
+                        ));
                     }
                 }
                 let mut a = Vec::new();

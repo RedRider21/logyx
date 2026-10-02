@@ -8,12 +8,36 @@ Non supporta ancora liste/mappe, route/render o codice dinamico: in quei casi
 solleva un errore chiaro. Serve a dimostrare il percorso di compilazione nativa.
 """
 
-import json
-
 from . import nodes as N
 from .errors import LogyxError
 
 _TYPES = {"int": "i64", "float": "f64", "bool": "bool", "string": "String"}
+
+
+def _rust_str(s):
+    """Letterale di stringa Rust valido (UTF-8 diretto, escape alla Rust).
+
+    Nota: non si usa json.dumps perché produce escape \\uXXXX, che Rust rifiuta
+    (vuole \\u{XXXX}); i caratteri non-ASCII vanno invece lasciati così come sono.
+    """
+    out = ['"']
+    for ch in s:
+        if ch == "\\":
+            out.append("\\\\")
+        elif ch == '"':
+            out.append('\\"')
+        elif ch == "\n":
+            out.append("\\n")
+        elif ch == "\t":
+            out.append("\\t")
+        elif ch == "\r":
+            out.append("\\r")
+        elif ord(ch) < 0x20:
+            out.append(f"\\u{{{ord(ch):x}}}")
+        else:
+            out.append(ch)
+    out.append('"')
+    return "".join(out)
 
 
 class RustTranspiler:
@@ -389,6 +413,8 @@ class RustTranspiler:
                 return None
             if name in ("upper", "lower"):
                 return "string"
+            if name == "contains":
+                return "bool"
             return self.func_rets.get(name)
         return None
 
@@ -509,7 +535,7 @@ class RustTranspiler:
         a = args[0]
         if isinstance(a, N.StringLit):
             fmt, fargs = self._format(a)
-            return f"println!({json.dumps(fmt)}{fargs});"
+            return f"println!({_rust_str(fmt)}{fargs});"
         return f'println!("{{}}", {self.expr(a)});'
 
     # --- espressioni ---
@@ -543,16 +569,16 @@ class RustTranspiler:
             if v is None:
                 raise LogyxError("nil non supportato dal transpiler v0")
             if isinstance(v, str):
-                return json.dumps(v) + ".to_string()"
+                return _rust_str(v) + ".to_string()"
             if isinstance(v, int):
                 return f"{v}i64"
             return f"{v}f64"
         if t == "StringLit":
             if all(kind == "lit" for kind, _ in e.parts):
                 text = "".join(val for _, val in e.parts)
-                return json.dumps(text) + ".to_string()"
+                return _rust_str(text) + ".to_string()"
             fmt, fargs = self._format(e)
-            return f"format!({json.dumps(fmt)}{fargs})"
+            return f"format!({_rust_str(fmt)}{fargs})"
         if t == "Identifier":
             return e.name
         if t == "Unary":
@@ -628,6 +654,10 @@ class RustTranspiler:
                         raise LogyxError(f"{nm} accetta un solo argomento")
                     method = "to_uppercase" if nm == "upper" else "to_lowercase"
                     return f"({self.expr(e.args[0])}).{method}()"
+                if nm == "contains":
+                    if len(e.args) != 2:
+                        raise LogyxError("contains accetta due argomenti: contains(lista, valore)")
+                    return f"({self.expr(e.args[0])}).contains(&({self.expr(e.args[1])}))"
             args = ", ".join(self.expr(a) for a in e.args)
             return f"{self.expr(e.callee)}({args})"
         raise LogyxError(f"espressione non supportata dal transpiler v0: {t}")
