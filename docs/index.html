@@ -112,6 +112,15 @@
   .split{display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start}
   @media(max-width:780px){ .split{grid-template-columns:1fr} }
 
+  /* Riferimento */
+  .ref-sub{font-size:1.15rem; margin:30px 0 12px}
+  table.builtins{width:100%; border-collapse:collapse; font-size:.92rem}
+  table.builtins td{padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top}
+  table.builtins tr:last-child td{border-bottom:none}
+  table.builtins td:first-child{white-space:nowrap; color:var(--accent);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-weight:600}
+  table.builtins td:last-child{color:var(--muted)}
+
   /* Roadmap */
   .road{display:flex; flex-direction:column; gap:2px}
   .road .row{display:flex; align-items:flex-start; gap:14px; padding:14px 16px; background:var(--panel);
@@ -141,6 +150,7 @@
     </div>
     <a class="link" href="#perche" data-i18n="nav.why">Perché</a>
     <a class="link" href="#codice" data-i18n="nav.code">Codice</a>
+    <a class="link" href="#riferimento" data-i18n="nav.ref">Riferimento</a>
     <a class="link" href="#stato" data-i18n="nav.status">Stato</a>
     <a class="link" href="#inizia" data-i18n="nav.start">Inizia</a>
     <div class="spacer"></div>
@@ -229,6 +239,79 @@
     </div>
   </section>
 
+  <section id="riferimento">
+    <div class="wrap">
+      <h2 data-i18n="ref.h">Riferimento</h2>
+      <p class="sub" data-i18n="ref.sub">Tutti i costrutti, gli operatori e le funzioni del nucleo del linguaggio, oggi.</p>
+
+      <h3 class="ref-sub" data-i18n="ref.constructs">Costrutti</h3>
+      <div class="split">
+        <div class="code-wrap"><pre>// variabili, costanti, tipi
+x = 10
+nome: string = "Ada"
+const PI = 3.14159
+
+// tipi:  int  float  bool  string  nil
+// liste: [1, 2, 3]
+// mappe: {"a": 1, "b": 2}</pre></div>
+        <div class="code-wrap"><pre>// controllo di flusso
+if x > 0 { } else if x == 0 { } else { }
+
+while x > 0 { x -= 1 }
+
+for n in range(10) { }
+for v in lista {
+    if v == 0 { continue }
+    if v > 9 { break }
+}</pre></div>
+      </div>
+      <div class="split">
+        <div class="code-wrap"><pre>// funzioni (tipi dedotti) ed errori
+fn somma(a, b) { return a + b }
+
+fn dividi(a, b) -> int | error {
+    if b == 0 { fail "zero" }
+    return a / b
+}
+
+match dividi(10, 0) {
+    ok v  { print(v) }
+    err e { print(e) }
+}</pre></div>
+        <div class="code-wrap"><pre>// moduli
+import "lib_math.logyx"
+
+// operatori
+// aritmetici:  +  -  *  /  %
+// confronto:   ==  !=  &lt;  &lt;=  &gt;  &gt;=
+// logici:      and  or  not
+// composti:    +=  -=  *=  /=  %=
+// propaga errore:  espr?</pre></div>
+      </div>
+
+      <h3 class="ref-sub" data-i18n="ref.builtins">Funzioni builtin</h3>
+      <div class="card" style="padding:4px 8px">
+        <table class="builtins">
+          <tr><td>print(x)</td><td data-i18n="bi.print">Stampa x</td></tr>
+          <tr><td>len(x)</td><td data-i18n="bi.len">Lunghezza di lista, mappa o stringa</td></tr>
+          <tr><td>str(x)</td><td data-i18n="bi.str">Converte in stringa</td></tr>
+          <tr><td>range(n), range(a,b)</td><td data-i18n="bi.range">Sequenza di interi 0..n-1 oppure a..b-1</td></tr>
+          <tr><td>push(lista, x)</td><td data-i18n="bi.push">Aggiunge x in coda alla lista</td></tr>
+          <tr><td>remove(lista, i)</td><td data-i18n="bi.remove">Toglie l'elemento all'indice i</td></tr>
+          <tr><td>contains(lista, x)</td><td data-i18n="bi.contains">Vero se la lista contiene x</td></tr>
+          <tr><td>sum(lista)</td><td data-i18n="bi.sum">Somma degli elementi (interi)</td></tr>
+          <tr><td>sort(lista)</td><td data-i18n="bi.sort">Ordina la lista in ordine crescente</td></tr>
+          <tr><td>abs(x)</td><td data-i18n="bi.abs">Valore assoluto</td></tr>
+          <tr><td>min(a,b), max(a,b)</td><td data-i18n="bi.minmax">Il minore / il maggiore fra due numeri</td></tr>
+          <tr><td>pow(base, esp)</td><td data-i18n="bi.pow">Potenza fra interi (esp ≥ 0)</td></tr>
+          <tr><td>floor(x), ceil(x)</td><td data-i18n="bi.floorceil">Arrotonda verso il basso / verso l'alto</td></tr>
+          <tr><td>upper(s), lower(s)</td><td data-i18n="bi.upperlower">Stringa in maiuscolo / minuscolo</td></tr>
+          <tr><td>trim(s)</td><td data-i18n="bi.trim">Toglie gli spazi ai bordi</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
   <section id="stato">
     <div class="wrap">
       <h2 data-i18n="status.h">A che punto è</h2>
@@ -288,7 +371,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
 
   var I18N = {
     it:{
-      "nav.why":"Perché","nav.code":"Codice","nav.status":"Stato","nav.start":"Inizia",
+      "nav.why":"Perché","nav.code":"Codice","nav.ref":"Riferimento","nav.status":"Stato","nav.start":"Inizia",
       "hero.v0":"Versione 0 · anteprima",
       "hero.badge":"Un linguaggio · molti mondi",
       "hero.title":"Un solo sorgente per <span class=\"grad\">server e client</span>",
@@ -303,6 +386,15 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "why.c5.h":"Interoperabilità dal primo giorno","why.c5.p":"FFI con C (la lingua franca) e accesso alle crates Rust: l'ecosistema copre i mondi che il linguaggio non gonfia.",
       "why.c6.h":"Batterie da web incluse","why.c6.p":"Routing, template, HTTP e database nella libreria standard, alla PHP. Il cuore del linguaggio resta piccolo.",
       "code.h":"Che aspetto ha","code.sub":"Sintassi non posizionale con graffe, punto e virgola opzionale, tipi facoltativi. Server fuori, client dentro le isole.",
+      "ref.h":"Riferimento","ref.sub":"Tutti i costrutti, gli operatori e le funzioni del nucleo del linguaggio, oggi.",
+      "ref.constructs":"Costrutti","ref.builtins":"Funzioni builtin",
+      "bi.print":"Stampa x","bi.len":"Lunghezza di lista, mappa o stringa","bi.str":"Converte in stringa",
+      "bi.range":"Sequenza di interi 0..n-1 oppure a..b-1","bi.push":"Aggiunge x in coda alla lista",
+      "bi.remove":"Toglie l'elemento all'indice i","bi.contains":"Vero se la lista contiene x",
+      "bi.sum":"Somma degli elementi (interi)","bi.sort":"Ordina la lista in ordine crescente",
+      "bi.abs":"Valore assoluto","bi.minmax":"Il minore / il maggiore fra due numeri",
+      "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
+      "bi.upperlower":"Stringa in maiuscolo / minuscolo","bi.trim":"Toglie gli spazi ai bordi",
       "status.h":"A che punto è","status.sub":"Logyx è un prototipo funzionante in Python (lexer, parser, interprete, render web, transpiler Rust). Ecco la mappa.",
       "status.v0.h":"Siamo alla versione 0.",
       "status.v0.p":"Il prototipo in Python e la transpilazione verso Rust sono impalcature temporanee per far nascere il linguaggio. L'obiettivo è un Logyx <em>self-hosted</em> — un compilatore scritto in Logyx che genera direttamente codice macchina — in cui né Python né Rust resteranno una dipendenza.",
@@ -317,7 +409,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "a11y.top":"Torna su"
     },
     en:{
-      "nav.why":"Why","nav.code":"Code","nav.status":"Status","nav.start":"Start",
+      "nav.why":"Why","nav.code":"Code","nav.ref":"Reference","nav.status":"Status","nav.start":"Start",
       "hero.v0":"Version 0 · preview",
       "hero.badge":"One language · many worlds",
       "hero.title":"One source for <span class=\"grad\">server and client</span>",
@@ -332,6 +424,15 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "why.c5.h":"Interoperability from day one","why.c5.p":"C FFI (the lingua franca) and access to Rust crates: the ecosystem covers the worlds the language doesn't bloat.",
       "why.c6.h":"Web batteries included","why.c6.p":"Routing, templates, HTTP and database in the standard library, PHP-style. The language core stays small.",
       "code.h":"What it looks like","code.sub":"Non-positional brace syntax, optional semicolons, optional types. Server outside, client inside the islands.",
+      "ref.h":"Reference","ref.sub":"Every construct, operator and core function of the language, today.",
+      "ref.constructs":"Constructs","ref.builtins":"Builtin functions",
+      "bi.print":"Prints x","bi.len":"Length of a list, map or string","bi.str":"Converts to a string",
+      "bi.range":"Sequence of integers 0..n-1 or a..b-1","bi.push":"Appends x to the list",
+      "bi.remove":"Removes the element at index i","bi.contains":"True if the list contains x",
+      "bi.sum":"Sum of the elements (integers)","bi.sort":"Sorts the list in ascending order",
+      "bi.abs":"Absolute value","bi.minmax":"The smaller / the larger of two numbers",
+      "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
+      "bi.upperlower":"String in upper / lower case","bi.trim":"Removes surrounding whitespace",
       "status.h":"Where it stands","status.sub":"Logyx is a working prototype in Python (lexer, parser, interpreter, web render, Rust transpiler). Here's the map.",
       "status.v0.h":"We are at version 0.",
       "status.v0.p":"The Python prototype and the transpilation to Rust are temporary scaffolding to bootstrap the language. The goal is a self-hosted Logyx — a compiler written in Logyx that emits machine code directly — where neither Python nor Rust will remain a dependency.",
