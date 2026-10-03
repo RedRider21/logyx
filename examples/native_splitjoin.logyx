@@ -1,0 +1,20 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// split e join sulle stringhe. Interprete e nativo.
+//   python3 main.py       ../examples/native_splitjoin.logyx
+//   python3 main.py build ../examples/native_splitjoin.logyx
+
+fn main() {
+    s = "pane,latte,uova"
+    parti = split(s, ",")
+
+    print("quante parti = {len(parti)}")
+    print("prima = {parti[0]}")
+    for p in parti {
+        print("- {p}")
+    }
+
+    unito = join(parti, " + ")
+    print("unito = {unito}")
+}

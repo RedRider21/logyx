@@ -320,7 +320,9 @@ impl Codegen {
                     if name == "min" || name == "max" {
                         return args.iter().find_map(|a| self.type_of(a, ptypes));
                     }
-                    if name == "upper" || name == "lower" || name == "trim" || name == "substring" {
+                    if name == "upper" || name == "lower" || name == "trim" || name == "substring"
+                        || name == "join"
+                    {
                         return Some("string".into());
                     }
                     if name == "contains" || name == "has" {
@@ -582,12 +584,22 @@ impl Codegen {
                 }
                 return;
             }
-            if name == "upper" || name == "lower" || name == "trim" || name == "index_of" {
+            if name == "upper" || name == "lower" || name == "trim" || name == "index_of"
+                || name == "split"
+            {
                 for a in args {
                     if let Expr::Ident(n) = a {
                         if let Some(set) = ev.get_mut(n) {
                             set.insert("string".into());
                         }
+                    }
+                }
+                return;
+            }
+            if name == "join" {
+                if let Some(Expr::Ident(n)) = args.get(1) {
+                    if let Some(set) = ev.get_mut(n) {
+                        set.insert("string".into());
                     }
                 }
                 return;
@@ -1116,6 +1128,30 @@ impl Codegen {
                             self.expr(&args[0])?,
                             self.expr(&args[1])?,
                             self.expr(&args[2])?
+                        ));
+                    }
+                    if name == "split" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "split accetta due argomenti: split(stringa, separatore)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({}).split(({}).as_str()).map(|x| x.to_string()).collect::<Vec<String>>()",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "join" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "join accetta due argomenti: join(lista, separatore)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({}).join(({}).as_str())",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?
                         ));
                     }
                     if name == "sort" {

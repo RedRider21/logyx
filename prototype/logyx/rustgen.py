@@ -320,10 +320,14 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
             return
-        if name in ("upper", "lower", "trim", "index_of"):
+        if name in ("upper", "lower", "trim", "index_of", "split"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("string")
+            return
+        if name == "join":
+            if len(e.args) == 2 and isinstance(e.args[1], N.Identifier) and e.args[1].name in ev:
+                ev[e.args[1].name].add("string")
             return
         if name == "substring":
             if e.args and isinstance(e.args[0], N.Identifier) and e.args[0].name in ev:
@@ -418,7 +422,7 @@ class RustTranspiler:
                     if tt is not None:
                         return tt
                 return None
-            if name in ("upper", "lower", "trim", "substring"):
+            if name in ("upper", "lower", "trim", "substring", "join"):
                 return "string"
             if name in ("contains", "has"):
                 return "bool"
@@ -710,6 +714,15 @@ class RustTranspiler:
                         raise LogyxError("substring accetta tre argomenti: substring(stringa, inizio, fine)")
                     return (f"({self.expr(e.args[0])})[({self.expr(e.args[1])}) as usize.."
                             f"({self.expr(e.args[2])}) as usize].to_string()")
+                if nm == "split":
+                    if len(e.args) != 2:
+                        raise LogyxError("split accetta due argomenti: split(stringa, separatore)")
+                    return (f"({self.expr(e.args[0])}).split(({self.expr(e.args[1])}).as_str())"
+                            ".map(|x| x.to_string()).collect::<Vec<String>>()")
+                if nm == "join":
+                    if len(e.args) != 2:
+                        raise LogyxError("join accetta due argomenti: join(lista, separatore)")
+                    return f"({self.expr(e.args[0])}).join(({self.expr(e.args[1])}).as_str())"
                 if nm == "sort":
                     raise LogyxError("usa sort come istruzione, non dentro un'espressione")
             args = ", ".join(self.expr(a) for a in e.args)

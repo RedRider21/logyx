@@ -192,6 +192,8 @@ class Interpreter:
         g.define("sqrt", lambda x: math.sqrt(x))
         g.define("index_of", lambda s, sub: s.find(sub))
         g.define("substring", lambda s, a, b: s[a:b])
+        g.define("split", lambda s, sep: s.split(sep))
+        g.define("join", lambda lista, sep: sep.join(lista))
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.

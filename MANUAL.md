@@ -181,6 +181,8 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `has(mappa, chiave)` | `true` se la mappa contiene la chiave |
 | `index_of(s, sub)` | Posizione (ASCII) della prima occorrenza di `sub` in `s`, oppure -1 |
 | `substring(s, a, b)` | Sottostringa (ASCII) da `a` incluso a `b` escluso |
+| `split(s, sep)` | Divide `s` sul separatore `sep` → lista di stringhe |
+| `join(lista, sep)` | Unisce una lista di stringhe con `sep` → stringa |
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |
