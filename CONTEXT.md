@@ -90,7 +90,15 @@ builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ce
 `replace`, manca solo regex).
 **`map`/`filter`/`reduce`: FATTI** (Fase 1 con funzioni *nominate* — `design/funzioni-ordine-superiore.md`).
 **Fase 2 (futura):** valori funzione e lambda inline (serve un tipo funzione nel linguaggio).
-**Prossimi fronti del nucleo:** record/struct (→ JSON), `match` generale, poi JSON/date, web→WASM.
+**Record/struct IN CORSO** (`design/record.md`): sintassi `record Nome { campo: tipo }`, costruzione
+posizionale `Nome(v1, v2)`, accesso `p.campo`. **Passo 1 FATTO** (clone sugli argomenti-variabile nelle
+chiamate, transpiler+compilatore, suite 27/27). **DA FARE — passi 2-5:**
+2) lexer/parser/AST: token `DOT`, keyword `record`, nodi `RecordDef` e `Field`;
+3) interprete: registrazione record, costruzione via Call, `ex_Field`, `logyx_str`;
+4) backend: emettere `#[derive(Clone)] struct ...` prima delle funzioni, costruzione `Nome{campo:...}`,
+   accesso `p.campo.clone()`, `ty()` accetta i nomi di record, tabella record per l'inferenza;
+5) esempio `native_record.logyx`, suite, MANUAL/manuale.html/sito/ROADMAP.
+Poi: `match` generale, JSON/date, web→WASM.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.
 

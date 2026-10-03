@@ -563,6 +563,13 @@ class RustTranspiler:
             raise LogyxError("sort nel transpiler v0 richiede una variabile lista come argomento")
         return f"{args[0].name}.sort();"
 
+    def _arg(self, a):
+        # Una variabile passata a una funzione la "muove"; cloniamo per riusabilità.
+        # Per i tipi Copy il clone è gratuito dopo l'ottimizzazione.
+        if isinstance(a, N.Identifier):
+            return self.expr(a) + ".clone()"
+        return self.expr(a)
+
     def _fn_name(self, args, n, idx, usage):
         base = usage.split("(")[0]
         if len(args) != n:
@@ -753,6 +760,6 @@ class RustTranspiler:
                             f".fold({self.expr(e.args[1])}, |acc, x| {fn}(acc, x))")
                 if nm == "sort":
                     raise LogyxError("usa sort come istruzione, non dentro un'espressione")
-            args = ", ".join(self.expr(a) for a in e.args)
+            args = ", ".join(self._arg(a) for a in e.args)
             return f"{self.expr(e.callee)}({args})"
         raise LogyxError(f"espressione non supportata dal transpiler v0: {t}")

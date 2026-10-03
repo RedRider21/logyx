@@ -915,6 +915,15 @@ impl Codegen {
         Ok((fmt, fargs))
     }
 
+    fn arg(&mut self, a: &Expr) -> R<String> {
+        // Una variabile passata a una funzione la muove; cloniamo per riusabilità
+        // (gratuito per i tipi Copy dopo l'ottimizzazione).
+        match a {
+            Expr::Ident(_) => Ok(format!("{}.clone()", self.expr(a)?)),
+            _ => self.expr(a),
+        }
+    }
+
     fn expr(&mut self, e: &Expr) -> R<String> {
         match e {
             Expr::Int(v) => Ok(format!("{v}i64")),
@@ -1216,7 +1225,7 @@ impl Codegen {
                 }
                 let mut a = Vec::new();
                 for arg in args {
-                    a.push(self.expr(arg)?);
+                    a.push(self.arg(arg)?);
                 }
                 Ok(format!("{}({})", self.expr(callee)?, a.join(", ")))
             }
