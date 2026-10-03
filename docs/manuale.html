@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuale di Logyx</title>
+<meta name="description" content="Manuale di riferimento del linguaggio Logyx: sintassi, costrutti, tipi, funzioni builtin e compilazione nativa.">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<style>
+  :root{
+    --bg:#f6f7fb; --panel:#ffffff; --text:#171a2b; --muted:#5a6076; --border:#e3e5ef;
+    --accent:#5b4be1; --code-bg:#0f1220; --code-text:#e7e9f5; --shadow:0 12px 40px rgba(23,26,43,.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c0e17; --panel:#141826; --text:#e8eaf3; --muted:#9aa3bd; --border:#252b3f;
+    --accent:#8b7dff; --code-bg:#0a0c15; --code-text:#e7e9f5; --shadow:0 14px 44px rgba(0,0,0,.45);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0c0e17; --panel:#141826; --text:#e8eaf3; --muted:#9aa3bd; --border:#252b3f;
+      --accent:#8b7dff; --code-bg:#0a0c15; --code-text:#e7e9f5; --shadow:0 14px 44px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.65; -webkit-font-smoothing:antialiased}
+  a{color:var(--accent); text-decoration:none} a:hover{text-decoration:underline}
+  header{position:sticky; top:0; z-index:10; backdrop-filter:blur(10px);
+    background:color-mix(in srgb, var(--bg) 82%, transparent); border-bottom:1px solid var(--border)}
+  .nav{max-width:860px; margin:0 auto; display:flex; align-items:center; gap:12px; padding:12px 20px}
+  .brand{display:flex; align-items:center; gap:10px; font-weight:700; font-size:1.15rem}
+  .brand svg{width:32px; height:32px; display:block}
+  .nav .spacer{flex:1}
+  .ctrl{display:inline-flex; gap:6px; background:var(--panel); border:1px solid var(--border);
+    border-radius:10px; padding:4px}
+  .ctrl button{all:unset; cursor:pointer; padding:5px 9px; border-radius:7px; font-size:.82rem;
+    font-weight:600; color:var(--muted)}
+  .ctrl button.active{background:color-mix(in srgb,var(--accent) 16%,transparent); color:var(--accent)}
+  main{max-width:860px; margin:0 auto; padding:28px 20px 72px}
+  h1{font-size:2rem; letter-spacing:-.02em; margin:.2em 0 .5em}
+  h2{font-size:1.5rem; margin:1.7em 0 .5em; padding-top:.3em; border-top:1px solid var(--border)}
+  h3{font-size:1.15rem; margin:1.4em 0 .4em}
+  p,li{color:var(--text)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9em;
+    background:color-mix(in srgb,var(--accent) 12%,transparent); color:var(--accent);
+    padding:1px 6px; border-radius:6px}
+  pre{background:var(--code-bg); border:1px solid var(--border); border-radius:12px; padding:16px 18px;
+    overflow:auto; box-shadow:var(--shadow)}
+  pre code{background:none; color:var(--code-text); padding:0; font-size:.88rem; line-height:1.6}
+  table{width:100%; border-collapse:collapse; margin:1em 0; font-size:.94rem}
+  th,td{text-align:left; padding:9px 12px; border-bottom:1px solid var(--border); vertical-align:top}
+  th{color:var(--muted); font-weight:700}
+  blockquote{margin:1em 0; padding:8px 16px; border-left:4px solid var(--accent);
+    background:color-mix(in srgb,var(--accent) 8%,transparent); border-radius:0 10px 10px 0; color:var(--muted)}
+  hr{border:none; border-top:1px solid var(--border); margin:2em 0}
+  .backlink{display:inline-block; margin-bottom:8px; color:var(--muted); font-weight:600; font-size:.92rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="nav">
+    <a class="brand" href="index.html" aria-label="Logyx">
+      <svg viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="120" fill="#5b4be1"/><path d="M494 1020 432 1188Q404 1265 366.5 1293.0Q329 1321 235 1321H123V1556H330Q512 1556 610.5 1479.0Q709 1402 777 1220L1235 0H877L654 588L419 0H61Z" transform="translate(64.70,216.00) scale(0.0977,-0.0977)" fill="#fff"/><circle cx="128" cy="44" r="15" fill="#22c3dd"/></svg>
+      <span>Logyx</span>
+    </a>
+    <div class="spacer"></div>
+    <div class="ctrl" role="group" aria-label="tema">
+      <button data-theme-btn="light" title="chiaro">☀</button>
+      <button data-theme-btn="dark" title="scuro">☾</button>
+    </div>
+  </div>
+</header>
+<main>
+  <a class="backlink" href="index.html">← Logyx</a>
+<h1 id="manuale-di-logyx">Manuale di Logyx</h1>
+<ul>
+<li><strong>Autore:</strong> Daniele Deplano (RedRider21) · <strong>Licenza:</strong> AGPL-3.0 · <strong>Aggiornato:</strong> 2026-09-28</li>
+</ul>
+<p>Manuale di riferimento del linguaggio <strong>Logyx</strong> e delle sue funzioni, aggiornato via via che il progetto
+cresce. Descrive ciò che il prototipo esegue davvero oggi; le parti non ancora fatte sono elencate in fondo.</p>
+<p>Legenda stato: ✅ implementato · 🟡 parziale · ⏳ previsto.</p>
+<hr />
+<h2 id="1-eseguire-un-programma">1. Eseguire un programma</h2>
+<p>Dal prototipo Python (cartella <code>prototype/</code>, serve solo Python 3.8+):</p>
+<table>
+<thead>
+<tr>
+<th>Comando</th>
+<th>Cosa fa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>python3 main.py &lt;file&gt;.logyx</code></td>
+<td>Esegue il programma (chiama <code>main()</code> se presente)</td>
+</tr>
+<tr>
+<td><code>python3 main.py render &lt;file&gt; &lt;percorso&gt;</code></td>
+<td>Stampa l'HTML reso da una route</td>
+</tr>
+<tr>
+<td><code>python3 main.py serve &lt;file&gt; [porta]</code></td>
+<td>Avvia un server HTTP</td>
+</tr>
+<tr>
+<td><code>python3 main.py build &lt;file&gt;</code></td>
+<td>Transpila un sottoinsieme tipizzato in Rust (compila se c'è <code>rustc</code>)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-sintassi-di-base">2. Sintassi di base ✅</h2>
+<ul>
+<li><strong>Non posizionale</strong>: i blocchi usano le graffe <code>{ }</code>; l'indentazione è solo estetica.</li>
+<li><strong>Punto e virgola opzionale</strong>: fine riga o <code>;</code>.</li>
+<li><strong>Commenti</strong>: <code>//</code> a riga singola, <code>/* ... */</code> a blocco.</li>
+<li><strong>Poche parentesi tonde</strong>: nei costrutti di controllo NON si usano <code>()</code> attorno alla condizione.</li>
+</ul>
+<pre><code>if x &gt; 0 { print(&quot;positivo&quot;) }      // non:  if (x &gt; 0)
+</code></pre>
+<h2 id="3-tipi-e-valori">3. Tipi e valori ✅</h2>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Esempi</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>int</code></td>
+<td><code>42</code>, <code>-7</code></td>
+<td>interi</td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td><code>3.14</code></td>
+<td>virgola mobile</td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td><code>true</code>, <code>false</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>string</code></td>
+<td><code>"ciao"</code></td>
+<td>con interpolazione <code>"{...}"</code></td>
+</tr>
+<tr>
+<td><code>nil</code></td>
+<td><code>nil</code></td>
+<td>assenza di valore</td>
+</tr>
+<tr>
+<td>lista <code>[T]</code></td>
+<td><code>[1, 2, 3]</code></td>
+<td>vedi §7</td>
+</tr>
+<tr>
+<td>mappa <code>{K: V}</code></td>
+<td><code>{"nome": "Ada"}</code></td>
+<td>vedi §7</td>
+</tr>
+</tbody>
+</table>
+<p>I tipi sono <strong>opzionali</strong> (gradual typing): si annotano dove servono, con <code>nome: tipo</code>.</p>
+<h2 id="4-variabili-costanti-operatori">4. Variabili, costanti, operatori ✅</h2>
+<pre><code>x = 10                 // dichiarazione + assegnazione
+nome: string = &quot;Ada&quot;   // con tipo esplicito
+const PI = 3.14159     // costante (non riassegnabile)
+</code></pre>
+<ul>
+<li>Aritmetici: <code>+  -  *  /  %</code> — fra interi <code>/</code> è divisione intera troncata verso zero (come Rust)</li>
+<li>Confronto: <code>==  !=  &lt;  &lt;=  &gt;  &gt;=</code></li>
+<li>Logici: <code>and  or  not</code></li>
+<li><code>+</code> fra stringhe (o stringa e numero) concatena.</li>
+<li>Assegnazione composta: <code>+=  -=  *=  /=  %=</code> — per esempio <code>x += 1</code> equivale a <code>x = x + 1</code>.</li>
+</ul>
+<h2 id="5-controllo-di-flusso">5. Controllo di flusso ✅</h2>
+<pre><code>if x &gt; 0 { ... } else if x == 0 { ... } else { ... }
+while x &gt; 0 { x = x - 1 }
+for n in numeri { print(n) }
+</code></pre>
+<p>Dentro <code>while</code> e <code>for</code> si possono usare <code>break</code> (esce dal ciclo) e <code>continue</code> (passa all'iterazione
+successiva).</p>
+<h2 id="6-funzioni">6. Funzioni ✅</h2>
+<pre><code>fn saluta(nome: string) -&gt; string {
+    return &quot;Ciao &quot; + nome
+}
+
+fn doppio(n) { return n * 2 }   // tipi opzionali
+
+fn main() { print(saluta(&quot;mondo&quot;)) }
+</code></pre>
+<p>Se esiste <code>main()</code>, viene chiamata automaticamente.</p>
+<h2 id="6b-moduli-e-import">6b. Moduli e import ✅</h2>
+<p><code>import "file.logyx"</code> porta nel programma le definizioni (funzioni) di un altro file. Il percorso è
+relativo al file che importa; l'estensione <code>.logyx</code> può essere omessa.</p>
+<pre><code>// lib_math.logyx
+fn quadrato(n) { return n * n }
+
+// main.logyx
+import &quot;lib_math.logyx&quot;
+fn main() { print(quadrato(9)) }     // 81
+</code></pre>
+<ul>
+<li>Ogni file è caricato <strong>una sola volta</strong> (import ripetuti o ciclici sono gestiti).</li>
+<li>Un nome di funzione definito in più moduli dà un errore chiaro (niente collisioni silenziose).</li>
+<li>Vale sia per l'interprete sia per la compilazione nativa (<code>build</code>): l'inferenza dei tipi funziona
+  anche fra le funzioni importate. Vedi <code>examples/use_import.logyx</code> e <code>examples/lib_math.logyx</code>.</li>
+</ul>
+<h2 id="6c-gestione-degli-errori">6c. Gestione degli errori ✅</h2>
+<p>Gli errori sono <strong>valori</strong> (modello Result), non eccezioni. Una funzione che può fallire lo dichiara con
+<code>-&gt; T | error</code> (o lo si lascia dedurre): restituisce un valore di tipo <code>T</code> <strong>oppure</strong> un errore.</p>
+<table>
+<thead>
+<tr>
+<th>Costrutto</th>
+<th>Effetto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>fail "messaggio"</code></td>
+<td>Esce dalla funzione restituendo un errore con quel messaggio</td>
+</tr>
+<tr>
+<td><code>espr?</code></td>
+<td>Se <code>espr</code> è un errore, lo propaga (esce dalla funzione); altrimenti dà il valore</td>
+</tr>
+<tr>
+<td><code>match espr { ok v { … } err e { … } }</code></td>
+<td>Gestisce i due casi: <code>v</code> è il valore, <code>e</code> è il messaggio d'errore</td>
+</tr>
+</tbody>
+</table>
+<pre><code>fn dividi(a, b) -&gt; int | error {
+    if b == 0 { fail &quot;divisione per zero&quot; }
+    return a / b
+}
+
+fn meta(x) -&gt; int | error {
+    return dividi(x, 2)?          // propaga se dividi fallisce
+}
+
+fn main() {
+    match dividi(10, 0) {
+        ok v  { print(&quot;risultato = {v}&quot;) }
+        err e { print(&quot;errore: {e}&quot;) }
+    }
+}
+</code></pre>
+<p>Vale sia per l'interprete sia per <code>build</code>: in Rust <code>-&gt; T | error</code> diventa <code>Result&lt;T, String&gt;</code>, <code>fail</code>
+diventa <code>return Err(...)</code>, <code>?</code> è l'omonimo operatore di Rust e <code>match ok/err</code> diventa <code>match Ok/Err</code>.
+Il tipo fallibile è <strong>dedotto</strong> anche senza annotazione, se il corpo usa <code>fail</code> o <code>?</code>. Vedi
+<code>examples/errori.logyx</code>.</p>
+<h2 id="7-collezioni">7. Collezioni 🟡</h2>
+<p>Liste e mappe: letterali, indicizzazione, <code>len</code>, iterazione con <code>for</code>.</p>
+<pre><code>xs = [3, 1, 2]
+xs[0]            // 3
+len(xs)          // 3
+for x in xs { ... }
+
+m = {&quot;nome&quot;: &quot;Ada&quot;}
+m[&quot;nome&quot;]        // &quot;Ada&quot;
+</code></pre>
+<p>Mutazioni: <code>push(lista, x)</code> aggiunge <code>x</code> in coda, <code>remove(lista, i)</code> toglie l'elemento all'indice <code>i</code>,
+<code>sort(lista)</code> ordina in place. Altre operazioni: <code>sum(lista)</code>, <code>contains(lista, x)</code>.
+Non ancora: <code>map</code>/<code>filter</code>/<code>reduce</code>, slicing, iterazione sui valori di mappa. ⏳</p>
+<h2 id="8-stringhe-e-interpolazione">8. Stringhe e interpolazione ✅</h2>
+<pre><code>nome = &quot;Logyx&quot;
+print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
+</code></pre>
+<h2 id="9-funzioni-builtin">9. Funzioni builtin ✅</h2>
+<table>
+<thead>
+<tr>
+<th>Funzione</th>
+<th>Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>print(x)</code></td>
+<td>Stampa <code>x</code> (con conversione leggibile)</td>
+</tr>
+<tr>
+<td><code>len(x)</code></td>
+<td>Lunghezza di lista, mappa o stringa</td>
+</tr>
+<tr>
+<td><code>str(x)</code></td>
+<td>Converte in stringa</td>
+</tr>
+<tr>
+<td><code>range(n)</code> / <code>range(a, b)</code></td>
+<td>Lista <code>0 .. n-1</code>, oppure <code>a .. b-1</code></td>
+</tr>
+<tr>
+<td><code>push(lista, x)</code></td>
+<td>Aggiunge <code>x</code> in coda alla lista (la muta); usala come istruzione</td>
+</tr>
+<tr>
+<td><code>remove(lista, i)</code></td>
+<td>Toglie l'elemento all'indice <code>i</code> (muta la lista); usala come istruzione</td>
+</tr>
+<tr>
+<td><code>abs(x)</code></td>
+<td>Valore assoluto di <code>x</code> (int o float)</td>
+</tr>
+<tr>
+<td><code>min(a, b)</code> / <code>max(a, b)</code></td>
+<td>Il minore / il maggiore fra due numeri dello stesso tipo</td>
+</tr>
+<tr>
+<td><code>upper(s)</code> / <code>lower(s)</code></td>
+<td>La stringa <code>s</code> in maiuscolo / minuscolo</td>
+</tr>
+<tr>
+<td><code>contains(lista, x)</code></td>
+<td><code>true</code> se la lista contiene il valore <code>x</code></td>
+</tr>
+<tr>
+<td><code>trim(s)</code></td>
+<td>La stringa <code>s</code> senza gli spazi iniziali e finali</td>
+</tr>
+<tr>
+<td><code>pow(base, esp)</code></td>
+<td><code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>)</td>
+</tr>
+<tr>
+<td><code>floor(x)</code> / <code>ceil(x)</code></td>
+<td>Arrotonda verso il basso / verso l'alto (ritorna un intero)</td>
+</tr>
+<tr>
+<td><code>sum(lista)</code></td>
+<td>Somma degli elementi (lista di interi)</td>
+</tr>
+<tr>
+<td><code>sort(lista)</code></td>
+<td>Ordina la lista in ordine crescente (la muta); usala come istruzione</td>
+</tr>
+</tbody>
+</table>
+<h2 id="10-web-lato-server">10. Web lato server ✅</h2>
+<ul>
+<li><code>route "/percorso" { ... }</code> definisce un endpoint; il corpo gira sul server.</li>
+<li><code>render &lt;html&gt;...&lt;/html&gt;</code> produce HTML con:</li>
+<li><strong>interpolazione</strong> <code>{espressione}</code> e <strong>escaping automatico</strong> dei valori;</li>
+<li><strong>blocchi di controllo</strong>: <code>{ for x in xs { ... } }</code> e <code>{ if cond { ... } else { ... } }</code>.</li>
+</ul>
+<pre><code>route &quot;/todo&quot; {
+    voci = [&quot;pane&quot;, &quot;latte&quot;]
+    render &lt;html&gt;&lt;body&gt;
+      &lt;ul&gt;{ for v in voci { &lt;li&gt;{v}&lt;/li&gt; } }&lt;/ul&gt;
+    &lt;/body&gt;&lt;/html&gt;
+}
+</code></pre>
+<p>Nota: i tag void vanno auto-chiusi (<code>&lt;br/&gt;</code>). 🟡</p>
+<h2 id="11-isole-client-javascript">11. Isole client (→ JavaScript) ✅</h2>
+<p>Il codice fra <code>@start-client</code> e <code>@end-client</code> è compilato a JavaScript ed emesso in uno <code>&lt;script&gt;</code>.</p>
+<p>DSL client v0:</p>
+<table>
+<thead>
+<tr>
+<th>Costrutto</th>
+<th>Effetto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nome = &lt;espr&gt;</code></td>
+<td>stato / assegnazione</td>
+</tr>
+<tr>
+<td><code>on "&lt;evento&gt;" of "&lt;sel&gt;" { ... }</code></td>
+<td>gestore di evento (<code>addEventListener</code>)</td>
+</tr>
+<tr>
+<td><code>set text of "&lt;sel&gt;" to &lt;espr&gt;</code></td>
+<td>aggiorna <code>textContent</code></td>
+</tr>
+<tr>
+<td><code>set html of "&lt;sel&gt;" to &lt;espr&gt;</code></td>
+<td>aggiorna <code>innerHTML</code></td>
+</tr>
+<tr>
+<td><code>if</code> / <code>for</code> / <code>while</code></td>
+<td>controllo di flusso (tradotto in JS)</td>
+</tr>
+</tbody>
+</table>
+<p>Un piccolo runtime rende disponibili anche nel client <code>range</code>, <code>len</code>, <code>str</code>, <code>print</code>.
+Target WASM: previsto. ⏳</p>
+<h2 id="12-compilazione-nativa-transpiler-rust">12. Compilazione nativa (transpiler Rust) 🟡</h2>
+<p><code>build</code> traduce un <strong>sottoinsieme tipizzato</strong> in Rust, che <code>rustc</code> compila a eseguibile nativo.</p>
+<ul>
+<li>Supporta: funzioni con tipi (<code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code>), aritmetica, confronti, logica,
+  concatenazione di stringhe con <code>+</code>, <code>if</code>/<code>else</code>, <code>while</code>, <code>for x in range(n)</code> o <code>range(a, b)</code>, <code>return</code>,
+  <code>print</code>, ricorsione. Gli interi sono <code>i64</code>; <code>/</code> è divisione intera.</li>
+<li><strong>Tipi di ritorno e dei parametri possono essere omessi</strong>: vengono dedotti dall'uso —
+  aritmetica → <code>int</code>/<code>float</code>, concatenazione con <code>+</code> → <code>string</code>, <code>not</code>/<code>and</code>/<code>or</code> o uso come condizione
+  → <code>bool</code>, confronti e chiamate propagano il tipo dell'altro lato. L'annotazione resta possibile e serve
+  solo quando l'uso non basta (es. un parametro che compare unicamente in un'interpolazione).</li>
+<li><strong>Liste di scalari</strong> (<code>int</code>/<code>float</code>/<code>bool</code>): letterale <code>[...]</code> → <code>Vec&lt;T&gt;</code>, indicizzazione <code>xs[i]</code>,
+  <code>len(xs)</code>, e <code>for x in xs</code> (elementi presi per valore). Usale come variabili locali. Vedi
+  <code>examples/native_list.logyx</code>.</li>
+<li><strong>Mappe con valori scalari</strong>: letterale <code>{k: v}</code> → <code>HashMap&lt;K, V&gt;</code>, accesso <code>m[k]</code>, <code>len(m)</code>.
+  Le chiavi possono essere stringhe o scalari; i valori scalari. Vedi <code>examples/native_map.logyx</code>.</li>
+<li>Non ancora: liste/mappe di stringhe, iterazione su mappa, collezioni come parametro/ritorno di
+  funzione, <code>route</code>/<code>render</code>, codice dinamico senza tipi. In quei casi dà un errore chiaro.</li>
+</ul>
+<pre><code>fn fib(n) {                       // nessuna annotazione
+    if n &lt; 2 { return n }
+    return fib(n - 1) + fib(n - 2)
+}
+</code></pre>
+<p>→ genera <code>fn fib(n: i64) -&gt; i64 { ... }</code> in Rust: <code>n</code> è dedotto <code>int</code> dall'uso (<code>n &lt; 2</code>, <code>n - 1</code>),
+il ritorno <code>int</code> dal corpo. Vedi <code>examples/native_infer.logyx</code>.</p>
+<h2 id="13-cosa-non-ce-ancora">13. Cosa non c'è ancora ⏳</h2>
+<ul>
+<li>Mutazioni/metodi su liste, mappe e stringhe; libreria standard.</li>
+<li>Moduli / import; gestione degli errori nel linguaggio.</li>
+<li>Lettura input nella DSL client (<code>value of ...</code>); target WASM del client.</li>
+<li>Transpiler Rust completo (oltre il sottoinsieme tipizzato).</li>
+</ul>
+</main>
+<script>
+(function(){
+  function store(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+  function load(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+  function applyTheme(mode){
+    if(mode==="light"||mode==="dark") document.documentElement.setAttribute("data-theme",mode);
+    else document.documentElement.removeAttribute("data-theme");
+    document.querySelectorAll("[data-theme-btn]").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-theme-btn")===mode);
+    });
+    store("logyx-theme",mode||"");
+  }
+  document.querySelectorAll("[data-theme-btn]").forEach(function(b){
+    b.addEventListener("click",function(){applyTheme(b.getAttribute("data-theme-btn"));});
+  });
+  applyTheme(load("logyx-theme")||"");
+})();
+</script>
+</body>
+</html>

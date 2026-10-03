@@ -10,7 +10,7 @@ Il nome unisce la radice greca **λόγος** (parola, ragione, linguaggio) al s
 - **Autore:** Daniele Deplano (RedRider21)
 - **Licenza:** AGPL-3.0 (vedi `LICENSE`)
 - **Stato:** **versione 0** — prototipo funzionante in Python (interprete + render web + transpiler Rust su sottoinsieme tipizzato)
-- **Sito:** https://redrider21.github.io/logyx/
+- **Sito:** https://redrider21.github.io/logyx/ · **Manuale online:** https://redrider21.github.io/logyx/manuale.html
 - **Documento di design online:** https://claude.ai/code/artifact/0aa46f19-cef5-4728-8e26-4b83867259cd
 
 ## In due parole
