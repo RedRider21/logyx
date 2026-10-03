@@ -1,0 +1,25 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Collezioni di stringhe: liste e mappe di String. Interprete e nativo.
+//   python3 main.py       ../examples/native_strlist.logyx
+//   python3 main.py build ../examples/native_strlist.logyx
+
+fn main() {
+    nomi = ["Carla", "Ada", "Bruno"]
+    push(nomi, "Dino")
+    print("quanti = {len(nomi)}")
+
+    sort(nomi)
+    print("primo in ordine = {nomi[0]}")
+    for n in nomi {
+        print("- {n}")
+    }
+    if contains(nomi, "Ada") {
+        print("c'è Ada")
+    }
+
+    citta = {"Ada": "Londra", "Bruno": "Roma"}
+    chiave = "Ada"
+    print("{chiave} vive a {citta[chiave]}")
+}

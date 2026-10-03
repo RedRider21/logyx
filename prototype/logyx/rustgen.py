@@ -532,9 +532,9 @@ class RustTranspiler:
                 lo, hi = self.expr(it.args[0]), self.expr(it.args[1])
             body = self.block(s.body, declared, indent + 1)
             return pad + f"for {s.var} in ({lo})..({hi}) {{\n" + body + "\n" + pad + "}"
-        # iterazione su lista: elementi Copy (int/float/bool), presi per valore
+        # iterazione su lista: per valore; cloned() vale sia per gli scalari sia per String
         body = self.block(s.body, declared, indent + 1)
-        return pad + f"for {s.var} in ({self.expr(it)}).iter().copied() {{\n" + body + "\n" + pad + "}"
+        return pad + f"for {s.var} in ({self.expr(it)}).iter().cloned() {{\n" + body + "\n" + pad + "}"
 
     def push_call(self, args):
         if len(args) != 2:
@@ -623,22 +623,12 @@ class RustTranspiler:
                     "il transpiler v0 non deduce il tipo di una lista vuota; "
                     "usa una lista con almeno un elemento"
                 )
-            if any(self._stringish(x) for x in e.elements):
-                raise LogyxError(
-                    "il transpiler v0 gestisce liste di scalari (int/float/bool); "
-                    "le liste di stringhe non sono ancora supportate"
-                )
             return "vec![" + ", ".join(self.expr(x) for x in e.elements) + "]"
         if t == "MapLit":
             if not e.pairs:
                 raise LogyxError(
                     "il transpiler v0 non deduce il tipo di una mappa vuota; "
                     "usa una mappa con almeno una coppia"
-                )
-            if any(self._stringish(v) for _, v in e.pairs):
-                raise LogyxError(
-                    "il transpiler v0 gestisce mappe con valori scalari (int/float/bool); "
-                    "i valori stringa non sono ancora supportati"
                 )
             name = f"__m{self._tmp}"
             self._tmp += 1
@@ -650,8 +640,8 @@ class RustTranspiler:
             return f"({self.expr(e.operand)})?"
         if t == "Index":
             if isinstance(e.target, N.Identifier) and getattr(self, "kinds", {}).get(e.target.name) == "map":
-                return f"(*{self.expr(e.target)}.get(&({self.expr(e.index)})).unwrap())"
-            return f"{self.expr(e.target)}[({self.expr(e.index)}) as usize]"
+                return f"{self.expr(e.target)}.get(&({self.expr(e.index)})).unwrap().clone()"
+            return f"{self.expr(e.target)}[({self.expr(e.index)}) as usize].clone()"
         if t == "Call":
             if isinstance(e.callee, N.Identifier):
                 nm = e.callee.name

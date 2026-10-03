@@ -423,12 +423,12 @@ Target WASM: previsto. ⏳</p>
   aritmetica → <code>int</code>/<code>float</code>, concatenazione con <code>+</code> → <code>string</code>, <code>not</code>/<code>and</code>/<code>or</code> o uso come condizione
   → <code>bool</code>, confronti e chiamate propagano il tipo dell'altro lato. L'annotazione resta possibile e serve
   solo quando l'uso non basta (es. un parametro che compare unicamente in un'interpolazione).</li>
-<li><strong>Liste di scalari</strong> (<code>int</code>/<code>float</code>/<code>bool</code>): letterale <code>[...]</code> → <code>Vec&lt;T&gt;</code>, indicizzazione <code>xs[i]</code>,
-  <code>len(xs)</code>, e <code>for x in xs</code> (elementi presi per valore). Usale come variabili locali. Vedi
-  <code>examples/native_list.logyx</code>.</li>
-<li><strong>Mappe con valori scalari</strong>: letterale <code>{k: v}</code> → <code>HashMap&lt;K, V&gt;</code>, accesso <code>m[k]</code>, <code>len(m)</code>.
-  Le chiavi possono essere stringhe o scalari; i valori scalari. Vedi <code>examples/native_map.logyx</code>.</li>
-<li>Non ancora: liste/mappe di stringhe, iterazione su mappa, collezioni come parametro/ritorno di
+<li><strong>Liste</strong> (di <code>int</code>/<code>float</code>/<code>bool</code> <strong>o <code>string</code></strong>): letterale <code>[...]</code> → <code>Vec&lt;T&gt;</code>, indicizzazione
+  <code>xs[i]</code>, <code>len(xs)</code>, e <code>for x in xs</code>. Usale come variabili locali. Vedi <code>examples/native_list.logyx</code>
+  e <code>examples/native_strlist.logyx</code>.</li>
+<li><strong>Mappe</strong>: letterale <code>{k: v}</code> → <code>HashMap&lt;K, V&gt;</code>, accesso <code>m[k]</code>, <code>len(m)</code>, <code>has(m, k)</code>. Chiavi e
+  valori possono essere scalari <strong>o stringhe</strong>. Vedi <code>examples/native_map.logyx</code>.</li>
+<li>Non ancora: iterazione su mappa (<code>keys</code>/<code>values</code>), collezioni come parametro/ritorno di
   funzione, <code>route</code>/<code>render</code>, codice dinamico senza tipi. In quei casi dà un errore chiaro.</li>
 </ul>
 <pre><code>fn fib(n) {                       // nessuna annotazione

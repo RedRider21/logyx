@@ -13,7 +13,7 @@ EXAMPLES="$ROOT/examples"
 LOGYXC="$ROOT/compiler/target/release/logyxc"
 
 # Esempi supportati dal compilatore nativo (niente costrutti web).
-CASES="native_fib native_hello native_range native_infer native_list native_map native_push native_math native_text native_remove native_contains native_trim native_pow native_breakcont native_compound native_listops native_round native_has native_sqrt native_strops use_import errori"
+CASES="native_fib native_hello native_range native_infer native_list native_map native_push native_math native_text native_remove native_contains native_trim native_pow native_breakcont native_compound native_listops native_round native_has native_sqrt native_strops native_strlist use_import errori"
 
 echo "== build del compilatore Rust (release) =="
 ( cd "$ROOT/compiler" && cargo build --release ) >/dev/null 2>&1 \

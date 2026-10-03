@@ -811,10 +811,10 @@ impl Codegen {
                 }
             }
         }
-        // iterazione su lista (elementi Copy, per valore)
+        // iterazione su lista (per valore; cloned() vale per scalari e per String)
         let it = self.expr(iterable)?;
         let b = self.block(body, declared, indent + 1)?;
-        Ok(format!("{pad}for {var} in ({it}).iter().copied() {{\n{b}\n{pad}}}"))
+        Ok(format!("{pad}for {var} in ({it}).iter().cloned() {{\n{b}\n{pad}}}"))
     }
 
     fn push_call(&mut self, args: &[Expr]) -> R<String> {
@@ -941,11 +941,6 @@ impl Codegen {
                         "il backend non deduce il tipo di una lista vuota; usa almeno un elemento",
                     ));
                 }
-                if els.iter().any(stringish) {
-                    return Err(LogyxError::new(
-                        "il backend gestisce liste di scalari; le liste di stringhe non sono ancora supportate",
-                    ));
-                }
                 let mut parts = Vec::new();
                 for x in els {
                     parts.push(self.expr(x)?);
@@ -956,11 +951,6 @@ impl Codegen {
                 if ps.is_empty() {
                     return Err(LogyxError::new(
                         "il backend non deduce il tipo di una mappa vuota; usa almeno una coppia",
-                    ));
-                }
-                if ps.iter().any(|(_, v)| stringish(v)) {
-                    return Err(LogyxError::new(
-                        "il backend gestisce mappe con valori scalari; i valori stringa non sono ancora supportati",
                     ));
                 }
                 let name = format!("__m{}", self.tmp);
@@ -978,14 +968,14 @@ impl Codegen {
                 if let Expr::Ident(n) = &**target {
                     if self.kinds.get(n).map(|s| s.as_str()) == Some("map") {
                         return Ok(format!(
-                            "(*{}.get(&({})).unwrap())",
+                            "{}.get(&({})).unwrap().clone()",
                             self.expr(target)?,
                             self.expr(index)?
                         ));
                     }
                 }
                 Ok(format!(
-                    "{}[({}) as usize]",
+                    "{}[({}) as usize].clone()",
                     self.expr(target)?,
                     self.expr(index)?
                 ))

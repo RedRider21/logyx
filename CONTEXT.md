@@ -86,8 +86,9 @@ builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ce
 - **record/struct** (tipi con campi) → sbloccano JSON e modellazione dati;
 - `enum` e `match` generale (oggi `match` è solo `ok`/`err`).
 
-**Bloccati finché non arrivano i fronti grossi:** `split`/`join`/`map`/`filter`/`reduce` richiedono le
-**collezioni di stringhe** (ownership in Rust) o le **closure**.
+**Collezioni di stringhe: FATTE** (opzione "clone uniforme", `design/collezioni-stringhe.md`): liste e
+mappe di `String` ora supportate. Prossimo sblocco immediato: `split`/`join`.
+**Ancora bloccati dalle closure:** `map`/`filter`/`reduce`.
 
 **Orizzonte:** completato il nucleo + una libreria standard scritta in Logyx, puntare al **self-hosting**
 (compilatore in Logyx), poi capacità web → WASM.

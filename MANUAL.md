@@ -233,12 +233,12 @@ Target WASM: previsto. ⏳
   aritmetica → `int`/`float`, concatenazione con `+` → `string`, `not`/`and`/`or` o uso come condizione
   → `bool`, confronti e chiamate propagano il tipo dell'altro lato. L'annotazione resta possibile e serve
   solo quando l'uso non basta (es. un parametro che compare unicamente in un'interpolazione).
-- **Liste di scalari** (`int`/`float`/`bool`): letterale `[...]` → `Vec<T>`, indicizzazione `xs[i]`,
-  `len(xs)`, e `for x in xs` (elementi presi per valore). Usale come variabili locali. Vedi
-  `examples/native_list.logyx`.
-- **Mappe con valori scalari**: letterale `{k: v}` → `HashMap<K, V>`, accesso `m[k]`, `len(m)`.
-  Le chiavi possono essere stringhe o scalari; i valori scalari. Vedi `examples/native_map.logyx`.
-- Non ancora: liste/mappe di stringhe, iterazione su mappa, collezioni come parametro/ritorno di
+- **Liste** (di `int`/`float`/`bool` **o `string`**): letterale `[...]` → `Vec<T>`, indicizzazione
+  `xs[i]`, `len(xs)`, e `for x in xs`. Usale come variabili locali. Vedi `examples/native_list.logyx`
+  e `examples/native_strlist.logyx`.
+- **Mappe**: letterale `{k: v}` → `HashMap<K, V>`, accesso `m[k]`, `len(m)`, `has(m, k)`. Chiavi e
+  valori possono essere scalari **o stringhe**. Vedi `examples/native_map.logyx`.
+- Non ancora: iterazione su mappa (`keys`/`values`), collezioni come parametro/ritorno di
   funzione, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```
