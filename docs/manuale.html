@@ -389,10 +389,17 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <td><code>reduce(lista, init, f)</code></td>
 <td>Accumula da <code>init</code> applicando <code>f(acc, elemento)</code></td>
 </tr>
+<tr>
+<td><code>to_json(x)</code></td>
+<td>Serializza <code>x</code> (int, bool, string o record) in una stringa JSON</td>
+</tr>
 </tbody>
 </table>
 <p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione è il <strong>nome di una funzione definita con <code>fn</code></strong> (non una lambda
-inline, per ora). Esempi: <code>examples/native_mapfilter.logyx</code>, <code>examples/native_reduce.logyx</code>.
+inline, per ora). Esempi: <code>examples/native_mapfilter.logyx</code>, <code>examples/native_reduce.logyx</code>.</p>
+<p><code>to_json</code> serializza <strong>int</strong>, <strong>bool</strong>, <strong>string</strong> e <strong>record</strong> (anche annidati), in formato compatto;
+le stringhe sono "escaped". Non ancora: <code>float</code>, liste/mappe, e <code>from_json</code> (deserializzazione). Vedi
+<code>examples/native_json.logyx</code>.
 | <code>pow(base, esp)</code> | <code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>) |
 | <code>floor(x)</code> / <code>ceil(x)</code> | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | <code>sqrt(x)</code> | Radice quadrata (ritorna un float) |

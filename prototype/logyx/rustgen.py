@@ -13,6 +13,23 @@ from .errors import LogyxError
 
 _TYPES = {"int": "i64", "float": "f64", "bool": "bool", "string": "String"}
 
+_JSON_HELPER = r'''fn __json_str(s: &str) -> String {
+    let mut out = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\t' => out.push_str("\\t"),
+            '\r' => out.push_str("\\r"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}'''
+
 
 def _rust_str(s):
     """Letterale di stringa Rust valido (UTF-8 diretto, escape alla Rust).
@@ -67,13 +84,18 @@ class RustTranspiler:
             self.func_rets[f.name] = rt or None
             self.fallible[f.name] = fal
         self._tmp = 0
+        self.uses_json = False
         self._infer(funcs)
-        out = []
+        struct_defs = []
         for name in sorted(self.records):
             fields = ", ".join(f"{fn}: {self.ty(ft)}" for fn, ft in self.records[name])
-            out.append(f"#[derive(Clone)]\nstruct {name} {{ {fields} }}")
-        out += [self.func(f) for f in funcs]
-        return "\n\n".join(out) + "\n"
+            struct_defs.append(f"#[derive(Clone)]\nstruct {name} {{ {fields} }}")
+        func_defs = [self.func(f) for f in funcs]
+        pieces = []
+        if self.uses_json:
+            pieces.append(_JSON_HELPER)
+        pieces += struct_defs + func_defs
+        return "\n\n".join(pieces) + "\n"
 
     # --- rilevazione di fallibilità (presenza di `fail` o `?`) ---
 
@@ -150,6 +172,7 @@ class RustTranspiler:
             ret_str = "" if ret == "__void__" else f" -> {self.ty(ret)}"
         declared = set(f.params)
         self.kinds = {}  # nome -> "list" | "map" (categoria delle variabili locali)
+        self.cur_types = {n: t for n, t in pt.items() if t}  # tipi noti (param + locali)
         body = self.block(f.body, declared, 1)
         return f"fn {f.name}({params}){ret_str} {{\n{body}\n}}"
 
@@ -439,7 +462,7 @@ class RustTranspiler:
                     if tt is not None:
                         return tt
                 return None
-            if name in ("upper", "lower", "trim", "substring", "join", "replace"):
+            if name in ("upper", "lower", "trim", "substring", "join", "replace", "to_json"):
                 return "string"
             if name in ("contains", "has"):
                 return "bool"
@@ -518,6 +541,9 @@ class RustTranspiler:
             k = self._value_kind(s.value)
             if k:
                 self.kinds[s.name] = k
+            vt = self._type_of(s.value, self.cur_types)
+            if vt:
+                self.cur_types[s.name] = vt
             kw = "let" if s.is_const else "let mut"
             return pad + f"{kw} {s.name} = {self.expr(s.value)};"
         if t == "Assign":
@@ -527,6 +553,9 @@ class RustTranspiler:
             k = self._value_kind(s.value)
             if k:
                 self.kinds[name] = k
+            vt = self._type_of(s.value, self.cur_types)
+            if vt:
+                self.cur_types[name] = vt
             val = self.expr(s.value)
             if name in declared:
                 return pad + f"{name} = {val};"
@@ -583,6 +612,22 @@ class RustTranspiler:
         if not isinstance(args[0], N.Identifier):
             raise LogyxError("sort nel transpiler v0 richiede una variabile lista come argomento")
         return f"{args[0].name}.sort();"
+
+    def _json_value(self, rust_expr, type_str):
+        if type_str in ("int", "bool"):
+            return f'format!("{{}}", ({rust_expr}))'
+        if type_str == "string":
+            return f"__json_str(&({rust_expr}))"
+        if type_str in getattr(self, "records", {}):
+            parts, args = [], []
+            for fn, ft in self.records[type_str]:
+                parts.append('\\"' + fn + '\\":{}')
+                args.append(self._json_value(f"({rust_expr}).{fn}", ft))
+            fmt = "{{" + ",".join(parts) + "}}"
+            return 'format!("' + fmt + '", ' + ", ".join(args) + ")"
+        raise LogyxError(
+            f"to_json non supporta il tipo '{type_str}' (v0: int, bool, string, record)"
+        )
 
     def _make_record_expr(self, name, args):
         fields = self.records[name]
@@ -778,6 +823,14 @@ class RustTranspiler:
                         raise LogyxError("replace accetta tre argomenti: replace(stringa, da, a)")
                     return (f"({self.expr(e.args[0])}).replace(({self.expr(e.args[1])}).as_str(), "
                             f"({self.expr(e.args[2])}).as_str())")
+                if nm == "to_json":
+                    if len(e.args) != 1:
+                        raise LogyxError("to_json accetta un solo argomento")
+                    ta = self._type_of(e.args[0], getattr(self, "cur_types", {}))
+                    if not ta:
+                        raise LogyxError("to_json: non riesco a dedurre il tipo dell'argomento")
+                    self.uses_json = True
+                    return self._json_value(self.expr(e.args[0]), ta)
                 if nm == "map":
                     fn = self._fn_name(e.args, 2, 1, "map(lista, funzione)")
                     return (f"({self.expr(e.args[0])}).iter().cloned().map(|x| {fn}(x))"

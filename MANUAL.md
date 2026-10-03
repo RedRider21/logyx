@@ -214,9 +214,14 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `map(lista, f)` | Nuova lista con la funzione `f` applicata a ogni elemento |
 | `filter(lista, p)` | Gli elementi della lista per cui la funzione `p` è vera |
 | `reduce(lista, init, f)` | Accumula da `init` applicando `f(acc, elemento)` |
+| `to_json(x)` | Serializza `x` (int, bool, string o record) in una stringa JSON |
 
 In `map`/`filter`/`reduce` la funzione è il **nome di una funzione definita con `fn`** (non una lambda
 inline, per ora). Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`.
+
+`to_json` serializza **int**, **bool**, **string** e **record** (anche annidati), in formato compatto;
+le stringhe sono "escaped". Non ancora: `float`, liste/mappe, e `from_json` (deserializzazione). Vedi
+`examples/native_json.logyx`.
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

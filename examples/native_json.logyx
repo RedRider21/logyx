@@ -1,0 +1,28 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// to_json: serializzazione in JSON di scalari e record. Interprete e nativo.
+//   python3 main.py       ../examples/native_json.logyx
+//   python3 main.py build ../examples/native_json.logyx
+
+record Persona {
+    nome: string,
+    eta: int
+}
+
+record Squadra {
+    nome: string,
+    capitano: Persona,
+    attiva: bool
+}
+
+fn main() {
+    ada = Persona("Ada", 36)
+    print(to_json(ada))
+
+    s = Squadra("Alfa", Persona("Guido", 45), true)
+    print(to_json(s))
+
+    print(to_json(42))
+    print(to_json("con \"virgolette\" e \\ backslash"))
+}

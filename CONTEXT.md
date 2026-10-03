@@ -95,8 +95,12 @@ builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ce
 → `#[derive(Clone)] struct`. Interprete + nativo, suite 28/28 (`examples/native_record.logyx`).
 Limiti v0: campi scalari/string (no record annidati, no liste/mappe di record — prossimo giro di
 "clone uniforme" sui contenitori con elemento record).
-**Prossimi fronti del nucleo:** `match` generale (oggi solo `ok`/`err`); poi JSON/date; web→WASM.
-Fase 2 funzioni: valori funzione e lambda inline.
+**JSON: serializzazione FATTA** (`design/json.md`): `to_json(x)` per int/bool/string/record (anche
+annidati), formato compatto, escape; ambiente dei tipi locali aggiunto per la generazione type-directed.
+Interprete+nativo, suite 29/29 (`examples/native_json.logyx`). **DA FARE:** `from_json` (parser JSON),
+float/liste in `to_json`.
+**Prossimi fronti del nucleo:** `match` generale (oggi solo `ok`/`err`); date/tempo; web→WASM.
+Fase 2 funzioni: valori funzione e lambda inline. Contenitori di record (liste/mappe di record).
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.
 

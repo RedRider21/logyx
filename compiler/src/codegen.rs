@@ -32,6 +32,23 @@ fn rust_str_lit(s: &str) -> String {
     format!("{:?}", s)
 }
 
+const JSON_HELPER: &str = r#"fn __json_str(s: &str) -> String {
+    let mut out = String::from("\"");
+    for c in s.chars() {
+        match c {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\t' => out.push_str("\\t"),
+            '\r' => out.push_str("\\r"),
+            c if (c as u32) < 0x20 => out.push_str(&format!("\\u{:04x}", c as u32)),
+            c => out.push(c),
+        }
+    }
+    out.push('"');
+    out
+}"#;
+
 fn fn_name(args: &[Expr], n: usize, idx: usize, usage: &str) -> R<String> {
     let base = usage.split('(').next().unwrap_or(usage);
     if args.len() != n {
@@ -110,6 +127,8 @@ pub struct Codegen {
     tmp: usize,
     cur_fallible: bool,
     kinds: HashMap<String, String>,
+    cur_types: HashMap<String, Option<String>>,
+    uses_json: bool,
 }
 
 impl Codegen {
@@ -123,6 +142,8 @@ impl Codegen {
             tmp: 0,
             cur_fallible: false,
             kinds: HashMap::new(),
+            cur_types: HashMap::new(),
+            uses_json: false,
         }
     }
 
@@ -176,25 +197,33 @@ impl Codegen {
             self.fallible.insert(f.name.clone(), fal);
         }
         self.infer(&funcs);
-        let mut out = Vec::new();
+        self.uses_json = false;
         // struct dei record, prima delle funzioni
-        let mut rec_names: Vec<&String> = self.records.keys().collect();
+        let mut structs = Vec::new();
+        let mut rec_names: Vec<String> = self.records.keys().cloned().collect();
         rec_names.sort();
-        for name in rec_names {
+        for name in &rec_names {
             let fields = self.records[name].clone();
             let mut parts = Vec::new();
             for (fname, ftype) in &fields {
                 parts.push(format!("{}: {}", fname, self.rust_type(ftype)?));
             }
-            out.push(format!(
+            structs.push(format!(
                 "#[derive(Clone)]\nstruct {} {{ {} }}",
                 name,
                 parts.join(", ")
             ));
         }
+        let mut func_defs = Vec::new();
         for f in &funcs {
-            out.push(self.func(f)?);
+            func_defs.push(self.func(f)?);
         }
+        let mut out = Vec::new();
+        if self.uses_json {
+            out.push(JSON_HELPER.to_string());
+        }
+        out.extend(structs);
+        out.extend(func_defs);
         Ok(out.join("\n\n") + "\n")
     }
 
@@ -363,7 +392,7 @@ impl Codegen {
                         return args.iter().find_map(|a| self.type_of(a, ptypes));
                     }
                     if name == "upper" || name == "lower" || name == "trim" || name == "substring"
-                        || name == "join" || name == "replace"
+                        || name == "join" || name == "replace" || name == "to_json"
                     {
                         return Some("string".into());
                     }
@@ -741,6 +770,7 @@ impl Codegen {
         };
         let mut declared: HashSet<String> = f.params.iter().map(|p| p.name.clone()).collect();
         self.kinds.clear();
+        self.cur_types = pt.clone();
         let body = self.block(&f.body, &mut declared, 1)?;
         Ok(format!("fn {}({}){} {{\n{}\n}}", f.name, params, ret_str, body))
     }
@@ -806,6 +836,9 @@ impl Codegen {
                 if let Some(k) = value_kind(value) {
                     self.kinds.insert(name.clone(), k.to_string());
                 }
+                if let Some(vt) = self.type_of(value, &self.cur_types.clone()) {
+                    self.cur_types.insert(name.clone(), Some(vt));
+                }
                 let kw = if *is_const { "let" } else { "let mut" };
                 Ok(format!("{pad}{kw} {name} = {};", self.expr(value)?))
             }
@@ -820,6 +853,9 @@ impl Codegen {
                 };
                 if let Some(k) = value_kind(value) {
                     self.kinds.insert(name.clone(), k.to_string());
+                }
+                if let Some(vt) = self.type_of(value, &self.cur_types.clone()) {
+                    self.cur_types.insert(name.clone(), Some(vt));
                 }
                 let val = self.expr(value)?;
                 if declared.contains(&name) {
@@ -952,6 +988,30 @@ impl Codegen {
             }
         }
         Ok((fmt, fargs))
+    }
+
+    fn json_value(&self, rust_expr: &str, type_str: &str) -> R<String> {
+        match type_str {
+            "int" | "bool" => Ok(format!("format!(\"{{}}\", ({}))", rust_expr)),
+            "string" => Ok(format!("__json_str(&({}))", rust_expr)),
+            t if self.records.contains_key(t) => {
+                let fields = self.records[t].clone();
+                let mut fmt_parts = Vec::new();
+                let mut vals = Vec::new();
+                for (fname, ftype) in &fields {
+                    fmt_parts.push(format!("\\\"{}\\\":{{}}", fname));
+                    vals.push(self.json_value(&format!("({}).{}", rust_expr, fname), ftype)?);
+                }
+                let mut fmt = String::from("{{");
+                fmt.push_str(&fmt_parts.join(","));
+                fmt.push_str("}}");
+                Ok(format!("format!(\"{}\", {})", fmt, vals.join(", ")))
+            }
+            other => Err(LogyxError::new(format!(
+                "to_json non supporta il tipo '{}' (v0: int, bool, string, record)",
+                other
+            ))),
+        }
     }
 
     fn arg(&mut self, a: &Expr) -> R<String> {
@@ -1233,6 +1293,18 @@ impl Codegen {
                             self.expr(&args[1])?,
                             self.expr(&args[2])?
                         ));
+                    }
+                    if name == "to_json" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("to_json accetta un solo argomento"));
+                        }
+                        let ct = self.cur_types.clone();
+                        let ta = self.type_of(&args[0], &ct).ok_or_else(|| {
+                            LogyxError::new("to_json: non riesco a dedurre il tipo dell'argomento")
+                        })?;
+                        self.uses_json = true;
+                        let ex = self.expr(&args[0])?;
+                        return self.json_value(&ex, &ta);
                     }
                     if name == "map" {
                         let f = fn_name(args, 2, 1, "map(lista, funzione)")?;

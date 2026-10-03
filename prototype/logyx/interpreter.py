@@ -231,6 +231,43 @@ class Interpreter:
         g.define("filter", _filter)
         g.define("reduce", _reduce)
 
+        def _json_escape(s):
+            out = ['"']
+            for c in s:
+                if c == '"':
+                    out.append('\\"')
+                elif c == "\\":
+                    out.append("\\\\")
+                elif c == "\n":
+                    out.append("\\n")
+                elif c == "\t":
+                    out.append("\\t")
+                elif c == "\r":
+                    out.append("\\r")
+                elif ord(c) < 0x20:
+                    out.append("\\u%04x" % ord(c))
+                else:
+                    out.append(c)
+            out.append('"')
+            return "".join(out)
+
+        def _to_json(v):
+            if isinstance(v, bool):
+                return "true" if v else "false"
+            if isinstance(v, int):
+                return str(v)
+            if isinstance(v, str):
+                return _json_escape(v)
+            if isinstance(v, RecordValue):
+                parts = [
+                    '"%s":%s' % (fn, _to_json(v.fields[fn]))
+                    for fn, _ in self.records[v.type_name]
+                ]
+                return "{" + ",".join(parts) + "}"
+            raise LogyxError("to_json non supporta questo tipo (v0: int, bool, string, record)")
+
+        g.define("to_json", _to_json)
+
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.
 
