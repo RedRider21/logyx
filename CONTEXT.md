@@ -67,6 +67,10 @@ Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incremental
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
 (ora **19/19**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
 
+**Allineamento doc a ogni aggiunta:** aggiornare `MANUAL.md`, poi rigenerare il manuale online con
+`python3 tools/build_manual.py` (→ `docs/manuale.html`), e aggiungere la voce nella tabella/sezione
+"Riferimento" di `docs/index.html` (con le chiavi i18n IT/EN). Il sito ha: landing + `manuale.html`.
+
 **Già fatto in questa fase:** costrutti `break`/`continue`, operatori composti `+= -= *= /= %=`;
 builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ceil`, `abs/min/max`,
 `upper/lower`. Vedi `ROADMAP.md` per il quadro completo e le priorità.

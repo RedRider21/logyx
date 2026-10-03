@@ -1,0 +1,22 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// has(mappa, chiave): vero se la mappa contiene la chiave. Interprete e nativo.
+//   python3 main.py       ../examples/native_has.logyx
+//   python3 main.py build ../examples/native_has.logyx
+
+fn main() {
+    prezzi = {"pane": 2, "latte": 1, "uova": 3}
+
+    if has(prezzi, "pane") {
+        print("c'è il pane")
+    } else {
+        print("niente pane")
+    }
+
+    if has(prezzi, "burro") {
+        print("c'è il burro")
+    } else {
+        print("niente burro")
+    }
+}

@@ -188,6 +188,7 @@ class Interpreter:
         g.define("sort", _sort)
         g.define("floor", lambda x: math.floor(x))
         g.define("ceil", lambda x: math.ceil(x))
+        g.define("has", lambda m, k: k in m)
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.

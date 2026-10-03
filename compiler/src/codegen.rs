@@ -323,7 +323,7 @@ impl Codegen {
                     if name == "upper" || name == "lower" || name == "trim" {
                         return Some("string".into());
                     }
-                    if name == "contains" {
+                    if name == "contains" || name == "has" {
                         return Some("bool".into());
                     }
                     if name == "sum" {
@@ -1030,6 +1030,18 @@ impl Codegen {
                         }
                         return Ok(format!(
                             "({}).contains(&({}))",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "has" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "has accetta due argomenti: has(mappa, chiave)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({}).contains_key(&({}))",
                             self.expr(&args[0])?,
                             self.expr(&args[1])?
                         ));

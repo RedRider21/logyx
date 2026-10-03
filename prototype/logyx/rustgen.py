@@ -413,7 +413,7 @@ class RustTranspiler:
                 return None
             if name in ("upper", "lower", "trim"):
                 return "string"
-            if name == "contains":
+            if name in ("contains", "has"):
                 return "bool"
             if name == "sum":
                 return "int"
@@ -675,6 +675,10 @@ class RustTranspiler:
                     if len(e.args) != 2:
                         raise LogyxError("contains accetta due argomenti: contains(lista, valore)")
                     return f"({self.expr(e.args[0])}).contains(&({self.expr(e.args[1])}))"
+                if nm == "has":
+                    if len(e.args) != 2:
+                        raise LogyxError("has accetta due argomenti: has(mappa, chiave)")
+                    return f"({self.expr(e.args[0])}).contains_key(&({self.expr(e.args[1])}))"
                 if nm == "trim":
                     if len(e.args) != 1:
                         raise LogyxError("trim accetta un solo argomento")

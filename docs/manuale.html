@@ -266,11 +266,12 @@ len(xs)          // 3
 for x in xs { ... }
 
 m = {&quot;nome&quot;: &quot;Ada&quot;}
-m[&quot;nome&quot;]        // &quot;Ada&quot;
+m[&quot;nome&quot;]            // &quot;Ada&quot;
+has(m, &quot;nome&quot;)       // true
 </code></pre>
 <p>Mutazioni: <code>push(lista, x)</code> aggiunge <code>x</code> in coda, <code>remove(lista, i)</code> toglie l'elemento all'indice <code>i</code>,
-<code>sort(lista)</code> ordina in place. Altre operazioni: <code>sum(lista)</code>, <code>contains(lista, x)</code>.
-Non ancora: <code>map</code>/<code>filter</code>/<code>reduce</code>, slicing, iterazione sui valori di mappa. ⏳</p>
+<code>sort(lista)</code> ordina in place. Altre operazioni: <code>sum(lista)</code>, <code>contains(lista, x)</code>, <code>has(mappa, chiave)</code>.
+Non ancora: <code>map</code>/<code>filter</code>/<code>reduce</code>, slicing, <code>keys</code>/<code>values</code> e iterazione sui valori di mappa. ⏳</p>
 <h2 id="8-stringhe-e-interpolazione">8. Stringhe e interpolazione ✅</h2>
 <pre><code>nome = &quot;Logyx&quot;
 print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
@@ -327,6 +328,10 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <tr>
 <td><code>trim(s)</code></td>
 <td>La stringa <code>s</code> senza gli spazi iniziali e finali</td>
+</tr>
+<tr>
+<td><code>has(mappa, chiave)</code></td>
+<td><code>true</code> se la mappa contiene la chiave</td>
 </tr>
 <tr>
 <td><code>pow(base, esp)</code></td>

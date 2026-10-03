@@ -309,6 +309,7 @@ import "lib_math.logyx"
           <tr><td>floor(x), ceil(x)</td><td data-i18n="bi.floorceil">Arrotonda verso il basso / verso l'alto</td></tr>
           <tr><td>upper(s), lower(s)</td><td data-i18n="bi.upperlower">Stringa in maiuscolo / minuscolo</td></tr>
           <tr><td>trim(s)</td><td data-i18n="bi.trim">Toglie gli spazi ai bordi</td></tr>
+          <tr><td>has(mappa, chiave)</td><td data-i18n="bi.has">Vero se la mappa contiene la chiave</td></tr>
         </table>
       </div>
     </div>
@@ -397,6 +398,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "bi.abs":"Valore assoluto","bi.minmax":"Il minore / il maggiore fra due numeri",
       "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
       "bi.upperlower":"Stringa in maiuscolo / minuscolo","bi.trim":"Toglie gli spazi ai bordi",
+      "bi.has":"Vero se la mappa contiene la chiave",
       "status.h":"A che punto è","status.sub":"Logyx è un prototipo funzionante in Python (lexer, parser, interprete, render web, transpiler Rust). Ecco la mappa.",
       "status.v0.h":"Siamo alla versione 0.",
       "status.v0.p":"Il prototipo in Python e la transpilazione verso Rust sono impalcature temporanee per far nascere il linguaggio. L'obiettivo è un Logyx <em>self-hosted</em> — un compilatore scritto in Logyx che genera direttamente codice macchina — in cui né Python né Rust resteranno una dipendenza.",
@@ -435,6 +437,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "bi.abs":"Absolute value","bi.minmax":"The smaller / the larger of two numbers",
       "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
       "bi.upperlower":"String in upper / lower case","bi.trim":"Removes surrounding whitespace",
+      "bi.has":"True if the map contains the key",
       "status.h":"Where it stands","status.sub":"Logyx is a working prototype in Python (lexer, parser, interpreter, web render, Rust transpiler). Here's the map.",
       "status.v0.h":"We are at version 0.",
       "status.v0.p":"The Python prototype and the transpilation to Rust are temporary scaffolding to bootstrap the language. The goal is a self-hosted Logyx — a compiler written in Logyx that emits machine code directly — where neither Python nor Rust will remain a dependency.",

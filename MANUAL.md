@@ -148,12 +148,13 @@ len(xs)          // 3
 for x in xs { ... }
 
 m = {"nome": "Ada"}
-m["nome"]        // "Ada"
+m["nome"]            // "Ada"
+has(m, "nome")       // true
 ```
 
 Mutazioni: `push(lista, x)` aggiunge `x` in coda, `remove(lista, i)` toglie l'elemento all'indice `i`,
-`sort(lista)` ordina in place. Altre operazioni: `sum(lista)`, `contains(lista, x)`.
-Non ancora: `map`/`filter`/`reduce`, slicing, iterazione sui valori di mappa. ⏳
+`sort(lista)` ordina in place. Altre operazioni: `sum(lista)`, `contains(lista, x)`, `has(mappa, chiave)`.
+Non ancora: `map`/`filter`/`reduce`, slicing, `keys`/`values` e iterazione sui valori di mappa. ⏳
 
 ## 8. Stringhe e interpolazione ✅
 
@@ -177,6 +178,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `upper(s)` / `lower(s)` | La stringa `s` in maiuscolo / minuscolo |
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
 | `trim(s)` | La stringa `s` senza gli spazi iniziali e finali |
+| `has(mappa, chiave)` | `true` se la mappa contiene la chiave |
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sum(lista)` | Somma degli elementi (lista di interi) |
