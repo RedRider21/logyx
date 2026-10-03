@@ -71,6 +71,13 @@ TEMPLATE = """<!doctype html>
     background:color-mix(in srgb,var(--accent) 8%,transparent); border-radius:0 10px 10px 0; color:var(--muted)}}
   hr{{border:none; border-top:1px solid var(--border); margin:2em 0}}
   .backlink{{display:inline-block; margin-bottom:8px; color:var(--muted); font-weight:600; font-size:.92rem}}
+  .to-top{{position:fixed; right:22px; bottom:22px; z-index:20; width:46px; height:46px;
+    border-radius:50%; border:1px solid var(--border); background:var(--panel); color:var(--accent);
+    font-size:1.3rem; cursor:pointer; box-shadow:var(--shadow); opacity:0; transform:translateY(12px);
+    pointer-events:none; transition:opacity .25s, transform .25s}}
+  .to-top.show{{opacity:1; transform:translateY(0); pointer-events:auto}}
+  .to-top:hover{{border-color:var(--accent)}}
+  @media(max-width:720px){{ .to-top{{right:16px; bottom:16px}} }}
 </style>
 </head>
 <body>
@@ -91,6 +98,7 @@ TEMPLATE = """<!doctype html>
   <a class="backlink" href="index.html">← Logyx</a>
 {body}
 </main>
+<button id="toTop" class="to-top" aria-label="Torna su" title="Torna su">↑</button>
 <script>
 (function(){{
   function store(k,v){{try{{localStorage.setItem(k,v);}}catch(e){{}}}}
@@ -107,6 +115,13 @@ TEMPLATE = """<!doctype html>
     b.addEventListener("click",function(){{applyTheme(b.getAttribute("data-theme-btn"));}});
   }});
   applyTheme(load("logyx-theme")||"");
+  var toTop=document.getElementById("toTop");
+  if(toTop){{
+    var onScroll=function(){{ toTop.classList.toggle("show", window.pageYOffset>420); }};
+    window.addEventListener("scroll", onScroll, {{passive:true}});
+    toTop.addEventListener("click", function(){{ window.scrollTo({{top:0, behavior:"smooth"}}); }});
+    onScroll();
+  }}
 }})();
 </script>
 </body>
