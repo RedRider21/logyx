@@ -321,7 +321,7 @@ impl Codegen {
                         return args.iter().find_map(|a| self.type_of(a, ptypes));
                     }
                     if name == "upper" || name == "lower" || name == "trim" || name == "substring"
-                        || name == "join"
+                        || name == "join" || name == "replace"
                     {
                         return Some("string".into());
                     }
@@ -585,7 +585,7 @@ impl Codegen {
                 return;
             }
             if name == "upper" || name == "lower" || name == "trim" || name == "index_of"
-                || name == "split"
+                || name == "split" || name == "replace"
             {
                 for a in args {
                     if let Expr::Ident(n) = a {
@@ -1152,6 +1152,19 @@ impl Codegen {
                             "({}).join(({}).as_str())",
                             self.expr(&args[0])?,
                             self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "replace" {
+                        if args.len() != 3 {
+                            return Err(LogyxError::new(
+                                "replace accetta tre argomenti: replace(stringa, da, a)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({}).replace(({}).as_str(), ({}).as_str())",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?,
+                            self.expr(&args[2])?
                         ));
                     }
                     if name == "sort" {

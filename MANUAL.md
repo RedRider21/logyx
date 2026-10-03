@@ -183,6 +183,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `substring(s, a, b)` | Sottostringa (ASCII) da `a` incluso a `b` escluso |
 | `split(s, sep)` | Divide `s` sul separatore `sep` → lista di stringhe |
 | `join(lista, sep)` | Unisce una lista di stringhe con `sep` → stringa |
+| `replace(s, da, a)` | Sostituisce tutte le occorrenze di `da` con `a` in `s` |
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

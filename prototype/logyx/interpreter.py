@@ -194,6 +194,7 @@ class Interpreter:
         g.define("substring", lambda s, a, b: s[a:b])
         g.define("split", lambda s, sep: s.split(sep))
         g.define("join", lambda lista, sep: sep.join(lista))
+        g.define("replace", lambda s, frm, to: s.replace(frm, to))
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.

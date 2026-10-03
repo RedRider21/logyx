@@ -1,0 +1,13 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// replace(s, da, a): sostituisce tutte le occorrenze. Interprete e nativo.
+//   python3 main.py       ../examples/native_replace.logyx
+//   python3 main.py build ../examples/native_replace.logyx
+
+fn main() {
+    s = "ciao mondo mondo"
+    da = "mondo"
+    a = "terra"
+    print("{replace(s, da, a)}")      // ciao terra terra
+}

@@ -320,7 +320,7 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
             return
-        if name in ("upper", "lower", "trim", "index_of", "split"):
+        if name in ("upper", "lower", "trim", "index_of", "split", "replace"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("string")
@@ -422,7 +422,7 @@ class RustTranspiler:
                     if tt is not None:
                         return tt
                 return None
-            if name in ("upper", "lower", "trim", "substring", "join"):
+            if name in ("upper", "lower", "trim", "substring", "join", "replace"):
                 return "string"
             if name in ("contains", "has"):
                 return "bool"
@@ -723,6 +723,11 @@ class RustTranspiler:
                     if len(e.args) != 2:
                         raise LogyxError("join accetta due argomenti: join(lista, separatore)")
                     return f"({self.expr(e.args[0])}).join(({self.expr(e.args[1])}).as_str())"
+                if nm == "replace":
+                    if len(e.args) != 3:
+                        raise LogyxError("replace accetta tre argomenti: replace(stringa, da, a)")
+                    return (f"({self.expr(e.args[0])}).replace(({self.expr(e.args[1])}).as_str(), "
+                            f"({self.expr(e.args[2])}).as_str())")
                 if nm == "sort":
                     raise LogyxError("usa sort come istruzione, non dentro un'espressione")
             args = ", ".join(self.expr(a) for a in e.args)

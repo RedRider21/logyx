@@ -43,7 +43,7 @@ Da costruire preferibilmente **in Logyx**, non come builtin infiniti nel compila
 
 | Area | Esempi | Stato |
 | --- | --- | --- |
-| Stringhe | `len`, `upper`, `lower`, `trim`, `index_of`, `substring`, `split`, `join` ✅ · `replace` ⏳ · regex ⏳ | 🟡 |
+| Stringhe | `len`, `upper`, `lower`, `trim`, `index_of`, `substring`, `split`, `join`, `replace` ✅ · regex ⏳ | 🟡 |
 | Collezioni di stringhe | liste e mappe di `String` ✅ (vedi `design/collezioni-stringhe.md`) | ✅ |
 | Liste | `len`, `push`, `remove`, `contains`, `sum`, `sort` ✅ · `map`, `filter`, `reduce`, slice ⏳ | 🟡 |
 | Mappe | letterale, accesso, `len` ✅ · `has`, `keys`, `values`, iterazione ⏳ | 🟡 |
