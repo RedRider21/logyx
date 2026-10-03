@@ -184,6 +184,12 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `split(s, sep)` | Divide `s` sul separatore `sep` → lista di stringhe |
 | `join(lista, sep)` | Unisce una lista di stringhe con `sep` → stringa |
 | `replace(s, da, a)` | Sostituisce tutte le occorrenze di `da` con `a` in `s` |
+| `map(lista, f)` | Nuova lista con la funzione `f` applicata a ogni elemento |
+| `filter(lista, p)` | Gli elementi della lista per cui la funzione `p` è vera |
+| `reduce(lista, init, f)` | Accumula da `init` applicando `f(acc, elemento)` |
+
+In `map`/`filter`/`reduce` la funzione è il **nome di una funzione definita con `fn`** (non una lambda
+inline, per ora). Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`.
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

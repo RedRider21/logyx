@@ -1,0 +1,30 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// map e filter con una funzione nominata. Interprete e nativo.
+//   python3 main.py       ../examples/native_mapfilter.logyx
+//   python3 main.py build ../examples/native_mapfilter.logyx
+
+fn raddoppia(n) {
+    return n * 2
+}
+
+fn pari(n) {
+    return n % 2 == 0
+}
+
+fn main() {
+    xs = [1, 2, 3, 4, 5]
+
+    doppi = map(xs, raddoppia)
+    print("somma dei doppi = {sum(doppi)}")        // 30
+    for d in doppi {
+        print("- {d}")
+    }
+
+    solo_pari = filter(xs, pari)
+    print("quanti pari = {len(solo_pari)}")        // 2
+    for p in solo_pari {
+        print("pari: {p}")
+    }
+}

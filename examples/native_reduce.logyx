@@ -1,0 +1,23 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// reduce con una funzione nominata. Interprete e nativo.
+//   python3 main.py       ../examples/native_reduce.logyx
+//   python3 main.py build ../examples/native_reduce.logyx
+
+fn somma2(a, b) {
+    return a + b
+}
+
+fn massimo2(a, b) {
+    if a > b {
+        return a
+    }
+    return b
+}
+
+fn main() {
+    xs = [3, 7, 2, 8, 5]
+    print("totale  = {reduce(xs, 0, somma2)}")       // 25
+    print("massimo = {reduce(xs, 0, massimo2)}")     // 8
+}

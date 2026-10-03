@@ -434,6 +434,8 @@ class RustTranspiler:
                 return "int"
             if name == "sqrt":
                 return "float"
+            if name == "reduce" and len(e.args) >= 2:
+                return self._type_of(e.args[1], ptypes)
             return self.func_rets.get(name)
         return None
 
@@ -560,6 +562,15 @@ class RustTranspiler:
         if not isinstance(args[0], N.Identifier):
             raise LogyxError("sort nel transpiler v0 richiede una variabile lista come argomento")
         return f"{args[0].name}.sort();"
+
+    def _fn_name(self, args, n, idx, usage):
+        base = usage.split("(")[0]
+        if len(args) != n:
+            raise LogyxError(f"{base} accetta {n} argomenti: {usage}")
+        f = args[idx]
+        if not isinstance(f, N.Identifier):
+            raise LogyxError(f"{base}: l'argomento funzione deve essere il nome di una funzione definita con 'fn'")
+        return f.name
 
     def print_call(self, args):
         if len(args) != 1:
@@ -728,6 +739,18 @@ class RustTranspiler:
                         raise LogyxError("replace accetta tre argomenti: replace(stringa, da, a)")
                     return (f"({self.expr(e.args[0])}).replace(({self.expr(e.args[1])}).as_str(), "
                             f"({self.expr(e.args[2])}).as_str())")
+                if nm == "map":
+                    fn = self._fn_name(e.args, 2, 1, "map(lista, funzione)")
+                    return (f"({self.expr(e.args[0])}).iter().cloned().map(|x| {fn}(x))"
+                            ".collect::<Vec<_>>()")
+                if nm == "filter":
+                    fn = self._fn_name(e.args, 2, 1, "filter(lista, funzione)")
+                    return (f"({self.expr(e.args[0])}).iter().cloned().filter(|x| {fn}(x.clone()))"
+                            ".collect::<Vec<_>>()")
+                if nm == "reduce":
+                    fn = self._fn_name(e.args, 3, 2, "reduce(lista, iniziale, funzione)")
+                    return (f"({self.expr(e.args[0])}).iter().cloned()"
+                            f".fold({self.expr(e.args[1])}, |acc, x| {fn}(acc, x))")
                 if nm == "sort":
                     raise LogyxError("usa sort come istruzione, non dentro un'espressione")
             args = ", ".join(self.expr(a) for a in e.args)

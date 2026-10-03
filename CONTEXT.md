@@ -86,9 +86,13 @@ builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ce
 - **record/struct** (tipi con campi) → sbloccano JSON e modellazione dati;
 - `enum` e `match` generale (oggi `match` è solo `ok`/`err`).
 
-**Collezioni di stringhe: FATTE** (opzione "clone uniforme", `design/collezioni-stringhe.md`): liste e
-mappe di `String` ora supportate. Prossimo sblocco immediato: `split`/`join`.
-**Ancora bloccati dalle closure:** `map`/`filter`/`reduce`.
+**Collezioni di stringhe: FATTE** (`design/collezioni-stringhe.md`); stringhe complete (`split`/`join`/
+`replace`, manca solo regex).
+**`map`/`filter`/`reduce`: FATTI** (Fase 1 con funzioni *nominate* — `design/funzioni-ordine-superiore.md`).
+**Fase 2 (futura):** valori funzione e lambda inline (serve un tipo funzione nel linguaggio).
+**Prossimi fronti del nucleo:** record/struct (→ JSON), `match` generale, poi JSON/date, web→WASM.
+Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
+esempi si itera o si usa `sum`/`join`/`len`.
 
 **Orizzonte:** completato il nucleo + una libreria standard scritta in Logyx, puntare al **self-hosting**
 (compilatore in Logyx), poi capacità web → WASM.

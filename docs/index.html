@@ -303,6 +303,9 @@ import "lib_math.logyx"
           <tr><td>contains(lista, x)</td><td data-i18n="bi.contains">Vero se la lista contiene x</td></tr>
           <tr><td>sum(lista)</td><td data-i18n="bi.sum">Somma degli elementi (interi)</td></tr>
           <tr><td>sort(lista)</td><td data-i18n="bi.sort">Ordina la lista in ordine crescente</td></tr>
+          <tr><td>map(lista, f)</td><td data-i18n="bi.map">Nuova lista con la funzione f su ogni elemento</td></tr>
+          <tr><td>filter(lista, p)</td><td data-i18n="bi.filter">Gli elementi per cui la funzione p è vera</td></tr>
+          <tr><td>reduce(lista, init, f)</td><td data-i18n="bi.reduce">Accumula da init con f(acc, elemento)</td></tr>
           <tr><td>abs(x)</td><td data-i18n="bi.abs">Valore assoluto</td></tr>
           <tr><td>min(a,b), max(a,b)</td><td data-i18n="bi.minmax">Il minore / il maggiore fra due numeri</td></tr>
           <tr><td>pow(base, esp)</td><td data-i18n="bi.pow">Potenza fra interi (esp ≥ 0)</td></tr>
@@ -401,6 +404,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "bi.range":"Sequenza di interi 0..n-1 oppure a..b-1","bi.push":"Aggiunge x in coda alla lista",
       "bi.remove":"Toglie l'elemento all'indice i","bi.contains":"Vero se la lista contiene x",
       "bi.sum":"Somma degli elementi (interi)","bi.sort":"Ordina la lista in ordine crescente",
+      "bi.map":"Nuova lista con la funzione f su ogni elemento","bi.filter":"Gli elementi per cui la funzione p è vera","bi.reduce":"Accumula da init con f(acc, elemento)",
       "bi.abs":"Valore assoluto","bi.minmax":"Il minore / il maggiore fra due numeri",
       "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
       "bi.sqrt":"Radice quadrata (ritorna un float)",
@@ -444,6 +448,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "bi.range":"Sequence of integers 0..n-1 or a..b-1","bi.push":"Appends x to the list",
       "bi.remove":"Removes the element at index i","bi.contains":"True if the list contains x",
       "bi.sum":"Sum of the elements (integers)","bi.sort":"Sorts the list in ascending order",
+      "bi.map":"New list with function f applied to each element","bi.filter":"The elements for which function p is true","bi.reduce":"Folds from init with f(acc, element)",
       "bi.abs":"Absolute value","bi.minmax":"The smaller / the larger of two numbers",
       "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
       "bi.sqrt":"Square root (returns a float)",

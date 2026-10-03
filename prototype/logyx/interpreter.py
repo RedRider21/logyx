@@ -196,6 +196,22 @@ class Interpreter:
         g.define("join", lambda lista, sep: sep.join(lista))
         g.define("replace", lambda s, frm, to: s.replace(frm, to))
 
+        def _map(lista, f):
+            return [self.call(f, [x]) for x in lista]
+
+        def _filter(lista, p):
+            return [x for x in lista if truthy(self.call(p, [x]))]
+
+        def _reduce(lista, init, f):
+            acc = init
+            for x in lista:
+                acc = self.call(f, [acc, x])
+            return acc
+
+        g.define("map", _map)
+        g.define("filter", _filter)
+        g.define("reduce", _reduce)
+
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.
 

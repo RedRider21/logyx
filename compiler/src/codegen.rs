@@ -32,6 +32,19 @@ fn rust_str_lit(s: &str) -> String {
     format!("{:?}", s)
 }
 
+fn fn_name(args: &[Expr], n: usize, idx: usize, usage: &str) -> R<String> {
+    let base = usage.split('(').next().unwrap_or(usage);
+    if args.len() != n {
+        return Err(LogyxError::new(format!("{base} accetta {n} argomenti: {usage}")));
+    }
+    match &args[idx] {
+        Expr::Ident(name) => Ok(name.clone()),
+        _ => Err(LogyxError::new(format!(
+            "{base}: l'argomento funzione deve essere il nome di una funzione definita con 'fn'"
+        ))),
+    }
+}
+
 fn binop_sym(op: &BinOp) -> &'static str {
     match op {
         BinOp::Add => "+",
@@ -339,6 +352,9 @@ impl Codegen {
                     }
                     if name == "sqrt" {
                         return Some("float".into());
+                    }
+                    if name == "reduce" {
+                        return args.get(1).and_then(|a| self.type_of(a, ptypes));
                     }
                     return self.rets.get(name).cloned().flatten();
                 }
@@ -1165,6 +1181,31 @@ impl Codegen {
                             self.expr(&args[0])?,
                             self.expr(&args[1])?,
                             self.expr(&args[2])?
+                        ));
+                    }
+                    if name == "map" {
+                        let f = fn_name(args, 2, 1, "map(lista, funzione)")?;
+                        return Ok(format!(
+                            "({}).iter().cloned().map(|x| {}(x)).collect::<Vec<_>>()",
+                            self.expr(&args[0])?,
+                            f
+                        ));
+                    }
+                    if name == "filter" {
+                        let f = fn_name(args, 2, 1, "filter(lista, funzione)")?;
+                        return Ok(format!(
+                            "({}).iter().cloned().filter(|x| {}(x.clone())).collect::<Vec<_>>()",
+                            self.expr(&args[0])?,
+                            f
+                        ));
+                    }
+                    if name == "reduce" {
+                        let f = fn_name(args, 3, 2, "reduce(lista, iniziale, funzione)")?;
+                        return Ok(format!(
+                            "({}).iter().cloned().fold({}, |acc, x| {}(acc, x))",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?,
+                            f
                         ));
                     }
                     if name == "sort" {

@@ -45,7 +45,7 @@ Da costruire preferibilmente **in Logyx**, non come builtin infiniti nel compila
 | --- | --- | --- |
 | Stringhe | `len`, `upper`, `lower`, `trim`, `index_of`, `substring`, `split`, `join`, `replace` ✅ · regex ⏳ | 🟡 |
 | Collezioni di stringhe | liste e mappe di `String` ✅ (vedi `design/collezioni-stringhe.md`) | ✅ |
-| Liste | `len`, `push`, `remove`, `contains`, `sum`, `sort` ✅ · `map`, `filter`, `reduce`, slice ⏳ | 🟡 |
+| Liste | `len`, `push`, `remove`, `contains`, `sum`, `sort`, `map`, `filter`, `reduce` ✅ · slice ⏳ | 🟡 |
 | Mappe | letterale, accesso, `len` ✅ · `has`, `keys`, `values`, iterazione ⏳ | 🟡 |
 | Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil` ✅ · `sqrt`, `round`, `random` ⏳ | 🟡 |
 | I/O e sistema | `print` ✅ · lettura input, file, ambiente ⏳ | 🟡 |
