@@ -369,7 +369,8 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
             return
-        if name in ("upper", "lower", "trim", "index_of", "split", "replace"):
+        if name in ("upper", "lower", "trim", "index_of", "split", "replace",
+                    "starts_with", "ends_with"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("string")
@@ -484,7 +485,7 @@ class RustTranspiler:
                 return None
             if name in ("upper", "lower", "trim", "substring", "join", "replace", "to_json", "sha256"):
                 return "string"
-            if name in ("contains", "has"):
+            if name in ("contains", "has", "starts_with", "ends_with"):
                 return "bool"
             if name == "index_of":
                 return "int"
@@ -867,6 +868,11 @@ class RustTranspiler:
                         raise LogyxError("to_json: non riesco a dedurre il tipo dell'argomento")
                     self.uses_json = True
                     return self._json_value(self.expr(e.args[0]), ta)
+                if nm in ("starts_with", "ends_with"):
+                    if len(e.args) != 2:
+                        raise LogyxError(f"{nm} accetta due argomenti: {nm}(stringa, parte)")
+                    method = "starts_with" if nm == "starts_with" else "ends_with"
+                    return f"({self.expr(e.args[0])}).{method}(({self.expr(e.args[1])}).as_str())"
                 if nm == "sha256":
                     if len(e.args) != 1:
                         raise LogyxError("sha256 accetta un solo argomento")

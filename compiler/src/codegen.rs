@@ -405,7 +405,9 @@ impl Codegen {
                     {
                         return Some("string".into());
                     }
-                    if name == "contains" || name == "has" {
+                    if name == "contains" || name == "has"
+                        || name == "starts_with" || name == "ends_with"
+                    {
                         return Some("bool".into());
                     }
                     if name == "index_of" {
@@ -691,6 +693,7 @@ impl Codegen {
             }
             if name == "upper" || name == "lower" || name == "trim" || name == "index_of"
                 || name == "split" || name == "replace"
+                || name == "starts_with" || name == "ends_with"
             {
                 for a in args {
                     if let Expr::Ident(n) = a {
@@ -1338,6 +1341,19 @@ impl Codegen {
                             self.expr(&args[0])?,
                             self.expr(&args[1])?,
                             self.expr(&args[2])?
+                        ));
+                    }
+                    if name == "starts_with" || name == "ends_with" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(format!(
+                                "{name} accetta due argomenti: {name}(stringa, parte)"
+                            )));
+                        }
+                        return Ok(format!(
+                            "({}).{}(({}).as_str())",
+                            self.expr(&args[0])?,
+                            name,
+                            self.expr(&args[1])?
                         ));
                     }
                     if name == "sha256" {

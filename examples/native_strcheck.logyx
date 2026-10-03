@@ -1,0 +1,22 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// starts_with / ends_with: prefisso e suffisso di una stringa. Interprete e nativo.
+//   python3 main.py       ../examples/native_strcheck.logyx
+//   python3 main.py build ../examples/native_strcheck.logyx
+
+fn main() {
+    s = "logyx.dev"
+
+    if starts_with(s, "logyx") {
+        print("inizia con logyx")
+    }
+    if ends_with(s, ".dev") {
+        print("finisce con .dev")
+    }
+    if starts_with(s, "xyz") {
+        print("inizia con xyz")
+    } else {
+        print("non inizia con xyz")
+    }
+}

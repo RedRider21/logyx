@@ -269,6 +269,8 @@ class Interpreter:
 
         g.define("to_json", _to_json)
         g.define("sha256", lambda s: hashlib.sha256(s.encode("utf-8")).hexdigest())
+        g.define("starts_with", lambda s, p: s.startswith(p))
+        g.define("ends_with", lambda s, p: s.endswith(p))
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.

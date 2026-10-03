@@ -224,6 +224,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `split(s, sep)` | Divide `s` sul separatore `sep` → lista di stringhe |
 | `join(lista, sep)` | Unisce una lista di stringhe con `sep` → stringa |
 | `replace(s, da, a)` | Sostituisce tutte le occorrenze di `da` con `a` in `s` |
+| `starts_with(s, p)` / `ends_with(s, p)` | `true` se `s` inizia / finisce con `p` |
 | `map(lista, f)` | Nuova lista con la funzione `f` applicata a ogni elemento |
 | `filter(lista, p)` | Gli elementi della lista per cui la funzione `p` è vera |
 | `reduce(lista, init, f)` | Accumula da `init` applicando `f(acc, elemento)` |
