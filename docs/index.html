@@ -310,6 +310,8 @@ import "lib_math.logyx"
           <tr><td>sqrt(x)</td><td data-i18n="bi.sqrt">Radice quadrata (ritorna un float)</td></tr>
           <tr><td>upper(s), lower(s)</td><td data-i18n="bi.upperlower">Stringa in maiuscolo / minuscolo</td></tr>
           <tr><td>trim(s)</td><td data-i18n="bi.trim">Toglie gli spazi ai bordi</td></tr>
+          <tr><td>index_of(s, sub)</td><td data-i18n="bi.indexof">Posizione della prima occorrenza di sub, o -1</td></tr>
+          <tr><td>substring(s, a, b)</td><td data-i18n="bi.substring">Sottostringa da a incluso a b escluso</td></tr>
           <tr><td>has(mappa, chiave)</td><td data-i18n="bi.has">Vero se la mappa contiene la chiave</td></tr>
         </table>
       </div>
@@ -400,6 +402,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
       "bi.sqrt":"Radice quadrata (ritorna un float)",
       "bi.upperlower":"Stringa in maiuscolo / minuscolo","bi.trim":"Toglie gli spazi ai bordi",
+      "bi.indexof":"Posizione della prima occorrenza di sub, o -1","bi.substring":"Sottostringa da a incluso a b escluso",
       "bi.has":"Vero se la mappa contiene la chiave",
       "status.h":"A che punto è","status.sub":"Logyx è un prototipo funzionante in Python (lexer, parser, interprete, render web, transpiler Rust). Ecco la mappa.",
       "status.v0.h":"Siamo alla versione 0.",
@@ -440,6 +443,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
       "bi.sqrt":"Square root (returns a float)",
       "bi.upperlower":"String in upper / lower case","bi.trim":"Removes surrounding whitespace",
+      "bi.indexof":"Position of the first occurrence of sub, or -1","bi.substring":"Substring from a (inclusive) to b (exclusive)",
       "bi.has":"True if the map contains the key",
       "status.h":"Where it stands","status.sub":"Logyx is a working prototype in Python (lexer, parser, interpreter, web render, Rust transpiler). Here's the map.",
       "status.v0.h":"We are at version 0.",

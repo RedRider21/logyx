@@ -1,0 +1,17 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Operazioni su stringhe: index_of e substring. Interprete e nativo.
+//   python3 main.py       ../examples/native_strops.logyx
+//   python3 main.py build ../examples/native_strops.logyx
+
+fn main() {
+    s = "ciao mondo"
+    sub = "mondo"
+    manca = "xyz"
+
+    print("posizione di mondo = {index_of(s, sub)}")    // 5
+    print("posizione di xyz   = {index_of(s, manca)}")  // -1
+    print("prime 4 lettere    = {substring(s, 0, 4)}")  // ciao
+    print("da 5 a 10          = {substring(s, 5, 10)}") // mondo
+}

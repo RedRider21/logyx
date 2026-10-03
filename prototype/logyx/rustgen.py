@@ -320,10 +320,17 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
             return
-        if name in ("upper", "lower", "trim"):
+        if name in ("upper", "lower", "trim", "index_of"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("string")
+            return
+        if name == "substring":
+            if e.args and isinstance(e.args[0], N.Identifier) and e.args[0].name in ev:
+                ev[e.args[0].name].add("string")
+            for a in e.args[1:3]:
+                if isinstance(a, N.Identifier) and a.name in ev:
+                    ev[a.name].add("int")
             return
         if name == "remove":
             if len(e.args) == 2 and isinstance(e.args[1], N.Identifier) and e.args[1].name in ev:
@@ -411,10 +418,12 @@ class RustTranspiler:
                     if tt is not None:
                         return tt
                 return None
-            if name in ("upper", "lower", "trim"):
+            if name in ("upper", "lower", "trim", "substring"):
                 return "string"
             if name in ("contains", "has"):
                 return "bool"
+            if name == "index_of":
+                return "int"
             if name == "sum":
                 return "int"
             if name in ("floor", "ceil"):
@@ -701,6 +710,16 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("sqrt accetta un solo argomento")
                     return f"(({self.expr(e.args[0])}) as f64).sqrt()"
+                if nm == "index_of":
+                    if len(e.args) != 2:
+                        raise LogyxError("index_of accetta due argomenti: index_of(stringa, sottostringa)")
+                    return (f"({self.expr(e.args[0])}).find(({self.expr(e.args[1])}).as_str())"
+                            ".map(|i| i as i64).unwrap_or(-1i64)")
+                if nm == "substring":
+                    if len(e.args) != 3:
+                        raise LogyxError("substring accetta tre argomenti: substring(stringa, inizio, fine)")
+                    return (f"({self.expr(e.args[0])})[({self.expr(e.args[1])}) as usize.."
+                            f"({self.expr(e.args[2])}) as usize].to_string()")
                 if nm == "sort":
                     raise LogyxError("usa sort come istruzione, non dentro un'espressione")
             args = ", ".join(self.expr(a) for a in e.args)

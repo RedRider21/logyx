@@ -179,6 +179,8 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
 | `trim(s)` | La stringa `s` senza gli spazi iniziali e finali |
 | `has(mappa, chiave)` | `true` se la mappa contiene la chiave |
+| `index_of(s, sub)` | Posizione (ASCII) della prima occorrenza di `sub` in `s`, oppure -1 |
+| `substring(s, a, b)` | Sottostringa (ASCII) da `a` incluso a `b` escluso |
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

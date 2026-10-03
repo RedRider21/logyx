@@ -320,11 +320,14 @@ impl Codegen {
                     if name == "min" || name == "max" {
                         return args.iter().find_map(|a| self.type_of(a, ptypes));
                     }
-                    if name == "upper" || name == "lower" || name == "trim" {
+                    if name == "upper" || name == "lower" || name == "trim" || name == "substring" {
                         return Some("string".into());
                     }
                     if name == "contains" || name == "has" {
                         return Some("bool".into());
+                    }
+                    if name == "index_of" {
+                        return Some("int".into());
                     }
                     if name == "sum" {
                         return Some("int".into());
@@ -579,11 +582,26 @@ impl Codegen {
                 }
                 return;
             }
-            if name == "upper" || name == "lower" || name == "trim" {
+            if name == "upper" || name == "lower" || name == "trim" || name == "index_of" {
                 for a in args {
                     if let Expr::Ident(n) = a {
                         if let Some(set) = ev.get_mut(n) {
                             set.insert("string".into());
+                        }
+                    }
+                }
+                return;
+            }
+            if name == "substring" {
+                if let Some(Expr::Ident(n)) = args.first() {
+                    if let Some(set) = ev.get_mut(n) {
+                        set.insert("string".into());
+                    }
+                }
+                for a in args.iter().skip(1).take(2) {
+                    if let Expr::Ident(n) = a {
+                        if let Some(set) = ev.get_mut(n) {
+                            set.insert("int".into());
                         }
                     }
                 }
@@ -1084,6 +1102,31 @@ impl Codegen {
                             return Err(LogyxError::new("sqrt accetta un solo argomento"));
                         }
                         return Ok(format!("(({}) as f64).sqrt()", self.expr(&args[0])?));
+                    }
+                    if name == "index_of" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "index_of accetta due argomenti: index_of(stringa, sottostringa)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({}).find(({}).as_str()).map(|i| i as i64).unwrap_or(-1i64)",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "substring" {
+                        if args.len() != 3 {
+                            return Err(LogyxError::new(
+                                "substring accetta tre argomenti: substring(stringa, inizio, fine)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({})[({}) as usize..({}) as usize].to_string()",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?,
+                            self.expr(&args[2])?
+                        ));
                     }
                     if name == "sort" {
                         return Err(LogyxError::new(

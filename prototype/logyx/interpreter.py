@@ -190,6 +190,8 @@ class Interpreter:
         g.define("ceil", lambda x: math.ceil(x))
         g.define("has", lambda m, k: k in m)
         g.define("sqrt", lambda x: math.sqrt(x))
+        g.define("index_of", lambda s, sub: s.find(sub))
+        g.define("substring", lambda s, a, b: s[a:b])
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.
