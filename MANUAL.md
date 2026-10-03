@@ -181,6 +181,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `has(mappa, chiave)` | `true` se la mappa contiene la chiave |
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
+| `sqrt(x)` | Radice quadrata (ritorna un float) |
 | `sum(lista)` | Somma degli elementi (lista di interi) |
 | `sort(lista)` | Ordina la lista in ordine crescente (la muta); usala come istruzione |
 

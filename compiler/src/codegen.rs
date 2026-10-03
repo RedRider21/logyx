@@ -332,6 +332,9 @@ impl Codegen {
                     if name == "floor" || name == "ceil" {
                         return Some("int".into());
                     }
+                    if name == "sqrt" {
+                        return Some("float".into());
+                    }
                     return self.rets.get(name).cloned().flatten();
                 }
                 None
@@ -565,7 +568,7 @@ impl Codegen {
                 return;
             }
             if name == "abs" || name == "min" || name == "max" || name == "pow"
-                || name == "floor" || name == "ceil"
+                || name == "floor" || name == "ceil" || name == "sqrt"
             {
                 for a in args {
                     if let Expr::Ident(n) = a {
@@ -1075,6 +1078,12 @@ impl Codegen {
                             return Err(LogyxError::new(format!("{name} accetta un solo argomento")));
                         }
                         return Ok(format!("(({}) as f64).{}() as i64", self.expr(&args[0])?, name));
+                    }
+                    if name == "sqrt" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("sqrt accetta un solo argomento"));
+                        }
+                        return Ok(format!("(({}) as f64).sqrt()", self.expr(&args[0])?));
                     }
                     if name == "sort" {
                         return Err(LogyxError::new(

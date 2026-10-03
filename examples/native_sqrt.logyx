@@ -1,0 +1,12 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// sqrt(x): radice quadrata (ritorna un float). Interprete e nativo.
+//   python3 main.py       ../examples/native_sqrt.logyx
+//   python3 main.py build ../examples/native_sqrt.logyx
+
+fn main() {
+    print("sqrt(16)   = {sqrt(16)}")      // 4
+    print("sqrt(144)  = {sqrt(144)}")     // 12
+    print("sqrt(2.25) = {sqrt(2.25)}")    // 1.5
+}
