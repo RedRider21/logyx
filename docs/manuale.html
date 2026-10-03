@@ -187,6 +187,15 @@ for n in numeri { print(n) }
 </code></pre>
 <p>Dentro <code>while</code> e <code>for</code> si possono usare <code>break</code> (esce dal ciclo) e <code>continue</code> (passa all'iterazione
 successiva).</p>
+<p>Il costrutto <code>match</code> sceglie un ramo <strong>per valore</strong> (confronto di uguaglianza); <code>else</code> è il ramo di
+default, opzionale:</p>
+<pre><code>match n {
+    0 { print(&quot;zero&quot;) }
+    1 { print(&quot;uno&quot;) }
+    else { print(&quot;altro&quot;) }
+}
+</code></pre>
+<p>(Il <code>match</code> con i rami <code>ok</code>/<code>err</code> è invece la gestione degli errori, vedi §6c.)</p>
 <h2 id="6-funzioni">6. Funzioni ✅</h2>
 <pre><code>fn saluta(nome: string) -&gt; string {
     return &quot;Ciao &quot; + nome

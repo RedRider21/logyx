@@ -78,6 +78,11 @@ pub enum Stmt {
         err_var: String,
         err_block: Vec<Stmt>,
     },
+    MatchValue {
+        subject: Expr,
+        cases: Vec<(Expr, Vec<Stmt>)>,
+        else_block: Option<Vec<Stmt>>,
+    },
     Func(Function),
 }
 

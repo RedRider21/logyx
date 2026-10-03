@@ -166,6 +166,13 @@ class Match:
 
 
 @dataclass
+class MatchValue:
+    subject: Any
+    cases: List[Tuple[Any, List[Any]]]  # (pattern, blocco)
+    else_block: Optional[List[Any]]
+
+
+@dataclass
 class RouteDef:
     path: str
     body: List[Any]

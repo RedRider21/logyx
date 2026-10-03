@@ -70,6 +70,19 @@ for n in numeri { print(n) }
 Dentro `while` e `for` si possono usare `break` (esce dal ciclo) e `continue` (passa all'iterazione
 successiva).
 
+Il costrutto `match` sceglie un ramo **per valore** (confronto di uguaglianza); `else` è il ramo di
+default, opzionale:
+
+```
+match n {
+    0 { print("zero") }
+    1 { print("uno") }
+    else { print("altro") }
+}
+```
+
+(Il `match` con i rami `ok`/`err` è invece la gestione degli errori, vedi §6c.)
+
 ## 6. Funzioni ✅
 
 ```

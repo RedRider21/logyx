@@ -142,7 +142,9 @@ istruzione   := dichiarazione | assegnazione | if | while | for
               | espressione | render | isolaClient
 isolaClient  := "@start-client" istruzione* "@end-client"
 
-match        := "match" espressione "{" "ok" IDENT blocco "err" IDENT blocco "}"
+match        := matchValore | matchErrori
+matchValore  := "match" espressione "{" (espressione blocco)* ("else" blocco)? "}"
+matchErrori  := "match" espressione "{" "ok" IDENT blocco "err" IDENT blocco "}"
 
 if           := "if" espressione blocco ("else" "if" espressione blocco)* ("else" blocco)?
 while        := "while" espressione blocco

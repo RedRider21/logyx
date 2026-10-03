@@ -33,7 +33,8 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | **Funzioni come valori / closure / lambda** | ⏳ | **1** |
 | Parametri con default; numero variabile di argomenti | ⏳ | 3 |
 | **Record/struct** (tipi con campi) | ✅ | — |
-| `enum` e `match` generale (oggi solo `ok`/`err`) | ⏳ | 3 |
+| `match` generale (sui valori, con `else`) | ✅ | — |
+| `enum` (tipi somma) | ⏳ | 3 |
 | Tuple; `for` con indice | ⏳ | 4 |
 | Costanti globali a primo livello; conversioni esplicite (`int()`, `float()`) | 🟡 | 3 |
 
@@ -50,6 +51,20 @@ Da costruire preferibilmente **in Logyx**, non come builtin infiniti nel compila
 | Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil` ✅ · `sqrt`, `round`, `random` ⏳ | 🟡 |
 | I/O e sistema | `print` ✅ · lettura input, file, ambiente ⏳ | 🟡 |
 | Dati | **JSON**: `to_json` (serializzazione di scalari/record) ✅ · `from_json` (parsing) ⏳ · **date/tempo** ⏳ | 🟡 |
+
+## Piano 2.5 — Librerie esterne (l'ecosistema)
+
+Logyx transpila a Rust: eredita tre porte verso le librerie esterne. **Da costruire** (oggi `import`
+carica solo file `.logyx` locali).
+
+| Porta | Cosa apre | Come | Priorità |
+| --- | --- | --- | --- |
+| **Crates Rust** | l'ecosistema crates.io (serde, reqwest, regex, DB, ...) | dipendenza nel `Cargo.toml` generato + binding | **la principale** |
+| **FFI con C** | librerie di sistema / C | dichiarazione firme + linker | media |
+| **Ponte Python** | numpy/pandas/ML | `PyO3` (CPython incorporato) | bassa (binario pesante, no WASM) |
+
+Nota: il ponte Python è possibile ma costoso (perde il "puro nativo" e il target WASM) → opzione di
+nicchia, non fondamento. Le crates Rust coprono quasi tutto ciò che serve.
 
 ## Piano 3 — Capacità di piattaforma (il confronto vero con PHP/JS)
 

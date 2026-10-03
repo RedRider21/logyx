@@ -125,6 +125,11 @@ class RustTranspiler:
                 if self._expr_has_try(s.subject) or self._body_has_fail_or_try(s.ok_block) \
                         or self._body_has_fail_or_try(s.err_block):
                     return True
+            elif t == "MatchValue":
+                if self._expr_has_try(s.subject) \
+                        or any(self._body_has_fail_or_try(blk) for _, blk in s.cases) \
+                        or (s.else_block and self._body_has_fail_or_try(s.else_block)):
+                    return True
         return False
 
     def _expr_has_try(self, e):
@@ -272,6 +277,15 @@ class RustTranspiler:
             self._scan_expr(s.subject, pt, ev)
             self._scan_stmts(s.ok_block, pt, ev, fname)
             self._scan_stmts(s.err_block, pt, ev, fname)
+        elif t == "MatchValue":
+            for pat, blk in s.cases:
+                self._compare_ev(s.subject, pat, pt, ev)
+                self._compare_ev(pat, s.subject, pt, ev)
+                self._scan_expr(pat, pt, ev)
+                self._scan_stmts(blk, pt, ev, fname)
+            self._scan_expr(s.subject, pt, ev)
+            if s.else_block:
+                self._scan_stmts(s.else_block, pt, ev, fname)
 
     @staticmethod
     def _cond_bool(cond, ev):
@@ -408,6 +422,11 @@ class RustTranspiler:
             elif t == "Match":
                 yield from self._returns(s.ok_block)
                 yield from self._returns(s.err_block)
+            elif t == "MatchValue":
+                for _, blk in s.cases:
+                    yield from self._returns(blk)
+                if s.else_block:
+                    yield from self._returns(s.else_block)
 
     def _type_of(self, e, ptypes):
         t = type(e).__name__
@@ -519,6 +538,22 @@ class RustTranspiler:
                 + arm + f"Err({s.err_var}) => {{\n" + errb + "\n" + arm + "}\n"
                 + pad + "}"
             )
+        if t == "MatchValue":
+            subj = self.expr(s.subject)
+            out = ""
+            for i, (pat, blk) in enumerate(s.cases):
+                body = self.block(blk, declared, indent + 1)
+                cond = f"({subj} == {self.expr(pat)})"
+                head = "if" if i == 0 else " else if"
+                lead = pad if i == 0 else ""
+                out += lead + f"{head} {cond} {{\n" + body + "\n" + pad + "}"
+            if s.else_block is not None:
+                body = self.block(s.else_block, declared, indent + 1)
+                if not s.cases:
+                    out = pad + "{\n" + body + "\n" + pad + "}"
+                else:
+                    out += " else {\n" + body + "\n" + pad + "}"
+            return out or (pad + "{}")
         if t == "If":
             out = pad + f"if {self.expr(s.cond)} {{\n"
             out += self.block(s.then_block, declared, indent + 1) + "\n" + pad + "}"

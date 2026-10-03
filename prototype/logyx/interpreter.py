@@ -484,6 +484,15 @@ class Interpreter:
             child.define(s.ok_var, subject)
             self._exec_all(s.ok_block, child)
 
+    def st_MatchValue(self, s, env):
+        subject = self.eval(s.subject, env)
+        for pat, block in s.cases:
+            if subject == self.eval(pat, env):
+                self.exec_block(block, env)
+                return
+        if s.else_block is not None:
+            self.exec_block(s.else_block, env)
+
     def st_Render(self, s, env):
         raise _Response(self.render_template(s.raw, env))
 

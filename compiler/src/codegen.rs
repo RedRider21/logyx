@@ -245,6 +245,11 @@ impl Codegen {
                     || self.body_has_fail_or_try(ok_block)
                     || self.body_has_fail_or_try(err_block)
             }
+            Stmt::MatchValue { subject, cases, else_block } => {
+                self.expr_has_try(subject)
+                    || cases.iter().any(|(_, blk)| self.body_has_fail_or_try(blk))
+                    || else_block.as_ref().map_or(false, |b| self.body_has_fail_or_try(b))
+            }
             _ => false,
         })
     }
@@ -484,6 +489,18 @@ impl Codegen {
                 self.scan_expr(subject, pt, ev);
                 self.scan_stmts(ok_block, pt, ev, fname);
                 self.scan_stmts(err_block, pt, ev, fname);
+            }
+            Stmt::MatchValue { subject, cases, else_block } => {
+                for (pat, blk) in cases {
+                    self.compare_ev(subject, pat, pt, ev);
+                    self.compare_ev(pat, subject, pt, ev);
+                    self.scan_expr(pat, pt, ev);
+                    self.scan_stmts(blk, pt, ev, fname);
+                }
+                self.scan_expr(subject, pt, ev);
+                if let Some(eb) = else_block {
+                    self.scan_stmts(eb, pt, ev, fname);
+                }
             }
             Stmt::Break | Stmt::Continue | Stmt::Func(_) => {}
         }
@@ -803,6 +820,31 @@ impl Codegen {
             Stmt::Break => Ok(format!("{pad}break;")),
             Stmt::Continue => Ok(format!("{pad}continue;")),
             Stmt::Fail(e) => Ok(format!("{pad}return Err({});", self.expr(e)?)),
+            Stmt::MatchValue { subject, cases, else_block } => {
+                let subj = self.expr(subject)?;
+                let mut out = String::new();
+                for (i, (pat, blk)) in cases.iter().enumerate() {
+                    let body = self.block(blk, declared, indent + 1)?;
+                    let cond = format!("({} == {})", subj, self.expr(pat)?);
+                    if i == 0 {
+                        out = format!("{pad}if {cond} {{\n{body}\n{pad}}}");
+                    } else {
+                        out += &format!(" else if {cond} {{\n{body}\n{pad}}}");
+                    }
+                }
+                if let Some(eb) = else_block {
+                    let body = self.block(eb, declared, indent + 1)?;
+                    if cases.is_empty() {
+                        out = format!("{pad}{{\n{body}\n{pad}}}");
+                    } else {
+                        out += &format!(" else {{\n{body}\n{pad}}}");
+                    }
+                }
+                if out.is_empty() {
+                    out = format!("{pad}{{}}");
+                }
+                Ok(out)
+            }
             Stmt::Match { subject, ok_var, ok_block, err_var, err_block } => {
                 let subj = self.expr(subject)?;
                 let mut ok_decl = declared.clone();
@@ -1377,6 +1419,14 @@ fn collect_return_values<'a>(stmts: &'a [Stmt], out: &mut Vec<&'a Expr>) {
             Stmt::Match { ok_block, err_block, .. } => {
                 collect_return_values(ok_block, out);
                 collect_return_values(err_block, out);
+            }
+            Stmt::MatchValue { cases, else_block, .. } => {
+                for (_, blk) in cases {
+                    collect_return_values(blk, out);
+                }
+                if let Some(eb) = else_block {
+                    collect_return_values(eb, out);
+                }
             }
             _ => {}
         }

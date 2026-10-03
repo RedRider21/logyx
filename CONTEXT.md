@@ -99,8 +99,11 @@ Limiti v0: campi scalari/string (no record annidati, no liste/mappe di record �
 annidati), formato compatto, escape; ambiente dei tipi locali aggiunto per la generazione type-directed.
 Interprete+nativo, suite 29/29 (`examples/native_json.logyx`). **DA FARE:** `from_json` (parser JSON),
 float/liste in `to_json`.
-**Prossimi fronti del nucleo:** `match` generale (oggi solo `ok`/`err`); date/tempo; web→WASM.
-Fase 2 funzioni: valori funzione e lambda inline. Contenitori di record (liste/mappe di record).
+**`match` generale: FATTO**: `match x { <valore> { } ... else { } }` (confronto per uguaglianza →
+if/else-if), distinto dal `match ok/err` degli errori; interprete+nativo, suite 30/30
+(`examples/native_matchval.logyx`).
+**Prossimi fronti:** librerie esterne (crates Rust — vedi ROADMAP "Piano 2.5"); `from_json`; date/tempo;
+web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.
 

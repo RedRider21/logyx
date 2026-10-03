@@ -253,6 +253,23 @@ class Parser:
         self.expect(T.MATCH)
         subject = self.expression()
         self.expect(T.LBRACE)
+        # match sugli errori (ok/err) oppure match sui valori
+        if self.at(T.IDENT) and self.peek().value in ("ok", "err"):
+            return self._match_result(subject)
+        cases = []
+        else_block = None
+        while not self.at(T.RBRACE) and not self.at(T.EOF):
+            if self.at(T.ELSE):
+                self.advance()
+                else_block = self.block()
+            else:
+                pat = self.expression()
+                blk = self.block()
+                cases.append((pat, blk))
+        self.expect(T.RBRACE)
+        return N.MatchValue(subject, cases, else_block)
+
+    def _match_result(self, subject):
         ok_var = ok_block = err_var = err_block = None
         while not self.at(T.RBRACE) and not self.at(T.EOF):
             tag = self.expect(T.IDENT, "ramo 'ok' oppure 'err'").value

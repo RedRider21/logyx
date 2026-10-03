@@ -335,6 +335,23 @@ impl Parser {
         self.expect(&TokenKind::Match, "match")?;
         let subject = self.expression()?;
         self.expect(&TokenKind::LBrace, "{")?;
+        let is_result = matches!(self.kind(), TokenKind::Ident(s) if s == "ok" || s == "err");
+        if !is_result {
+            let mut cases = Vec::new();
+            let mut else_block = None;
+            while !self.is(&TokenKind::RBrace) && !self.is(&TokenKind::Eof) {
+                if self.is(&TokenKind::Else) {
+                    self.advance();
+                    else_block = Some(self.block()?);
+                } else {
+                    let pat = self.expression()?;
+                    let blk = self.block()?;
+                    cases.push((pat, blk));
+                }
+            }
+            self.expect(&TokenKind::RBrace, "}")?;
+            return Ok(Stmt::MatchValue { subject, cases, else_block });
+        }
         let (mut okv, mut okb, mut errv, mut errb) = (None, None, None, None);
         while !self.is(&TokenKind::RBrace) && !self.is(&TokenKind::Eof) {
             let tag = self.ident_name("ramo 'ok' oppure 'err'")?;

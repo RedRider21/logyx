@@ -1,0 +1,30 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// match generale (sui valori): rami per valore + else. Interprete e nativo.
+//   python3 main.py       ../examples/native_matchval.logyx
+//   python3 main.py build ../examples/native_matchval.logyx
+
+fn nome_cifra(n) -> string {
+    match n {
+        0 { return "zero" }
+        1 { return "uno" }
+        2 { return "due" }
+        else { return "molti" }
+    }
+}
+
+fn main() {
+    for i in range(5) {
+        print("{i} -> {nome_cifra(i)}")
+    }
+
+    // match su stringhe, senza ramo else
+    s = "verde"
+    colore = "?"
+    match s {
+        "rosso" { colore = "fermo" }
+        "verde" { colore = "vai" }
+    }
+    print("{s}: {colore}")
+}
