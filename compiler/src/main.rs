@@ -48,37 +48,93 @@ fn run_gen(path: &str) -> Result<(), error::LogyxError> {
 }
 
 fn run_build(path: &str) -> Result<(), error::LogyxError> {
-    let rust = generate_rust(path)?;
-    let out_rs = change_ext(path, "rs");
-    std::fs::write(&out_rs, &rust)
-        .map_err(|e| error::LogyxError::new(format!("{out_rs}: {e}")))?;
-    println!("// Rust generato in {out_rs}");
-    if which_rustc() {
-        let bin = strip_ext(path) + "_bin";
-        let comp = std::process::Command::new("rustc")
-            .args(["-O", &out_rs, "-o", &bin])
-            .output()
-            .map_err(|e| error::LogyxError::new(format!("rustc: {e}")))?;
-        if !comp.status.success() {
-            return Err(error::LogyxError::new(format!(
-                "rustc ha segnalato errori:\n{}",
-                String::from_utf8_lossy(&comp.stderr)
-            )));
-        }
-        println!("──── esecuzione del binario nativo ────");
-        let run = std::process::Command::new(&bin)
-            .output()
-            .map_err(|e| error::LogyxError::new(format!("{bin}: {e}")))?;
-        print!("{}", String::from_utf8_lossy(&run.stdout));
+    let items = modules::load_program(path)?;
+    let mut cg = codegen::Codegen::new();
+    let rust = cg.generate(&items)?;
+    let deps = cg.deps.clone();
+    if deps.is_empty() {
+        build_rustc(path, &rust)
     } else {
+        build_cargo(path, &rust, &deps)
+    }
+}
+
+fn build_rustc(path: &str, rust: &str) -> Result<(), error::LogyxError> {
+    let out_rs = change_ext(path, "rs");
+    std::fs::write(&out_rs, rust).map_err(|e| error::LogyxError::new(format!("{out_rs}: {e}")))?;
+    println!("// Rust generato in {out_rs}");
+    if !which("rustc") {
         println!("──── rustc non installato ────");
         println!("Per compilare:  rustc -O {out_rs} -o app && ./app");
+        return Ok(());
     }
+    let bin = strip_ext(path) + "_bin";
+    let comp = std::process::Command::new("rustc")
+        .args(["-O", &out_rs, "-o", &bin])
+        .output()
+        .map_err(|e| error::LogyxError::new(format!("rustc: {e}")))?;
+    if !comp.status.success() {
+        return Err(error::LogyxError::new(format!(
+            "rustc ha segnalato errori:\n{}",
+            String::from_utf8_lossy(&comp.stderr)
+        )));
+    }
+    println!("──── esecuzione del binario nativo ────");
+    let run = std::process::Command::new(&bin)
+        .output()
+        .map_err(|e| error::LogyxError::new(format!("{bin}: {e}")))?;
+    print!("{}", String::from_utf8_lossy(&run.stdout));
     Ok(())
 }
 
-fn which_rustc() -> bool {
-    std::process::Command::new("rustc")
+fn build_cargo(
+    path: &str,
+    rust: &str,
+    deps: &std::collections::HashMap<String, String>,
+) -> Result<(), error::LogyxError> {
+    let dir = format!("{}_cargo", strip_ext(path));
+    std::fs::create_dir_all(format!("{dir}/src"))
+        .map_err(|e| error::LogyxError::new(format!("{dir}: {e}")))?;
+    let mut keys: Vec<&String> = deps.keys().collect();
+    keys.sort();
+    let mut toml = String::from(
+        "[package]\nname = \"logyxprog\"\nversion = \"0.0.1\"\nedition = \"2021\"\n\n[dependencies]\n",
+    );
+    for k in &keys {
+        toml += &format!("{} = \"{}\"\n", k, deps[*k]);
+    }
+    toml += "\n[[bin]]\nname = \"logyxprog\"\npath = \"src/main.rs\"\n\n[profile.release]\nopt-level = 3\n";
+    std::fs::write(format!("{dir}/Cargo.toml"), toml)
+        .map_err(|e| error::LogyxError::new(format!("{dir}/Cargo.toml: {e}")))?;
+    std::fs::write(format!("{dir}/src/main.rs"), rust)
+        .map_err(|e| error::LogyxError::new(format!("{dir}/src/main.rs: {e}")))?;
+    let names: Vec<String> = keys.iter().map(|k| k.to_string()).collect();
+    println!("// progetto cargo in {dir} (dipendenze: {})", names.join(", "));
+    if !which("cargo") {
+        println!("──── cargo non installato ────");
+        return Ok(());
+    }
+    let comp = std::process::Command::new("cargo")
+        .args(["build", "--release"])
+        .current_dir(&dir)
+        .output()
+        .map_err(|e| error::LogyxError::new(format!("cargo: {e}")))?;
+    if !comp.status.success() {
+        return Err(error::LogyxError::new(format!(
+            "cargo ha segnalato errori:\n{}",
+            String::from_utf8_lossy(&comp.stderr)
+        )));
+    }
+    println!("──── esecuzione del binario nativo ────");
+    let run = std::process::Command::new(format!("{dir}/target/release/logyxprog"))
+        .output()
+        .map_err(|e| error::LogyxError::new(format!("binario: {e}")))?;
+    print!("{}", String::from_utf8_lossy(&run.stdout));
+    Ok(())
+}
+
+fn which(cmd: &str) -> bool {
+    std::process::Command::new(cmd)
         .arg("--version")
         .output()
         .map(|o| o.status.success())

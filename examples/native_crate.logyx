@@ -1,0 +1,16 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Uso di una crate Rust (sha2) "sotto il cofano": sha256(s) -> stringa esadecimale.
+// Il build passa automaticamente da rustc a cargo quando serve una dipendenza.
+//   python3 main.py       ../examples/native_crate.logyx     (interprete, usa hashlib)
+//   python3 main.py build ../examples/native_crate.logyx     (nativo, usa la crate sha2)
+
+fn main() {
+    print(sha256("ciao"))
+
+    s = "Logyx"
+    print("sha256 di {s}: {sha256(s)}")
+
+    print(sha256("password123"))
+}

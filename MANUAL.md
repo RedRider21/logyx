@@ -228,6 +228,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `filter(lista, p)` | Gli elementi della lista per cui la funzione `p` è vera |
 | `reduce(lista, init, f)` | Accumula da `init` applicando `f(acc, elemento)` |
 | `to_json(x)` | Serializza `x` (int, bool, string o record) in una stringa JSON |
+| `sha256(s)` | Hash SHA-256 di `s` in esadecimale (usa la crate Rust `sha2`) |
 
 In `map`/`filter`/`reduce` la funzione è il **nome di una funzione definita con `fn`** (non una lambda
 inline, per ora). Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`.
@@ -235,6 +236,13 @@ inline, per ora). Esempi: `examples/native_mapfilter.logyx`, `examples/native_re
 `to_json` serializza **int**, **bool**, **string** e **record** (anche annidati), in formato compatto;
 le stringhe sono "escaped". Non ancora: `float`, liste/mappe, e `from_json` (deserializzazione). Vedi
 `examples/native_json.logyx`.
+
+### Librerie esterne (crates Rust)
+
+`sha256` è il primo builtin che usa una **libreria dell'ecosistema Rust** (la crate `sha2`). Quando un
+programma usa una dipendenza esterna, il comando `build` **passa automaticamente da `rustc` a `cargo`**
+(build ibrido): crea al volo un piccolo progetto `cargo`, scarica e compila le crate, ed esegue. Senza
+dipendenze resta `rustc` diretto (veloce). Vedi `examples/native_crate.logyx`.
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

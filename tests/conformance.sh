@@ -13,7 +13,7 @@ EXAMPLES="$ROOT/examples"
 LOGYXC="$ROOT/compiler/target/release/logyxc"
 
 # Esempi supportati dal compilatore nativo (niente costrutti web).
-CASES="native_fib native_hello native_range native_infer native_list native_map native_push native_math native_text native_remove native_contains native_trim native_pow native_breakcont native_compound native_listops native_round native_has native_sqrt native_strops native_strlist native_splitjoin native_replace native_mapfilter native_reduce native_record native_json native_matchval use_import errori"
+CASES="native_fib native_hello native_range native_infer native_list native_map native_push native_math native_text native_remove native_contains native_trim native_pow native_breakcont native_compound native_listops native_round native_has native_sqrt native_strops native_strlist native_splitjoin native_replace native_mapfilter native_reduce native_record native_json native_matchval native_crate use_import errori"
 
 echo "== build del compilatore Rust (release) =="
 ( cd "$ROOT/compiler" && cargo build --release ) >/dev/null 2>&1 \
@@ -39,7 +39,7 @@ for c in $CASES; do
 done
 
 # Pulizia degli artefatti generati accanto agli esempi (sono comunque gitignored).
-rm -f "$EXAMPLES"/*.rs "$EXAMPLES"/*_bin
+rm -f "$EXAMPLES"/*.rs "$EXAMPLES"/*_bin; rm -rf "$EXAMPLES"/*_cargo
 
 echo "---------------------------------------"
 echo "Conformi: $pass   Differenti: $fail"

@@ -1,6 +1,7 @@
 # Copyright (C) 2026 Daniele Deplano (RedRider21)
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import hashlib
 import math
 
 from . import nodes as N
@@ -267,6 +268,7 @@ class Interpreter:
             raise LogyxError("to_json non supporta questo tipo (v0: int, bool, string, record)")
 
         g.define("to_json", _to_json)
+        g.define("sha256", lambda s: hashlib.sha256(s.encode("utf-8")).hexdigest())
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.

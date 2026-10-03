@@ -409,13 +409,22 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <td><code>to_json(x)</code></td>
 <td>Serializza <code>x</code> (int, bool, string o record) in una stringa JSON</td>
 </tr>
+<tr>
+<td><code>sha256(s)</code></td>
+<td>Hash SHA-256 di <code>s</code> in esadecimale (usa la crate Rust <code>sha2</code>)</td>
+</tr>
 </tbody>
 </table>
 <p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione è il <strong>nome di una funzione definita con <code>fn</code></strong> (non una lambda
 inline, per ora). Esempi: <code>examples/native_mapfilter.logyx</code>, <code>examples/native_reduce.logyx</code>.</p>
 <p><code>to_json</code> serializza <strong>int</strong>, <strong>bool</strong>, <strong>string</strong> e <strong>record</strong> (anche annidati), in formato compatto;
 le stringhe sono "escaped". Non ancora: <code>float</code>, liste/mappe, e <code>from_json</code> (deserializzazione). Vedi
-<code>examples/native_json.logyx</code>.
+<code>examples/native_json.logyx</code>.</p>
+<h3 id="librerie-esterne-crates-rust">Librerie esterne (crates Rust)</h3>
+<p><code>sha256</code> è il primo builtin che usa una <strong>libreria dell'ecosistema Rust</strong> (la crate <code>sha2</code>). Quando un
+programma usa una dipendenza esterna, il comando <code>build</code> <strong>passa automaticamente da <code>rustc</code> a <code>cargo</code></strong>
+(build ibrido): crea al volo un piccolo progetto <code>cargo</code>, scarica e compila le crate, ed esegue. Senza
+dipendenze resta <code>rustc</code> diretto (veloce). Vedi <code>examples/native_crate.logyx</code>.
 | <code>pow(base, esp)</code> | <code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>) |
 | <code>floor(x)</code> / <code>ceil(x)</code> | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | <code>sqrt(x)</code> | Radice quadrata (ritorna un float) |

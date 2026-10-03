@@ -129,6 +129,7 @@ pub struct Codegen {
     kinds: HashMap<String, String>,
     cur_types: HashMap<String, Option<String>>,
     uses_json: bool,
+    pub deps: HashMap<String, String>,
 }
 
 impl Codegen {
@@ -144,6 +145,7 @@ impl Codegen {
             kinds: HashMap::new(),
             cur_types: HashMap::new(),
             uses_json: false,
+            deps: HashMap::new(),
         }
     }
 
@@ -198,6 +200,7 @@ impl Codegen {
         }
         self.infer(&funcs);
         self.uses_json = false;
+        self.deps.clear();
         // struct dei record, prima delle funzioni
         let mut structs = Vec::new();
         let mut rec_names: Vec<String> = self.records.keys().cloned().collect();
@@ -398,6 +401,7 @@ impl Codegen {
                     }
                     if name == "upper" || name == "lower" || name == "trim" || name == "substring"
                         || name == "join" || name == "replace" || name == "to_json"
+                        || name == "sha256"
                     {
                         return Some("string".into());
                     }
@@ -1334,6 +1338,16 @@ impl Codegen {
                             self.expr(&args[0])?,
                             self.expr(&args[1])?,
                             self.expr(&args[2])?
+                        ));
+                    }
+                    if name == "sha256" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("sha256 accetta un solo argomento"));
+                        }
+                        self.deps.insert("sha2".to_string(), "0.10".to_string());
+                        return Ok(format!(
+                            "{{ use sha2::{{Sha256, Digest}}; let mut __h = Sha256::new(); __h.update(({}).as_bytes()); format!(\"{{:x}}\", __h.finalize()) }}",
+                            self.expr(&args[0])?
                         ));
                     }
                     if name == "to_json" {

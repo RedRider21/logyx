@@ -85,6 +85,7 @@ class RustTranspiler:
             self.fallible[f.name] = fal
         self._tmp = 0
         self.uses_json = False
+        self.deps = {}  # crate -> versione (dipendenze esterne richieste)
         self._infer(funcs)
         struct_defs = []
         for name in sorted(self.records):
@@ -481,7 +482,7 @@ class RustTranspiler:
                     if tt is not None:
                         return tt
                 return None
-            if name in ("upper", "lower", "trim", "substring", "join", "replace", "to_json"):
+            if name in ("upper", "lower", "trim", "substring", "join", "replace", "to_json", "sha256"):
                 return "string"
             if name in ("contains", "has"):
                 return "bool"
@@ -866,6 +867,13 @@ class RustTranspiler:
                         raise LogyxError("to_json: non riesco a dedurre il tipo dell'argomento")
                     self.uses_json = True
                     return self._json_value(self.expr(e.args[0]), ta)
+                if nm == "sha256":
+                    if len(e.args) != 1:
+                        raise LogyxError("sha256 accetta un solo argomento")
+                    self.deps["sha2"] = "0.10"
+                    return ("{ use sha2::{Sha256, Digest}; let mut __h = Sha256::new(); "
+                            "__h.update((" + self.expr(e.args[0])
+                            + ").as_bytes()); format!(\"{:x}\", __h.finalize()) }")
                 if nm == "map":
                     fn = self._fn_name(e.args, 2, 1, "map(lista, funzione)")
                     return (f"({self.expr(e.args[0])}).iter().cloned().map(|x| {fn}(x))"

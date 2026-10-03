@@ -7,6 +7,7 @@ build/
 # Artefatti generati dal transpiler
 examples/*.rs
 *_bin
+*_cargo/
 
 # Python
 __pycache__/

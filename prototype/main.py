@@ -89,25 +89,56 @@ def cmd_build(path):
     from logyx.rustgen import RustTranspiler
 
     _, items = _load(path)
-    rust = RustTranspiler().transpile(items)
-    out_rs = os.path.splitext(path)[0] + ".rs"
-    with open(out_rs, "w", encoding="utf-8") as f:
+    tr = RustTranspiler()
+    rust = tr.transpile(items)
+    deps = getattr(tr, "deps", {})
+    base = os.path.splitext(path)[0]
+
+    if not deps:
+        # nessuna dipendenza esterna: compilazione diretta con rustc
+        out_rs = base + ".rs"
+        with open(out_rs, "w", encoding="utf-8") as f:
+            f.write(rust)
+        print(f"// Rust generato in {out_rs}\n")
+        print(rust)
+        if shutil.which("rustc"):
+            binp = base + "_bin"
+            comp = subprocess.run(["rustc", "-O", out_rs, "-o", binp], capture_output=True, text=True)
+            if comp.returncode != 0:
+                print("rustc ha segnalato errori:\n" + comp.stderr, file=sys.stderr)
+                return 1
+            print("──── esecuzione del binario nativo ────")
+            run = subprocess.run([binp], capture_output=True, text=True)
+            sys.stdout.write(run.stdout)
+            return run.returncode
+        print("──── rustc non installato ────")
+        print(f"Per compilare dove Rust e' presente:  rustc -O {out_rs} -o app && ./app")
+        return 0
+
+    # dipendenze esterne: progetto cargo al volo
+    cdir = base + "_cargo"
+    os.makedirs(os.path.join(cdir, "src"), exist_ok=True)
+    toml = '[package]\nname = "logyxprog"\nversion = "0.0.1"\nedition = "2021"\n\n[dependencies]\n'
+    for k in sorted(deps):
+        toml += f'{k} = "{deps[k]}"\n'
+    toml += '\n[[bin]]\nname = "logyxprog"\npath = "src/main.rs"\n\n[profile.release]\nopt-level = 3\n'
+    with open(os.path.join(cdir, "Cargo.toml"), "w", encoding="utf-8") as f:
+        f.write(toml)
+    with open(os.path.join(cdir, "src", "main.rs"), "w", encoding="utf-8") as f:
         f.write(rust)
-    print(f"// Rust generato in {out_rs}\n")
-    print(rust)
-    if shutil.which("rustc"):
-        binp = os.path.splitext(path)[0] + "_bin"
-        comp = subprocess.run(["rustc", "-O", out_rs, "-o", binp], capture_output=True, text=True)
-        if comp.returncode != 0:
-            print("rustc ha segnalato errori:\n" + comp.stderr, file=sys.stderr)
-            return 1
-        print("──── esecuzione del binario nativo ────")
-        run = subprocess.run([binp], capture_output=True, text=True)
-        sys.stdout.write(run.stdout)
-        return run.returncode
-    print("──── rustc non installato ────")
-    print(f"Per compilare dove Rust e' presente:  rustc -O {out_rs} -o app && ./app")
-    return 0
+    print(f"// progetto cargo in {cdir} (dipendenze: {', '.join(sorted(deps))})")
+    if not shutil.which("cargo"):
+        print("──── cargo non installato ────")
+        return 0
+    comp = subprocess.run(["cargo", "build", "--release"], cwd=cdir, capture_output=True, text=True)
+    if comp.returncode != 0:
+        print("cargo ha segnalato errori:\n" + comp.stderr, file=sys.stderr)
+        return 1
+    print("──── esecuzione del binario nativo ────")
+    run = subprocess.run([os.path.join(cdir, "target", "release", "logyxprog")],
+                         capture_output=True, text=True)
+    sys.stdout.write(run.stdout)
+    return run.returncode
 
 
 def main(argv):

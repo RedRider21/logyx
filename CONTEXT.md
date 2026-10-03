@@ -102,8 +102,13 @@ float/liste in `to_json`.
 **`match` generale: FATTO**: `match x { <valore> { } ... else { } }` (confronto per uguaglianza →
 if/else-if), distinto dal `match ok/err` degli errori; interprete+nativo, suite 30/30
 (`examples/native_matchval.logyx`).
-**Prossimi fronti:** librerie esterne (crates Rust — vedi ROADMAP "Piano 2.5"); `from_json`; date/tempo;
-web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
+**Crates Rust: AVVIATO** (`design/crates-rust.md`): **build ibrido** — senza dipendenze `rustc` diretto,
+con dipendenze crea un progetto `cargo` al volo (cartella `*_cargo/` gitignored), in entrambi i backend.
+Primo uso reale: builtin **`sha256`** via crate `sha2` "sotto il cofano" (deterministico → conforme).
+Il transpiler/compilatore tracciano le dipendenze (`deps`). Suite 31/31 (`examples/native_crate.logyx`).
+**DA FARE:** aggancio *generico* alle crate (sintassi `use rust`/`extern rust`), altri builtin via crate
+(es. `from_json` con serde), gestione errori di rete/crate.
+**Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.
 
