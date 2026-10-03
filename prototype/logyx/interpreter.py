@@ -37,6 +37,21 @@ class ErrValue:
         return isinstance(other, ErrValue) and other.message == self.message
 
 
+class RecordValue:
+    """Istanza di un record: un tipo con campi nominati."""
+
+    def __init__(self, type_name, fields):
+        self.type_name = type_name
+        self.fields = fields  # dict nome_campo -> valore
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, RecordValue)
+            and self.type_name == other.type_name
+            and self.fields == other.fields
+        )
+
+
 def html_escape(s):
     return (
         s.replace("&", "&amp;")
@@ -112,6 +127,9 @@ def logyx_str(v):
         return f"<fn {v.decl.name}>"
     if isinstance(v, ErrValue):
         return f"<error: {v.message}>"
+    if isinstance(v, RecordValue):
+        inner = ", ".join(f"{k}: {logyx_str(val)}" for k, val in v.fields.items())
+        return f"{v.type_name}({inner})"
     return str(v)
 
 
@@ -133,6 +151,7 @@ class Interpreter:
     def __init__(self):
         self.globals = Environment()
         self.routes = {}
+        self.records = {}  # nome -> lista di (nome_campo, tipo)
         self._install_builtins()
 
     def _install_builtins(self):
@@ -227,6 +246,8 @@ class Interpreter:
                     main = fn
             elif isinstance(item, N.RouteDef):
                 self.routes[item.path] = item
+            elif isinstance(item, N.RecordDef):
+                self.records[item.name] = item.fields
             else:
                 self.exec(item, self.globals)
         return main
@@ -522,9 +543,25 @@ class Interpreter:
             raise LogyxError("indice non valido")
 
     def ex_Call(self, n, env):
+        if isinstance(n.callee, N.Identifier) and n.callee.name in self.records:
+            return self._make_record(n.callee.name, [self.eval(a, env) for a in n.args])
         callee = self.eval(n.callee, env)
         args = [self.eval(a, env) for a in n.args]
         return self.call(callee, args)
+
+    def _make_record(self, name, args):
+        fields = self.records[name]
+        if len(args) != len(fields):
+            raise LogyxError(
+                f"il record '{name}' ha {len(fields)} campi, forniti {len(args)}"
+            )
+        return RecordValue(name, {fname: val for (fname, _), val in zip(fields, args)})
+
+    def ex_Field(self, n, env):
+        target = self.eval(n.target, env)
+        if isinstance(target, RecordValue) and n.name in target.fields:
+            return target.fields[n.name]
+        raise LogyxError(f"campo '{n.name}' non trovato")
 
     def call(self, callee, args):
         if isinstance(callee, LogyxFunction):

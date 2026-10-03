@@ -33,6 +33,7 @@ pub enum TokenKind {
     Match,
     Break,
     Continue,
+    Record,
     And,
     Or,
     Not,
@@ -65,6 +66,7 @@ pub enum TokenKind {
     Ge,
     Question,
     Pipe,
+    Dot,
     Eof,
 }
 
@@ -92,6 +94,7 @@ pub fn keyword(word: &str) -> Option<TokenKind> {
         "match" => TokenKind::Match,
         "break" => TokenKind::Break,
         "continue" => TokenKind::Continue,
+        "record" => TokenKind::Record,
         "and" => TokenKind::And,
         "or" => TokenKind::Or,
         "not" => TokenKind::Not,

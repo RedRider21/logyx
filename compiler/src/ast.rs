@@ -53,6 +53,7 @@ pub enum Expr {
     Logical { op: LogOp, left: Box<Expr>, right: Box<Expr> },
     Call { callee: Box<Expr>, args: Vec<Expr> },
     Index { target: Box<Expr>, index: Box<Expr> },
+    Field { target: Box<Expr>, name: String },
     List(Vec<Expr>),
     Map(Vec<(Expr, Expr)>),
     Try(Box<Expr>),
@@ -95,8 +96,15 @@ pub struct Function {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct RecordDef {
+    pub name: String,
+    pub fields: Vec<(String, TypeRef)>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Func(Function),
+    Record(RecordDef),
     Import(String),
     Stmt(Stmt),
 }

@@ -43,14 +43,16 @@ def _rust_str(s):
 class RustTranspiler:
     def transpile(self, items):
         funcs = [i for i in items if isinstance(i, N.FunctionDef)]
-        others = [i for i in items if not isinstance(i, N.FunctionDef)]
+        records = [i for i in items if isinstance(i, N.RecordDef)]
+        others = [i for i in items if not isinstance(i, (N.FunctionDef, N.RecordDef))]
         if others:
             raise LogyxError(
-                "il transpiler Rust v0 supporta solo definizioni di funzione "
+                "il transpiler Rust v0 supporta solo definizioni di funzione e record "
                 "(niente route/render o codice a primo livello)"
             )
         if not any(f.name == "main" for f in funcs):
             raise LogyxError("manca 'fn main()': serve un punto d'ingresso")
+        self.records = {r.name: r.fields for r in records}
         self.param_types = {
             f.name: dict(zip(f.params, f.param_types or [None] * len(f.params))) for f in funcs
         }
@@ -66,7 +68,12 @@ class RustTranspiler:
             self.fallible[f.name] = fal
         self._tmp = 0
         self._infer(funcs)
-        return "\n\n".join(self.func(f) for f in funcs) + "\n"
+        out = []
+        for name in sorted(self.records):
+            fields = ", ".join(f"{fn}: {self.ty(ft)}" for fn, ft in self.records[name])
+            out.append(f"#[derive(Clone)]\nstruct {name} {{ {fields} }}")
+        out += [self.func(f) for f in funcs]
+        return "\n\n".join(out) + "\n"
 
     # --- rilevazione di fallibilità (presenza di `fail` o `?`) ---
 
@@ -110,6 +117,8 @@ class RustTranspiler:
             return any(self._expr_has_try(a) for a in e.args)
         if t == "Index":
             return self._expr_has_try(e.target) or self._expr_has_try(e.index)
+        if t == "Field":
+            return self._expr_has_try(e.target)
         if t == "StringLit":
             return any(self._expr_has_try(v) for k, v in e.parts if k != "lit")
         if t == "ListLit":
@@ -277,6 +286,8 @@ class RustTranspiler:
                 ev[e.index.name].add("int")
             self._scan_expr(e.target, pt, ev)
             self._scan_expr(e.index, pt, ev)
+        elif t == "Field":
+            self._scan_expr(e.target, pt, ev)
 
     def _binary_ev(self, e, pt, ev):
         op, L, R = e.op, e.left, e.right
@@ -379,6 +390,12 @@ class RustTranspiler:
         t = type(e).__name__
         if t == "Try":
             return self._type_of(e.operand, ptypes)
+        if t == "Field":
+            tt = self._type_of(e.target, ptypes)
+            for fn, ft in getattr(self, "records", {}).get(tt, []):
+                if fn == e.name:
+                    return ft
+            return None
         if t == "StringLit":
             return "string"
         if t == "Literal":
@@ -436,15 +453,19 @@ class RustTranspiler:
                 return "float"
             if name == "reduce" and len(e.args) >= 2:
                 return self._type_of(e.args[1], ptypes)
+            if name in getattr(self, "records", {}):
+                return name
             return self.func_rets.get(name)
         return None
 
     def ty(self, t):
         if t is None:
             raise LogyxError("il transpiler v0 richiede tipi espliciti su parametri e tipo di ritorno")
-        if t not in _TYPES:
-            raise LogyxError(f"tipo non supportato dal transpiler v0: '{t}'")
-        return _TYPES[t]
+        if t in _TYPES:
+            return _TYPES[t]
+        if t in getattr(self, "records", {}):
+            return t
+        raise LogyxError(f"tipo non supportato dal transpiler v0: '{t}'")
 
     # --- istruzioni ---
 
@@ -563,6 +584,13 @@ class RustTranspiler:
             raise LogyxError("sort nel transpiler v0 richiede una variabile lista come argomento")
         return f"{args[0].name}.sort();"
 
+    def _make_record_expr(self, name, args):
+        fields = self.records[name]
+        if len(args) != len(fields):
+            raise LogyxError(f"il record '{name}' ha {len(fields)} campi, forniti {len(args)}")
+        parts = ", ".join(f"{fn}: {self._arg(a)}" for (fn, _), a in zip(fields, args))
+        return f"{name} {{ {parts} }}"
+
     def _arg(self, a):
         # Una variabile passata a una funzione la "muove"; cloniamo per riusabilità.
         # Per i tipi Copy il clone è gratuito dopo l'ottimizzazione.
@@ -664,7 +692,11 @@ class RustTranspiler:
             if isinstance(e.target, N.Identifier) and getattr(self, "kinds", {}).get(e.target.name) == "map":
                 return f"{self.expr(e.target)}.get(&({self.expr(e.index)})).unwrap().clone()"
             return f"{self.expr(e.target)}[({self.expr(e.index)}) as usize].clone()"
+        if t == "Field":
+            return f"{self.expr(e.target)}.{e.name}.clone()"
         if t == "Call":
+            if isinstance(e.callee, N.Identifier) and e.callee.name in getattr(self, "records", {}):
+                return self._make_record_expr(e.callee.name, e.args)
             if isinstance(e.callee, N.Identifier):
                 nm = e.callee.name
                 if nm == "print":

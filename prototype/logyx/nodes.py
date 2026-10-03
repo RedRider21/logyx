@@ -135,6 +135,18 @@ class Import:
 
 
 @dataclass
+class RecordDef:
+    name: str
+    fields: List[Tuple[str, str]]  # (nome_campo, tipo)
+
+
+@dataclass
+class Field:
+    target: Any
+    name: str
+
+
+@dataclass
 class Try:
     operand: Any  # espressione: propaga l'errore se presente, altrimenti il valore
 

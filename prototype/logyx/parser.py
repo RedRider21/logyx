@@ -45,6 +45,8 @@ class Parser:
         while not self.at(T.EOF):
             if self.at(T.IMPORT):
                 items.append(self.import_stmt())
+            elif self.at(T.RECORD):
+                items.append(self.record_def())
             elif self.at(T.FN):
                 items.append(self.function())
             elif self.at(T.IDENT) and self.peek().value == "route":
@@ -52,6 +54,27 @@ class Parser:
             else:
                 items.append(self.statement())
         return items
+
+    def record_def(self):
+        self.expect(T.RECORD)
+        name = self.expect(T.IDENT, "nome del record").value
+        self.expect(T.LBRACE)
+        fields = []
+        if not self.at(T.RBRACE):
+            fields.append(self.record_field())
+            while self.at(T.COMMA):
+                self.advance()
+                if self.at(T.RBRACE):
+                    break
+                fields.append(self.record_field())
+        self.expect(T.RBRACE)
+        return N.RecordDef(name, fields)
+
+    def record_field(self):
+        fname = self.expect(T.IDENT, "nome del campo").value
+        self.expect(T.COLON)
+        ftype = self.type_ref()
+        return (fname, ftype)
 
     def import_stmt(self):
         self.expect(T.IMPORT)
@@ -332,6 +355,10 @@ class Parser:
             elif self.at(T.QUESTION):
                 self.advance()
                 e = N.Try(e)
+            elif self.at(T.DOT):
+                self.advance()
+                fname = self.expect(T.IDENT, "nome del campo").value
+                e = N.Field(e, fname)
             else:
                 break
         return e

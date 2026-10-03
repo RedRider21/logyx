@@ -106,6 +106,7 @@ pub struct Codegen {
     param_order: HashMap<String, Vec<String>>,
     rets: HashMap<String, Option<String>>,
     fallible: HashMap<String, bool>,
+    records: HashMap<String, Vec<(String, String)>>,
     tmp: usize,
     cur_fallible: bool,
     kinds: HashMap<String, String>,
@@ -118,10 +119,19 @@ impl Codegen {
             param_order: HashMap::new(),
             rets: HashMap::new(),
             fallible: HashMap::new(),
+            records: HashMap::new(),
             tmp: 0,
             cur_fallible: false,
             kinds: HashMap::new(),
         }
+    }
+
+    /// Tipo Rust di un tipo Logyx (base o nome di record).
+    fn rust_type(&self, t: &str) -> R<String> {
+        if self.records.contains_key(t) {
+            return Ok(t.to_string());
+        }
+        Ok(ty(t)?.to_string())
     }
 
     pub fn generate(&mut self, items: &[Item]) -> R<String> {
@@ -129,6 +139,9 @@ impl Codegen {
         for it in items {
             match it {
                 Item::Func(f) => funcs.push(f.clone()),
+                Item::Record(r) => {
+                    self.records.insert(r.name.clone(), r.fields.clone());
+                }
                 Item::Import(_) => {} // già espansi dal resolver
                 Item::Stmt(_) => {
                     return Err(LogyxError::new(
@@ -164,6 +177,21 @@ impl Codegen {
         }
         self.infer(&funcs);
         let mut out = Vec::new();
+        // struct dei record, prima delle funzioni
+        let mut rec_names: Vec<&String> = self.records.keys().collect();
+        rec_names.sort();
+        for name in rec_names {
+            let fields = self.records[name].clone();
+            let mut parts = Vec::new();
+            for (fname, ftype) in &fields {
+                parts.push(format!("{}: {}", fname, self.rust_type(ftype)?));
+            }
+            out.push(format!(
+                "#[derive(Clone)]\nstruct {} {{ {} }}",
+                name,
+                parts.join(", ")
+            ));
+        }
         for f in &funcs {
             out.push(self.func(f)?);
         }
@@ -201,6 +229,7 @@ impl Codegen {
             Expr::Unary { operand, .. } => self.expr_has_try(operand),
             Expr::Call { args, .. } => args.iter().any(|a| self.expr_has_try(a)),
             Expr::Index { target, index } => self.expr_has_try(target) || self.expr_has_try(index),
+            Expr::Field { target, .. } => self.expr_has_try(target),
             Expr::Str(parts) => parts.iter().any(|p| match p {
                 StrPart::Expr(e) => self.expr_has_try(e),
                 _ => false,
@@ -356,9 +385,18 @@ impl Codegen {
                     if name == "reduce" {
                         return args.get(1).and_then(|a| self.type_of(a, ptypes));
                     }
+                    if self.records.contains_key(name) {
+                        return Some(name.clone());
+                    }
                     return self.rets.get(name).cloned().flatten();
                 }
                 None
+            }
+            Expr::Field { target, name } => {
+                let tt = self.type_of(target, ptypes)?;
+                self.records
+                    .get(&tt)
+                    .and_then(|fields| fields.iter().find(|(f, _)| f == name).map(|(_, t)| t.clone()))
             }
             _ => None,
         }
@@ -484,6 +522,7 @@ impl Codegen {
                 self.scan_expr(target, pt, ev);
                 self.scan_expr(index, pt, ev);
             }
+            Expr::Field { target, .. } => self.scan_expr(target, pt, ev),
             Expr::List(xs) => {
                 for x in xs {
                     self.scan_expr(x, pt, ev);
@@ -682,7 +721,7 @@ impl Codegen {
         }
         let mut params = Vec::new();
         for p in &f.params {
-            params.push(format!("{}: {}", p.name, ty(pt[&p.name].as_ref().unwrap())?));
+            params.push(format!("{}: {}", p.name, self.rust_type(pt[&p.name].as_ref().unwrap())?));
         }
         let params = params.join(", ");
         let ret = self.rets[&f.name].clone().ok_or_else(|| {
@@ -693,12 +732,12 @@ impl Codegen {
         })?;
         self.cur_fallible = self.fallible[&f.name];
         let ret_str = if self.cur_fallible {
-            let inner = if ret == "__void__" { "()".to_string() } else { ty(&ret)?.to_string() };
+            let inner = if ret == "__void__" { "()".to_string() } else { self.rust_type(&ret)? };
             format!(" -> Result<{}, String>", inner)
         } else if ret == "__void__" {
             String::new()
         } else {
-            format!(" -> {}", ty(&ret)?)
+            format!(" -> {}", self.rust_type(&ret)?)
         };
         let mut declared: HashSet<String> = f.params.iter().map(|p| p.name.clone()).collect();
         self.kinds.clear();
@@ -1017,6 +1056,9 @@ impl Codegen {
                     self.expr(index)?
                 ))
             }
+            Expr::Field { target, name } => {
+                Ok(format!("{}.{}.clone()", self.expr(target)?, name))
+            }
             Expr::Call { callee, args } => {
                 if let Expr::Ident(name) = &**callee {
                     if name == "print" {
@@ -1221,6 +1263,22 @@ impl Codegen {
                         return Err(LogyxError::new(
                             "usa sort come istruzione, non dentro un'espressione",
                         ));
+                    }
+                    // costruzione di un record: Nome(v1, v2, ...) posizionale
+                    if let Some(fields) = self.records.get(name).cloned() {
+                        if args.len() != fields.len() {
+                            return Err(LogyxError::new(format!(
+                                "il record '{}' ha {} campi, forniti {}",
+                                name,
+                                fields.len(),
+                                args.len()
+                            )));
+                        }
+                        let mut parts = Vec::new();
+                        for ((fname, _), arg) in fields.iter().zip(args.iter()) {
+                            parts.push(format!("{}: {}", fname, self.arg(arg)?));
+                        }
+                        return Ok(format!("{} {{ {} }}", name, parts.join(", ")));
                     }
                 }
                 let mut a = Vec::new();

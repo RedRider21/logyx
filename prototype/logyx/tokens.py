@@ -31,6 +31,7 @@ class T:
     MATCH = "MATCH"
     BREAK = "BREAK"
     CONTINUE = "CONTINUE"
+    RECORD = "RECORD"
     AND = "AND"
     OR = "OR"
     NOT = "NOT"
@@ -63,6 +64,7 @@ class T:
     GE = "GE"
     QUESTION = "QUESTION"
     PIPE = "PIPE"
+    DOT = "DOT"
     EOF = "EOF"
 
 
@@ -70,7 +72,7 @@ KEYWORDS = {
     "fn": T.FN, "return": T.RETURN, "if": T.IF, "else": T.ELSE,
     "while": T.WHILE, "for": T.FOR, "in": T.IN, "const": T.CONST,
     "import": T.IMPORT, "fail": T.FAIL, "match": T.MATCH,
-    "break": T.BREAK, "continue": T.CONTINUE,
+    "break": T.BREAK, "continue": T.CONTINUE, "record": T.RECORD,
     "and": T.AND, "or": T.OR, "not": T.NOT,
     "true": T.TRUE, "false": T.FALSE, "nil": T.NIL,
 }

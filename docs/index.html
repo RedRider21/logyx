@@ -290,6 +290,14 @@ import "lib_math.logyx"
 // composti:    +=  -=  *=  /=  %=
 // propaga errore:  espr?</pre></div>
       </div>
+      <div class="code-wrap" style="margin-top:22px"><pre>// record (tipi con campi)
+record Persona {
+    nome: string,
+    eta: int
+}
+
+ada = Persona("Ada", 36)      // costruzione posizionale
+ada.nome                      // accesso ai campi → "Ada"</pre></div>
 
       <h3 class="ref-sub" data-i18n="ref.builtins">Funzioni builtin</h3>
       <div class="card" style="padding:4px 8px">

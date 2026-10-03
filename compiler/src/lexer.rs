@@ -241,6 +241,7 @@ impl Lexer {
             '>' => TokenKind::Gt,
             '?' => TokenKind::Question,
             '|' => TokenKind::Pipe,
+            '.' => TokenKind::Dot,
             other => return Err(self.err(&format!("carattere inatteso {:?}", other))),
         };
         self.advance();

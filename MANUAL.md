@@ -137,6 +137,33 @@ diventa `return Err(...)`, `?` è l'omonimo operatore di Rust e `match ok/err` d
 Il tipo fallibile è **dedotto** anche senza annotazione, se il corpo usa `fail` o `?`. Vedi
 `examples/errori.logyx`.
 
+## 6d. Record (tipi con campi) ✅
+
+Un `record` è un tipo con **campi nominati** (come una struct).
+
+```
+record Persona {
+    nome: string,
+    eta: int
+}
+
+fn descrivi(p: Persona) -> string {
+    return p.nome + " ha " + str(p.eta) + " anni"
+}
+
+fn main() {
+    ada = Persona("Ada", 36)     // costruzione posizionale
+    print(descrivi(ada))
+    print(ada.nome)              // accesso ai campi: Ada
+}
+```
+
+- **Definizione:** `record Nome { campo: tipo, ... }` — i campi hanno tipi espliciti.
+- **Costruzione:** `Nome(v1, v2, ...)`, nell'ordine dei campi.
+- **Accesso ai campi:** `valore.campo`.
+- I record si possono passare alle funzioni e restituire. Vale per l'interprete e per `build`: in Rust
+  diventano `struct` con `#[derive(Clone)]`. Vedi `examples/native_record.logyx`.
+
 ## 7. Collezioni 🟡
 
 Liste e mappe: letterali, indicizzazione, `len`, iterazione con `for`.

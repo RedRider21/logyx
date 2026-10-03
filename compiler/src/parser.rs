@@ -79,6 +79,8 @@ impl Parser {
         while !self.is(&TokenKind::Eof) {
             if self.is(&TokenKind::Import) {
                 items.push(self.import_item()?);
+            } else if self.is(&TokenKind::Record) {
+                items.push(Item::Record(self.record_def()?));
             } else if self.is(&TokenKind::Fn) {
                 items.push(Item::Func(self.function()?));
             } else {
@@ -86,6 +88,32 @@ impl Parser {
             }
         }
         Ok(items)
+    }
+
+    fn record_def(&mut self) -> Result<RecordDef, LogyxError> {
+        self.expect(&TokenKind::Record, "record")?;
+        let name = self.ident_name("nome del record")?;
+        self.expect(&TokenKind::LBrace, "{")?;
+        let mut fields = Vec::new();
+        if !self.is(&TokenKind::RBrace) {
+            fields.push(self.record_field()?);
+            while self.is(&TokenKind::Comma) {
+                self.advance();
+                if self.is(&TokenKind::RBrace) {
+                    break;
+                }
+                fields.push(self.record_field()?);
+            }
+        }
+        self.expect(&TokenKind::RBrace, "}")?;
+        Ok(RecordDef { name, fields })
+    }
+
+    fn record_field(&mut self) -> Result<(String, TypeRef), LogyxError> {
+        let fname = self.ident_name("nome del campo")?;
+        self.expect(&TokenKind::Colon, ":")?;
+        let ftype = self.type_ref()?;
+        Ok((fname, ftype))
     }
 
     fn import_item(&mut self) -> Result<Item, LogyxError> {
@@ -475,6 +503,10 @@ impl Parser {
             } else if self.is(&TokenKind::Question) {
                 self.advance();
                 e = Expr::Try(Box::new(e));
+            } else if self.is(&TokenKind::Dot) {
+                self.advance();
+                let name = self.ident_name("nome del campo")?;
+                e = Expr::Field { target: Box::new(e), name };
             } else {
                 break;
             }

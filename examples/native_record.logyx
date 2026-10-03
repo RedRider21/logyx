@@ -1,0 +1,34 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Record: tipi con campi. Interprete e nativo.
+//   python3 main.py       ../examples/native_record.logyx
+//   python3 main.py build ../examples/native_record.logyx
+
+record Persona {
+    nome: string,
+    eta: int
+}
+
+fn descrivi(p: Persona) -> string {
+    return p.nome + " ha " + str(p.eta) + " anni"
+}
+
+fn piu_vecchio(a: Persona, b: Persona) -> Persona {
+    if a.eta > b.eta {
+        return a
+    }
+    return b
+}
+
+fn main() {
+    ada = Persona("Ada", 36)
+    guido = Persona("Guido", 45)
+
+    print(descrivi(ada))
+    print(descrivi(guido))
+
+    v = piu_vecchio(ada, guido)
+    print("il più vecchio è {v.nome}")
+    print("nome: {ada.nome}, eta: {ada.eta}")
+}

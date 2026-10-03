@@ -169,7 +169,7 @@ class Lexer:
             "[": T.LBRACK, "]": T.RBRACK, ",": T.COMMA, ":": T.COLON,
             "=": T.ASSIGN, "+": T.PLUS, "-": T.MINUS, "*": T.STAR,
             "/": T.SLASH, "%": T.PERCENT, "<": T.LT, ">": T.GT,
-            "?": T.QUESTION, "|": T.PIPE,
+            "?": T.QUESTION, "|": T.PIPE, ".": T.DOT,
         }
         if c in singles:
             self.advance()
