@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import hashlib
+import json
 import math
 
 from . import nodes as N
@@ -593,11 +594,33 @@ class Interpreter:
             raise LogyxError("indice non valido")
 
     def ex_Call(self, n, env):
-        if isinstance(n.callee, N.Identifier) and n.callee.name in self.records:
-            return self._make_record(n.callee.name, [self.eval(a, env) for a in n.args])
+        if isinstance(n.callee, N.Identifier):
+            cname = n.callee.name
+            if cname in self.records:
+                return self._make_record(cname, [self.eval(a, env) for a in n.args])
+            if cname == "from_json":
+                return self._from_json(n, env)
         callee = self.eval(n.callee, env)
         args = [self.eval(a, env) for a in n.args]
         return self.call(callee, args)
+
+    def _from_json(self, n, env):
+        if len(n.args) != 2 or not isinstance(n.args[1], N.Identifier):
+            raise LogyxError("from_json richiede: from_json(testo, NomeRecord)")
+        rec = n.args[1].name
+        if rec not in self.records:
+            raise LogyxError(f"from_json: '{rec}' non è un record")
+        testo = self.eval(n.args[0], env)
+        try:
+            data = json.loads(testo)
+        except Exception:
+            raise LogyxError("from_json: JSON non valido")
+        fields = {}
+        for fname, _ in self.records[rec]:
+            if fname not in data:
+                raise LogyxError(f"from_json: campo mancante '{fname}'")
+            fields[fname] = data[fname]
+        return RecordValue(rec, fields)
 
     def _make_record(self, name, args):
         fields = self.records[name]

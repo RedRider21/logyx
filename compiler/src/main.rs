@@ -101,7 +101,7 @@ fn build_cargo(
         "[package]\nname = \"logyxprog\"\nversion = \"0.0.1\"\nedition = \"2021\"\n\n[dependencies]\n",
     );
     for k in &keys {
-        toml += &format!("{} = \"{}\"\n", k, deps[*k]);
+        toml += &format!("{} = {}\n", k, deps[*k]);
     }
     toml += "\n[[bin]]\nname = \"logyxprog\"\npath = \"src/main.rs\"\n\n[profile.release]\nopt-level = 3\n";
     std::fs::write(format!("{dir}/Cargo.toml"), toml)

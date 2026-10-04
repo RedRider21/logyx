@@ -1,0 +1,20 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// from_json: deserializza una stringa JSON in un record (usa la crate serde).
+//   python3 main.py       ../examples/native_fromjson.logyx     (interprete, usa json)
+//   python3 main.py build ../examples/native_fromjson.logyx     (nativo, usa serde)
+
+record Punto {
+    x: int,
+    y: int
+}
+
+fn main() {
+    // nelle stringhe '{' '}' vanno escapati (avviano l'interpolazione): \{ \}
+    testo = "\{\"x\":3,\"y\":7\}"
+    p = from_json(testo, Punto)
+
+    print("x = {p.x}, y = {p.y}")
+    print(to_json(p))
+}

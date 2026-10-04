@@ -129,6 +129,7 @@ pub struct Codegen {
     kinds: HashMap<String, String>,
     cur_types: HashMap<String, Option<String>>,
     uses_json: bool,
+    uses_serde: bool,
     pub deps: HashMap<String, String>,
 }
 
@@ -145,6 +146,7 @@ impl Codegen {
             kinds: HashMap::new(),
             cur_types: HashMap::new(),
             uses_json: false,
+            uses_serde: false,
             deps: HashMap::new(),
         }
     }
@@ -200,8 +202,19 @@ impl Codegen {
         }
         self.infer(&funcs);
         self.uses_json = false;
+        self.uses_serde = false;
         self.deps.clear();
-        // struct dei record, prima delle funzioni
+        // le funzioni per prime: possono impostare uses_json / uses_serde / deps
+        let mut func_defs = Vec::new();
+        for f in &funcs {
+            func_defs.push(self.func(f)?);
+        }
+        // struct dei record (derive condizionale su serde)
+        let derive = if self.uses_serde {
+            "Clone, Serialize, Deserialize"
+        } else {
+            "Clone"
+        };
         let mut structs = Vec::new();
         let mut rec_names: Vec<String> = self.records.keys().cloned().collect();
         rec_names.sort();
@@ -212,16 +225,16 @@ impl Codegen {
                 parts.push(format!("{}: {}", fname, self.rust_type(ftype)?));
             }
             structs.push(format!(
-                "#[derive(Clone)]\nstruct {} {{ {} }}",
+                "#[derive({})]\nstruct {} {{ {} }}",
+                derive,
                 name,
                 parts.join(", ")
             ));
         }
-        let mut func_defs = Vec::new();
-        for f in &funcs {
-            func_defs.push(self.func(f)?);
-        }
         let mut out = Vec::new();
+        if self.uses_serde {
+            out.push("use serde::{Serialize, Deserialize};".to_string());
+        }
         if self.uses_json {
             out.push(JSON_HELPER.to_string());
         }
@@ -427,6 +440,14 @@ impl Codegen {
                     }
                     if self.records.contains_key(name) {
                         return Some(name.clone());
+                    }
+                    if name == "from_json" {
+                        if let Some(Expr::Ident(r)) = args.get(1) {
+                            if self.records.contains_key(r) {
+                                return Some(r.clone());
+                            }
+                        }
+                        return None;
                     }
                     return self.rets.get(name).cloned().flatten();
                 }
@@ -1356,11 +1377,37 @@ impl Codegen {
                             self.expr(&args[1])?
                         ));
                     }
+                    if name == "from_json" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "from_json richiede: from_json(testo, NomeRecord)",
+                            ));
+                        }
+                        let rec = match &args[1] {
+                            Expr::Ident(n) if self.records.contains_key(n) => n.clone(),
+                            _ => {
+                                return Err(LogyxError::new(
+                                    "from_json: il secondo argomento deve essere il nome di un record",
+                                ))
+                            }
+                        };
+                        self.uses_serde = true;
+                        self.deps.insert(
+                            "serde".to_string(),
+                            "{ version = \"1\", features = [\"derive\"] }".to_string(),
+                        );
+                        self.deps.insert("serde_json".to_string(), "\"1\"".to_string());
+                        return Ok(format!(
+                            "serde_json::from_str::<{}>(&({})).unwrap()",
+                            rec,
+                            self.expr(&args[0])?
+                        ));
+                    }
                     if name == "sha256" {
                         if args.len() != 1 {
                             return Err(LogyxError::new("sha256 accetta un solo argomento"));
                         }
-                        self.deps.insert("sha2".to_string(), "0.10".to_string());
+                        self.deps.insert("sha2".to_string(), "\"0.10\"".to_string());
                         return Ok(format!(
                             "{{ use sha2::{{Sha256, Digest}}; let mut __h = Sha256::new(); __h.update(({}).as_bytes()); format!(\"{{:x}}\", __h.finalize()) }}",
                             self.expr(&args[0])?

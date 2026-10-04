@@ -120,7 +120,7 @@ def cmd_build(path):
     os.makedirs(os.path.join(cdir, "src"), exist_ok=True)
     toml = '[package]\nname = "logyxprog"\nversion = "0.0.1"\nedition = "2021"\n\n[dependencies]\n'
     for k in sorted(deps):
-        toml += f'{k} = "{deps[k]}"\n'
+        toml += f"{k} = {deps[k]}\n"
     toml += '\n[[bin]]\nname = "logyxprog"\npath = "src/main.rs"\n\n[profile.release]\nopt-level = 3\n'
     with open(os.path.join(cdir, "Cargo.toml"), "w", encoding="utf-8") as f:
         f.write(toml)

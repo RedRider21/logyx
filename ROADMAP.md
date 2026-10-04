@@ -50,7 +50,7 @@ Da costruire preferibilmente **in Logyx**, non come builtin infiniti nel compila
 | Mappe | letterale, accesso, `len` ✅ · `has`, `keys`, `values`, iterazione ⏳ | 🟡 |
 | Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil` ✅ · `sqrt`, `round`, `random` ⏳ | 🟡 |
 | I/O e sistema | `print` ✅ · lettura input, file, ambiente ⏳ | 🟡 |
-| Dati | **JSON**: `to_json` (serializzazione di scalari/record) ✅ · `from_json` (parsing) ⏳ · **date/tempo** ⏳ | 🟡 |
+| Dati | **JSON**: `to_json` + `from_json` (serializza/deserializza scalari e record) ✅ · **date/tempo** ⏳ | 🟡 |
 
 ## Piano 2.5 — Librerie esterne (l'ecosistema)
 

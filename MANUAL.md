@@ -229,14 +229,19 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `filter(lista, p)` | Gli elementi della lista per cui la funzione `p` è vera |
 | `reduce(lista, init, f)` | Accumula da `init` applicando `f(acc, elemento)` |
 | `to_json(x)` | Serializza `x` (int, bool, string o record) in una stringa JSON |
+| `from_json(testo, Record)` | Deserializza il JSON `testo` in un record (usa la crate Rust `serde`) |
 | `sha256(s)` | Hash SHA-256 di `s` in esadecimale (usa la crate Rust `sha2`) |
 
 In `map`/`filter`/`reduce` la funzione è il **nome di una funzione definita con `fn`** (non una lambda
 inline, per ora). Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`.
 
 `to_json` serializza **int**, **bool**, **string** e **record** (anche annidati), in formato compatto;
-le stringhe sono "escaped". Non ancora: `float`, liste/mappe, e `from_json` (deserializzazione). Vedi
-`examples/native_json.logyx`.
+le stringhe sono "escaped". `from_json(testo, Record)` fa l'inverso: deserializza una stringa JSON in un
+record (campi scalari/string), usando la crate `serde`. Vedi `examples/native_json.logyx` e
+`examples/native_fromjson.logyx`.
+
+Nota: nelle **stringhe letterali** i caratteri `{` e `}` avviano l'interpolazione; per inserirli alla
+lettera (es. in un JSON scritto a mano) vanno escapati con `\{` e `\}`.
 
 ### Librerie esterne (crates Rust)
 

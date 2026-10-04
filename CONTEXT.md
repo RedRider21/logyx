@@ -55,11 +55,10 @@ tutti gli esempi (ora **9/9**). Flusso per ogni nuova feature nativa: implementa
 transpiler Python + compilatore Rust, aggiungere un esempio e lanciare la suite. Primo giro completato
 così col builtin **`push(lista, valore)`** (`examples/native_push.logyx`).
 
-## ⚠️ Promemoria operativo (disposizione utente, ottobre 2026)
+## Flusso (ottobre 2026)
 
-**Committare SOLO in locale. NON pushare su GitHub (né repo né Pages) fino a nuova indicazione esplicita
-dell'utente.** Al momento ci sono **9 commit locali in attesa di push** (`git log origin/main..HEAD`).
-Quando l'utente darà l'ok: `git push origin main` (e le Pages si aggiornano da sole, build da `main`/`docs`).
+Push su GitHub **consentito**: commit locale a ogni passo + `git push origin main` (le Pages si aggiornano
+da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 ## RIPRENDI DA QUI — cose da fare
 
@@ -104,10 +103,11 @@ if/else-if), distinto dal `match ok/err` degli errori; interprete+nativo, suite 
 (`examples/native_matchval.logyx`).
 **Crates Rust: AVVIATO** (`design/crates-rust.md`): **build ibrido** — senza dipendenze `rustc` diretto,
 con dipendenze crea un progetto `cargo` al volo (cartella `*_cargo/` gitignored), in entrambi i backend.
-Primo uso reale: builtin **`sha256`** via crate `sha2` "sotto il cofano" (deterministico → conforme).
-Il transpiler/compilatore tracciano le dipendenze (`deps`). Suite 31/31 (`examples/native_crate.logyx`).
-**DA FARE:** aggancio *generico* alle crate (sintassi `use rust`/`extern rust`), altri builtin via crate
-(es. `from_json` con serde), gestione errori di rete/crate.
+Usi reali di crate "sotto il cofano" (deterministici → conformi): **`sha256`** (crate `sha2`) e
+**`from_json`** (crate `serde`/`serde_json`, con derive condizionali Serialize/Deserialize sui record).
+Il transpiler/compilatore tracciano le dipendenze (`deps`, valore = spec TOML). Suite 33/33.
+**DA FARE:** aggancio *generico* alle crate (sintassi `use rust`/`extern rust`) per importare crate
+arbitrarie; `to_json`/`from_json` per float/liste/mappe; errori di rete/crate.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.

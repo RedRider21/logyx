@@ -85,14 +85,18 @@ class RustTranspiler:
             self.fallible[f.name] = fal
         self._tmp = 0
         self.uses_json = False
-        self.deps = {}  # crate -> versione (dipendenze esterne richieste)
+        self.uses_serde = False
+        self.deps = {}  # crate -> spec TOML (dopo '='), es. '"0.10"' o '{ version = "1", ... }'
         self._infer(funcs)
+        func_defs = [self.func(f) for f in funcs]  # può impostare uses_json / uses_serde / deps
+        derive = "Clone, Serialize, Deserialize" if self.uses_serde else "Clone"
         struct_defs = []
         for name in sorted(self.records):
             fields = ", ".join(f"{fn}: {self.ty(ft)}" for fn, ft in self.records[name])
-            struct_defs.append(f"#[derive(Clone)]\nstruct {name} {{ {fields} }}")
-        func_defs = [self.func(f) for f in funcs]
+            struct_defs.append(f"#[derive({derive})]\nstruct {name} {{ {fields} }}")
         pieces = []
+        if self.uses_serde:
+            pieces.append("use serde::{Serialize, Deserialize};")
         if self.uses_json:
             pieces.append(_JSON_HELPER)
         pieces += struct_defs + func_defs
@@ -499,6 +503,8 @@ class RustTranspiler:
                 return self._type_of(e.args[1], ptypes)
             if name in getattr(self, "records", {}):
                 return name
+            if name == "from_json" and len(e.args) == 2 and isinstance(e.args[1], N.Identifier):
+                return e.args[1].name
             return self.func_rets.get(name)
         return None
 
@@ -873,10 +879,20 @@ class RustTranspiler:
                         raise LogyxError(f"{nm} accetta due argomenti: {nm}(stringa, parte)")
                     method = "starts_with" if nm == "starts_with" else "ends_with"
                     return f"({self.expr(e.args[0])}).{method}(({self.expr(e.args[1])}).as_str())"
+                if nm == "from_json":
+                    if len(e.args) != 2 or not isinstance(e.args[1], N.Identifier):
+                        raise LogyxError("from_json richiede: from_json(testo, NomeRecord)")
+                    rec = e.args[1].name
+                    if rec not in self.records:
+                        raise LogyxError(f"from_json: '{rec}' non è un record")
+                    self.uses_serde = True
+                    self.deps["serde"] = '{ version = "1", features = ["derive"] }'
+                    self.deps["serde_json"] = '"1"'
+                    return f"serde_json::from_str::<{rec}>(&({self.expr(e.args[0])})).unwrap()"
                 if nm == "sha256":
                     if len(e.args) != 1:
                         raise LogyxError("sha256 accetta un solo argomento")
-                    self.deps["sha2"] = "0.10"
+                    self.deps["sha2"] = '"0.10"'
                     return ("{ use sha2::{Sha256, Digest}; let mut __h = Sha256::new(); "
                             "__h.update((" + self.expr(e.args[0])
                             + ").as_bytes()); format!(\"{:x}\", __h.finalize()) }")
