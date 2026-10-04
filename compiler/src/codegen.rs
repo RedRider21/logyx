@@ -243,9 +243,9 @@ impl Codegen {
         }
         // struct dei record (derive condizionale su serde)
         let derive = if self.uses_serde {
-            "Clone, Serialize, Deserialize"
+            "Clone, PartialEq, Serialize, Deserialize"
         } else {
-            "Clone"
+            "Clone, PartialEq"
         };
         let mut structs = Vec::new();
         let mut rec_names: Vec<String> = self.records.keys().cloned().collect();

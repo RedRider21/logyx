@@ -103,7 +103,7 @@ class RustTranspiler:
             params = ", ".join(f"{n}: {self.ty(t)}" for n, t in zip(ex.params, ex.param_types))
             extern_defs.append(f"fn {ex.name}({params}) -> {self.ty(ex.ret_type)} {{ {ex.body} }}")
         func_defs = [self.func(f) for f in funcs]  # può impostare uses_json / uses_serde / deps
-        derive = "Clone, Serialize, Deserialize" if self.uses_serde else "Clone"
+        derive = "Clone, PartialEq, Serialize, Deserialize" if self.uses_serde else "Clone, PartialEq"
         struct_defs = []
         for name in sorted(self.records):
             fields = ", ".join(f"{fn}: {self.ty(ft)}" for fn, ft in self.records[name])

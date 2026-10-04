@@ -175,7 +175,10 @@ fn main() {
 - **Costruzione:** `Nome(v1, v2, ...)`, nell'ordine dei campi.
 - **Accesso ai campi:** `valore.campo`.
 - I record si possono passare alle funzioni e restituire. Vale per l'interprete e per `build`: in Rust
-  diventano `struct` con `#[derive(Clone)]`. Vedi `examples/native_record.logyx`.
+  diventano `struct` con `#[derive(Clone, PartialEq)]`. Vedi `examples/native_record.logyx`.
+- I record possono stare in **liste e mappe**: `[Persona("Ada", 36), ...]`, `{"k": Persona(...)}`;
+  si iterano, indicizzano e se ne accede ai campi (`gente[0].nome`, `for p in gente { p.eta }`). Vedi
+  `examples/native_recordlist.logyx`.
 
 ## 7. Collezioni 🟡
 

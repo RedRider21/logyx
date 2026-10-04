@@ -32,7 +32,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | **Operatori composti** (`+=`, `-=`, `*=`, …) | ✅ | — |
 | **Funzioni come valori / closure / lambda** | ⏳ | **1** |
 | Parametri con default; numero variabile di argomenti | ⏳ | 3 |
-| **Record/struct** (tipi con campi) | ✅ | — |
+| **Record/struct** (tipi con campi, anche in liste/mappe) | ✅ | — |
 | `match` generale (sui valori, con `else`) | ✅ | — |
 | `enum` (tipi somma) | ⏳ | 3 |
 | Tuple; `for` con indice | ⏳ | 4 |

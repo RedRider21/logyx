@@ -296,7 +296,10 @@ fn main() {
 <li><strong>Costruzione:</strong> <code>Nome(v1, v2, ...)</code>, nell'ordine dei campi.</li>
 <li><strong>Accesso ai campi:</strong> <code>valore.campo</code>.</li>
 <li>I record si possono passare alle funzioni e restituire. Vale per l'interprete e per <code>build</code>: in Rust
-  diventano <code>struct</code> con <code>#[derive(Clone)]</code>. Vedi <code>examples/native_record.logyx</code>.</li>
+  diventano <code>struct</code> con <code>#[derive(Clone, PartialEq)]</code>. Vedi <code>examples/native_record.logyx</code>.</li>
+<li>I record possono stare in <strong>liste e mappe</strong>: <code>[Persona("Ada", 36), ...]</code>, <code>{"k": Persona(...)}</code>;
+  si iterano, indicizzano e se ne accede ai campi (<code>gente[0].nome</code>, <code>for p in gente { p.eta }</code>). Vedi
+  <code>examples/native_recordlist.logyx</code>.</li>
 </ul>
 <h2 id="7-collezioni">7. Collezioni 🟡</h2>
 <p>Liste e mappe: letterali, indicizzazione, <code>len</code>, iterazione con <code>for</code>.</p>

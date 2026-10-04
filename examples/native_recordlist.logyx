@@ -1,0 +1,30 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Contenitori di record: liste e mappe di record. Interprete e nativo.
+//   python3 main.py       ../examples/native_recordlist.logyx
+//   python3 main.py build ../examples/native_recordlist.logyx
+
+record Persona {
+    nome: string,
+    eta: int
+}
+
+fn main() {
+    gente = [Persona("Ada", 36), Persona("Bruno", 40), Persona("Carla", 29)]
+    push(gente, Persona("Dino", 50))
+
+    print("quanti = {len(gente)}")
+
+    totale = 0
+    for p in gente {
+        totale = totale + p.eta
+    }
+    print("eta totale = {totale}")         // 36+40+29+50 = 155
+    print("primo: {gente[0].nome}")        // Ada
+
+    // mappa con valori record
+    citta = {"Ada": Persona("Ada", 36), "Linus": Persona("Linus", 54)}
+    chiave = "Linus"
+    print("{chiave} ha {citta[chiave].eta} anni")
+}

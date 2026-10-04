@@ -303,7 +303,10 @@ record Persona {
 }
 
 ada = Persona("Ada", 36)      // costruzione posizionale
-ada.nome                      // accesso ai campi → "Ada"</pre></div>
+ada.nome                      // accesso ai campi → "Ada"
+
+gente = [Persona("Ada", 36), Persona("Bruno", 40)]   // liste/mappe di record
+gente[0].nome                 // "Ada"</pre></div>
       <div class="code-wrap" style="margin-top:22px"><pre>// librerie esterne: qualsiasi crate di crates.io
 use rust "hex" = "0.4"
 

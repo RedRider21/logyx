@@ -112,9 +112,12 @@ Il transpiler/compilatore tracciano le dipendenze (`deps`, valore = spec TOML).
 **Date/tempo: FATTO** — `now()` (timestamp Unix, via `std`, non deterministico → fuori suite) e
 `format_date(ts)` (data UTC, crate `chrono`, deterministico → suite 35/35, `examples/native_date.logyx`).
 Tre crate reali agganciate finora: `sha2`, `serde`, `chrono`.
+**Contenitori di record: FATTI** — liste e mappe di record (`Vec<T>`/`HashMap<K,T>`) funzionano con il
+"clone uniforme" già in piedi; record ora derivano anche `PartialEq` (per `contains`/`==`). Suite 36/36
+(`examples/native_recordlist.logyx`).
 **DA FARE:** extern con corpi Rust multi-riga/graffe (ora il corpo è una stringa senza `{`); `to_json`/
-`from_json` per float/liste/mappe; contenitori di record; `enum`; lambda inline; errori di rete/crate;
-**web→WASM** (grande obiettivo).
+`from_json` per float/liste/mappe; `enum`; lambda inline; errori di rete/crate; **web→WASM** (grande
+obiettivo).
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.
