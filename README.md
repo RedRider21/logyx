@@ -67,7 +67,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | `DESIGN.md` | Appunti di design completi e portabili |
 | `CONTEXT.md` | Punto di ripresa: dove siamo e prossimo passo |
 | `ROADMAP.md` | Gap-analysis e priorità: cosa manca verso un linguaggio completo |
-| `design/` | Mini-design dei fronti grossi (es. collezioni di stringhe) |
+| `design/` | Mini-design dei fronti grossi (collezioni, record, JSON, crate, web→WASM…) |
 | `prototype/` | Interprete/transpiler in Python (lexer, parser, interprete, rustgen) |
 | `compiler/` | Il compilatore vero in Rust (`logyxc`): lexer, parser, inferenza, backend |
 | `tests/` | Suite di conformità (`conformance.sh`): prototipo e compilatore danno lo stesso output |
