@@ -160,13 +160,21 @@ impl Codegen {
     }
 
     pub fn generate(&mut self, items: &[Item]) -> R<String> {
+        self.uses_json = false;
+        self.uses_serde = false;
+        self.deps.clear();
         let mut funcs: Vec<Function> = Vec::new();
+        let mut externs: Vec<ExternFn> = Vec::new();
         for it in items {
             match it {
                 Item::Func(f) => funcs.push(f.clone()),
                 Item::Record(r) => {
                     self.records.insert(r.name.clone(), r.fields.clone());
                 }
+                Item::UseRust { crate_name, version } => {
+                    self.deps.insert(crate_name.clone(), format!("\"{}\"", version));
+                }
+                Item::ExternFn(ex) => externs.push(ex.clone()),
                 Item::Import(_) => {} // già espansi dal resolver
                 Item::Stmt(_) => {
                     return Err(LogyxError::new(
@@ -178,6 +186,18 @@ impl Codegen {
         }
         if !funcs.iter().any(|f| f.name == "main") {
             return Err(LogyxError::new("manca 'fn main()': serve un punto d'ingresso"));
+        }
+        // firme delle funzioni extern (tipi dichiarati, non fallibili)
+        for ex in &externs {
+            let mut m = HashMap::new();
+            for (n, t) in &ex.params {
+                m.insert(n.clone(), Some(t.clone()));
+            }
+            self.ptype.insert(ex.name.clone(), m);
+            self.param_order
+                .insert(ex.name.clone(), ex.params.iter().map(|(n, _)| n.clone()).collect());
+            self.rets.insert(ex.name.clone(), Some(ex.ret.clone()));
+            self.fallible.insert(ex.name.clone(), false);
         }
         for f in &funcs {
             let mut m = HashMap::new();
@@ -201,13 +221,25 @@ impl Codegen {
             self.fallible.insert(f.name.clone(), fal);
         }
         self.infer(&funcs);
-        self.uses_json = false;
-        self.uses_serde = false;
-        self.deps.clear();
         // le funzioni per prime: possono impostare uses_json / uses_serde / deps
         let mut func_defs = Vec::new();
         for f in &funcs {
             func_defs.push(self.func(f)?);
+        }
+        // funzioni extern (corpo Rust fornito dall'utente)
+        let mut extern_defs = Vec::new();
+        for ex in &externs {
+            let mut ps = Vec::new();
+            for (n, t) in &ex.params {
+                ps.push(format!("{}: {}", n, self.rust_type(t)?));
+            }
+            extern_defs.push(format!(
+                "fn {}({}) -> {} {{ {} }}",
+                ex.name,
+                ps.join(", "),
+                self.rust_type(&ex.ret)?,
+                ex.body
+            ));
         }
         // struct dei record (derive condizionale su serde)
         let derive = if self.uses_serde {
@@ -239,6 +271,7 @@ impl Codegen {
             out.push(JSON_HELPER.to_string());
         }
         out.extend(structs);
+        out.extend(extern_defs);
         out.extend(func_defs);
         Ok(out.join("\n\n") + "\n")
     }

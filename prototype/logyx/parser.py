@@ -47,6 +47,10 @@ class Parser:
                 items.append(self.import_stmt())
             elif self.at(T.RECORD):
                 items.append(self.record_def())
+            elif self.at(T.USE):
+                items.append(self.use_rust())
+            elif self.at(T.EXTERN):
+                items.append(self.extern_fn())
             elif self.at(T.FN):
                 items.append(self.function())
             elif self.at(T.IDENT) and self.peek().value == "route":
@@ -75,6 +79,52 @@ class Parser:
         self.expect(T.COLON)
         ftype = self.type_ref()
         return (fname, ftype)
+
+    def _simple_string(self, what):
+        tok = self.expect(T.STRING, what)
+        parts = tok.value
+        if len(parts) != 1 or parts[0][0] != "lit":
+            self.error(f"{what}: è attesa una stringa semplice (senza interpolazione)")
+        return parts[0][1]
+
+    def use_rust(self):
+        self.expect(T.USE)
+        kw = self.expect(T.IDENT, "'rust'").value
+        if kw != "rust":
+            self.error("dopo 'use' è atteso 'rust'")
+        crate = self._simple_string("nome della crate")
+        self.expect(T.ASSIGN)
+        version = self._simple_string("versione della crate")
+        return N.UseRust(crate, version)
+
+    def extern_fn(self):
+        self.expect(T.EXTERN)
+        kw = self.expect(T.IDENT, "'rust'").value
+        if kw != "rust":
+            self.error("dopo 'extern' è atteso 'rust'")
+        self.expect(T.FN)
+        name = self.expect(T.IDENT, "nome di funzione").value
+        self.expect(T.LPAREN)
+        params, ptypes = [], []
+        if not self.at(T.RPAREN):
+            n, t = self.param()
+            if t is None:
+                self.error("i parametri di una funzione extern richiedono un tipo")
+            params.append(n)
+            ptypes.append(t)
+            while self.at(T.COMMA):
+                self.advance()
+                n, t = self.param()
+                if t is None:
+                    self.error("i parametri di una funzione extern richiedono un tipo")
+                params.append(n)
+                ptypes.append(t)
+        self.expect(T.RPAREN)
+        self.expect(T.ARROW, "'->' con il tipo di ritorno")
+        ret = self.type_ref()
+        self.expect(T.ASSIGN)
+        body = self._simple_string("corpo Rust dell'extern")
+        return N.ExternFn(name, params, ptypes, ret, body)
 
     def import_stmt(self):
         self.expect(T.IMPORT)

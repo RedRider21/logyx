@@ -245,10 +245,33 @@ lettera (es. in un JSON scritto a mano) vanno escapati con `\{` e `\}`.
 
 ### Librerie esterne (crates Rust)
 
-`sha256` è il primo builtin che usa una **libreria dell'ecosistema Rust** (la crate `sha2`). Quando un
-programma usa una dipendenza esterna, il comando `build` **passa automaticamente da `rustc` a `cargo`**
-(build ibrido): crea al volo un piccolo progetto `cargo`, scarica e compila le crate, ed esegue. Senza
-dipendenze resta `rustc` diretto (veloce). Vedi `examples/native_crate.logyx`.
+Alcuni builtin usano **librerie dell'ecosistema Rust** "sotto il cofano": `sha256` (crate `sha2`) e
+`from_json` (crate `serde`). Quando un programma usa una dipendenza esterna, il comando `build` **passa
+automaticamente da `rustc` a `cargo`** (build ibrido): crea al volo un piccolo progetto `cargo`, scarica e
+compila le crate, ed esegue. Senza dipendenze resta `rustc` diretto (veloce). Vedi
+`examples/native_crate.logyx`.
+
+#### Importare una crate qualsiasi (`use rust` / `extern rust`)
+
+Oltre ai builtin, puoi agganciare **qualunque crate** dichiarando la dipendenza e scrivendo una funzione
+`extern rust` con un piccolo corpo Rust che usa la crate:
+
+```
+use rust "hex" = "0.4"
+
+extern rust fn to_hex(s: string) -> string = "hex::encode(s.as_bytes())"
+
+fn main() {
+    print(to_hex("ciao"))        // 6369616f
+}
+```
+
+- `use rust "<crate>" = "<versione>"` dichiara la dipendenza (finisce nel `Cargo.toml`).
+- `extern rust fn nome(p: tipo, ...) -> tipo = "<espressione Rust>"` definisce una funzione il cui corpo
+  è codice Rust (i parametri sono i tipi Logyx mappati: `string`→`String`, `int`→`i64`, …). Il corpo
+  controlla le conversioni verso la crate (come un binding FFI): sei tu a scrivere il "glue".
+- Le funzioni `extern` girano **solo con `build`** (il nativo), non nell'interprete. Vedi
+  `examples/native_extern.logyx`.
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

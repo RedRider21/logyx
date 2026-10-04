@@ -141,6 +141,21 @@ class RecordDef:
 
 
 @dataclass
+class UseRust:
+    crate: str
+    version: str
+
+
+@dataclass
+class ExternFn:
+    name: str
+    params: List[str]
+    param_types: List[str]
+    ret_type: str
+    body: str  # espressione Rust (usa i parametri e la crate)
+
+
+@dataclass
 class Field:
     target: Any
     name: str

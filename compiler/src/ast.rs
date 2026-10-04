@@ -107,9 +107,19 @@ pub struct RecordDef {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct ExternFn {
+    pub name: String,
+    pub params: Vec<(String, TypeRef)>,
+    pub ret: TypeRef,
+    pub body: String,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum Item {
     Func(Function),
     Record(RecordDef),
+    UseRust { crate_name: String, version: String },
+    ExternFn(ExternFn),
     Import(String),
     Stmt(Stmt),
 }

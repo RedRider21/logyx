@@ -432,15 +432,35 @@ record (campi scalari/string), usando la crate <code>serde</code>. Vedi <code>ex
 <p>Nota: nelle <strong>stringhe letterali</strong> i caratteri <code>{</code> e <code>}</code> avviano l'interpolazione; per inserirli alla
 lettera (es. in un JSON scritto a mano) vanno escapati con <code>\{</code> e <code>\}</code>.</p>
 <h3 id="librerie-esterne-crates-rust">Librerie esterne (crates Rust)</h3>
-<p><code>sha256</code> è il primo builtin che usa una <strong>libreria dell'ecosistema Rust</strong> (la crate <code>sha2</code>). Quando un
-programma usa una dipendenza esterna, il comando <code>build</code> <strong>passa automaticamente da <code>rustc</code> a <code>cargo</code></strong>
-(build ibrido): crea al volo un piccolo progetto <code>cargo</code>, scarica e compila le crate, ed esegue. Senza
-dipendenze resta <code>rustc</code> diretto (veloce). Vedi <code>examples/native_crate.logyx</code>.
+<p>Alcuni builtin usano <strong>librerie dell'ecosistema Rust</strong> "sotto il cofano": <code>sha256</code> (crate <code>sha2</code>) e
+<code>from_json</code> (crate <code>serde</code>). Quando un programma usa una dipendenza esterna, il comando <code>build</code> <strong>passa
+automaticamente da <code>rustc</code> a <code>cargo</code></strong> (build ibrido): crea al volo un piccolo progetto <code>cargo</code>, scarica e
+compila le crate, ed esegue. Senza dipendenze resta <code>rustc</code> diretto (veloce). Vedi
+<code>examples/native_crate.logyx</code>.</p>
+<h4 id="importare-una-crate-qualsiasi-use-rust-extern-rust">Importare una crate qualsiasi (<code>use rust</code> / <code>extern rust</code>)</h4>
+<p>Oltre ai builtin, puoi agganciare <strong>qualunque crate</strong> dichiarando la dipendenza e scrivendo una funzione
+<code>extern rust</code> con un piccolo corpo Rust che usa la crate:</p>
+<pre><code>use rust &quot;hex&quot; = &quot;0.4&quot;
+
+extern rust fn to_hex(s: string) -&gt; string = &quot;hex::encode(s.as_bytes())&quot;
+
+fn main() {
+    print(to_hex(&quot;ciao&quot;))        // 6369616f
+}
+</code></pre>
+<ul>
+<li><code>use rust "&lt;crate&gt;" = "&lt;versione&gt;"</code> dichiara la dipendenza (finisce nel <code>Cargo.toml</code>).</li>
+<li><code>extern rust fn nome(p: tipo, ...) -&gt; tipo = "&lt;espressione Rust&gt;"</code> definisce una funzione il cui corpo
+  è codice Rust (i parametri sono i tipi Logyx mappati: <code>string</code>→<code>String</code>, <code>int</code>→<code>i64</code>, …). Il corpo
+  controlla le conversioni verso la crate (come un binding FFI): sei tu a scrivere il "glue".</li>
+<li>Le funzioni <code>extern</code> girano <strong>solo con <code>build</code></strong> (il nativo), non nell'interprete. Vedi
+  <code>examples/native_extern.logyx</code>.
 | <code>pow(base, esp)</code> | <code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>) |
 | <code>floor(x)</code> / <code>ceil(x)</code> | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | <code>sqrt(x)</code> | Radice quadrata (ritorna un float) |
 | <code>sum(lista)</code> | Somma degli elementi (lista di interi) |
-| <code>sort(lista)</code> | Ordina la lista in ordine crescente (la muta); usala come istruzione |</p>
+| <code>sort(lista)</code> | Ordina la lista in ordine crescente (la muta); usala come istruzione |</li>
+</ul>
 <h2 id="10-web-lato-server">10. Web lato server ✅</h2>
 <ul>
 <li><code>route "/percorso" { ... }</code> definisce un endpoint; il corpo gira sul server.</li>

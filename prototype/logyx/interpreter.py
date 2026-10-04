@@ -63,6 +63,13 @@ def html_escape(s):
     )
 
 
+class ExternMarker:
+    """Segnaposto per una funzione `extern rust`: eseguibile solo con `build`."""
+
+    def __init__(self, name):
+        self.name = name
+
+
 class LogyxFunction:
     def __init__(self, decl, closure):
         self.decl = decl
@@ -290,6 +297,10 @@ class Interpreter:
                 self.routes[item.path] = item
             elif isinstance(item, N.RecordDef):
                 self.records[item.name] = item.fields
+            elif isinstance(item, N.UseRust):
+                pass  # dipendenze crate: rilevanti solo per 'build'
+            elif isinstance(item, N.ExternFn):
+                self.globals.define(item.name, ExternMarker(item.name))
             else:
                 self.exec(item, self.globals)
         return main
@@ -637,6 +648,11 @@ class Interpreter:
         raise LogyxError(f"campo '{n.name}' non trovato")
 
     def call(self, callee, args):
+        if isinstance(callee, ExternMarker):
+            raise LogyxError(
+                f"'{callee.name}' è una funzione extern (Rust): disponibile solo con 'build', "
+                "non nell'interprete"
+            )
         if isinstance(callee, LogyxFunction):
             if len(args) != callee.arity:
                 raise LogyxError(

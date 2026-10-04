@@ -61,10 +61,13 @@ class RustTranspiler:
     def transpile(self, items):
         funcs = [i for i in items if isinstance(i, N.FunctionDef)]
         records = [i for i in items if isinstance(i, N.RecordDef)]
-        others = [i for i in items if not isinstance(i, (N.FunctionDef, N.RecordDef))]
+        externs = [i for i in items if isinstance(i, N.ExternFn)]
+        uses = [i for i in items if isinstance(i, N.UseRust)]
+        allowed = (N.FunctionDef, N.RecordDef, N.ExternFn, N.UseRust)
+        others = [i for i in items if not isinstance(i, allowed)]
         if others:
             raise LogyxError(
-                "il transpiler Rust v0 supporta solo definizioni di funzione e record "
+                "il transpiler Rust v0 supporta solo funzioni, record, use/extern rust "
                 "(niente route/render o codice a primo livello)"
             )
         if not any(f.name == "main" for f in funcs):
@@ -83,11 +86,22 @@ class RustTranspiler:
                 fal = True
             self.func_rets[f.name] = rt or None
             self.fallible[f.name] = fal
+        # funzioni extern: firma dichiarata (tipi noti, non fallibili)
+        for ex in externs:
+            self.param_types[ex.name] = dict(zip(ex.params, ex.param_types))
+            self.func_rets[ex.name] = ex.ret_type
+            self.fallible[ex.name] = False
         self._tmp = 0
         self.uses_json = False
         self.uses_serde = False
         self.deps = {}  # crate -> spec TOML (dopo '='), es. '"0.10"' o '{ version = "1", ... }'
+        for u in uses:
+            self.deps[u.crate] = f'"{u.version}"'
         self._infer(funcs)
+        extern_defs = []
+        for ex in externs:
+            params = ", ".join(f"{n}: {self.ty(t)}" for n, t in zip(ex.params, ex.param_types))
+            extern_defs.append(f"fn {ex.name}({params}) -> {self.ty(ex.ret_type)} {{ {ex.body} }}")
         func_defs = [self.func(f) for f in funcs]  # può impostare uses_json / uses_serde / deps
         derive = "Clone, Serialize, Deserialize" if self.uses_serde else "Clone"
         struct_defs = []
@@ -99,7 +113,7 @@ class RustTranspiler:
             pieces.append("use serde::{Serialize, Deserialize};")
         if self.uses_json:
             pieces.append(_JSON_HELPER)
-        pieces += struct_defs + func_defs
+        pieces += struct_defs + extern_defs + func_defs
         return "\n\n".join(pieces) + "\n"
 
     # --- rilevazione di fallibilità (presenza di `fail` o `?`) ---

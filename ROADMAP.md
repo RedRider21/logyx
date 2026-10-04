@@ -59,7 +59,7 @@ carica solo file `.logyx` locali).
 
 | Porta | Cosa apre | Come | Priorità |
 | --- | --- | --- | --- |
-| **Crates Rust** | l'ecosistema crates.io (serde, reqwest, regex, DB, ...) | dipendenza nel `Cargo.toml` generato + binding | **la principale** — 🟡 avviata: build ibrido `rustc`/`cargo` + primo uso reale (`sha256` via crate `sha2`) |
+| **Crates Rust** | l'ecosistema crates.io (serde, reqwest, regex, DB, ...) | `use rust "crate"` + `extern rust fn` (binding), build ibrido `rustc`/`cargo` | ✅ **funziona** — builtin via crate (`sha256`/`from_json`) + **via generica** (`examples/native_extern.logyx`) |
 | **FFI con C** | librerie di sistema / C | dichiarazione firme + linker | media |
 | **Ponte Python** | numpy/pandas/ML | `PyO3` (CPython incorporato) | bassa (binario pesante, no WASM) |
 

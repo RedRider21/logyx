@@ -304,6 +304,12 @@ record Persona {
 
 ada = Persona("Ada", 36)      // costruzione posizionale
 ada.nome                      // accesso ai campi → "Ada"</pre></div>
+      <div class="code-wrap" style="margin-top:22px"><pre>// librerie esterne: qualsiasi crate di crates.io
+use rust "hex" = "0.4"
+
+extern rust fn to_hex(s: string) -> string = "hex::encode(s.as_bytes())"
+
+to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
 
       <h3 class="ref-sub" data-i18n="ref.builtins">Funzioni builtin</h3>
       <div class="card" style="padding:4px 8px">

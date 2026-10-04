@@ -1,0 +1,18 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Via generica alle crate Rust: si dichiara una dipendenza e si scrive una
+// funzione `extern rust` con un piccolo corpo Rust che usa la crate.
+// Le funzioni extern girano solo con `build` (il nativo), non nell'interprete.
+//   python3 main.py build ../examples/native_extern.logyx
+
+use rust "hex" = "0.4"
+
+extern rust fn to_hex(s: string) -> string = "hex::encode(s.as_bytes())"
+
+fn main() {
+    print(to_hex("ciao"))
+
+    s = "Logyx"
+    print("{s} -> {to_hex(s)}")
+}

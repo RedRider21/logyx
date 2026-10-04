@@ -105,9 +105,12 @@ if/else-if), distinto dal `match ok/err` degli errori; interprete+nativo, suite 
 con dipendenze crea un progetto `cargo` al volo (cartella `*_cargo/` gitignored), in entrambi i backend.
 Usi reali di crate "sotto il cofano" (deterministici → conformi): **`sha256`** (crate `sha2`) e
 **`from_json`** (crate `serde`/`serde_json`, con derive condizionali Serialize/Deserialize sui record).
-Il transpiler/compilatore tracciano le dipendenze (`deps`, valore = spec TOML). Suite 33/33.
-**DA FARE:** aggancio *generico* alle crate (sintassi `use rust`/`extern rust`) per importare crate
-arbitrarie; `to_json`/`from_json` per float/liste/mappe; errori di rete/crate.
+Il transpiler/compilatore tracciano le dipendenze (`deps`, valore = spec TOML).
+**Via generica alle crate: FATTA** — `use rust "crate" = "ver"` + `extern rust fn nome(p: tipo) -> tipo
+= "<espr Rust>"` (binding con corpo Rust; le extern girano solo con `build`, non nell'interprete). Suite
+34/34 (`examples/native_extern.logyx`, crate `hex`).
+**DA FARE:** extern con corpi Rust multi-riga/graffe (ora il corpo è una stringa senza `{`); `to_json`/
+`from_json` per float/liste/mappe; date/tempo (crate `chrono`); errori di rete/crate; web→WASM.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.

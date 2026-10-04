@@ -32,6 +32,8 @@ class T:
     BREAK = "BREAK"
     CONTINUE = "CONTINUE"
     RECORD = "RECORD"
+    USE = "USE"
+    EXTERN = "EXTERN"
     AND = "AND"
     OR = "OR"
     NOT = "NOT"
@@ -73,6 +75,7 @@ KEYWORDS = {
     "while": T.WHILE, "for": T.FOR, "in": T.IN, "const": T.CONST,
     "import": T.IMPORT, "fail": T.FAIL, "match": T.MATCH,
     "break": T.BREAK, "continue": T.CONTINUE, "record": T.RECORD,
+    "use": T.USE, "extern": T.EXTERN,
     "and": T.AND, "or": T.OR, "not": T.NOT,
     "true": T.TRUE, "false": T.FALSE, "nil": T.NIL,
 }

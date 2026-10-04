@@ -81,6 +81,10 @@ impl Parser {
                 items.push(self.import_item()?);
             } else if self.is(&TokenKind::Record) {
                 items.push(Item::Record(self.record_def()?));
+            } else if self.is(&TokenKind::Use) {
+                items.push(self.use_rust()?);
+            } else if self.is(&TokenKind::Extern) {
+                items.push(Item::ExternFn(self.extern_fn()?));
             } else if self.is(&TokenKind::Fn) {
                 items.push(Item::Func(self.function()?));
             } else {
@@ -114,6 +118,65 @@ impl Parser {
         self.expect(&TokenKind::Colon, ":")?;
         let ftype = self.type_ref()?;
         Ok((fname, ftype))
+    }
+
+    fn simple_string(&mut self, what: &str) -> Result<String, LogyxError> {
+        let t = self.expect(&TokenKind::Str(vec![]), what)?;
+        if let TokenKind::Str(parts) = t.kind {
+            if parts.len() == 1 {
+                if let StringPart::Lit(s) = &parts[0] {
+                    return Ok(s.clone());
+                }
+            }
+        }
+        Err(self.error(&format!("{}: è attesa una stringa semplice", what)))
+    }
+
+    fn require_ident(&mut self, word: &str, after: &str) -> Result<(), LogyxError> {
+        let got = self.ident_name(&format!("'{}'", word))?;
+        if got != word {
+            return Err(self.error(&format!("dopo '{}' è atteso '{}'", after, word)));
+        }
+        Ok(())
+    }
+
+    fn use_rust(&mut self) -> Result<Item, LogyxError> {
+        self.expect(&TokenKind::Use, "use")?;
+        self.require_ident("rust", "use")?;
+        let crate_name = self.simple_string("nome della crate")?;
+        self.expect(&TokenKind::Assign, "=")?;
+        let version = self.simple_string("versione della crate")?;
+        Ok(Item::UseRust { crate_name, version })
+    }
+
+    fn extern_fn(&mut self) -> Result<ExternFn, LogyxError> {
+        self.expect(&TokenKind::Extern, "extern")?;
+        self.require_ident("rust", "extern")?;
+        self.expect(&TokenKind::Fn, "fn")?;
+        let name = self.ident_name("nome di funzione")?;
+        self.expect(&TokenKind::LParen, "(")?;
+        let mut params = Vec::new();
+        if !self.is(&TokenKind::RParen) {
+            params.push(self.extern_param()?);
+            while self.is(&TokenKind::Comma) {
+                self.advance();
+                params.push(self.extern_param()?);
+            }
+        }
+        self.expect(&TokenKind::RParen, ")")?;
+        self.expect(&TokenKind::Arrow, "'->' con il tipo di ritorno")?;
+        let ret = self.type_ref()?;
+        self.expect(&TokenKind::Assign, "=")?;
+        let body = self.simple_string("corpo Rust dell'extern")?;
+        Ok(ExternFn { name, params, ret, body })
+    }
+
+    fn extern_param(&mut self) -> Result<(String, TypeRef), LogyxError> {
+        let p = self.param()?;
+        match p.ty {
+            Some(t) => Ok((p.name, t)),
+            None => Err(self.error("i parametri di una funzione extern richiedono un tipo")),
+        }
     }
 
     fn import_item(&mut self) -> Result<Item, LogyxError> {
