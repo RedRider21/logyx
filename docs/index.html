@@ -329,6 +329,8 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
           <tr><td>to_json(x)</td><td data-i18n="bi.tojson">Serializza x (scalare o record) in JSON</td></tr>
           <tr><td>from_json(testo, Record)</td><td data-i18n="bi.fromjson">Deserializza il JSON in un record (crate serde)</td></tr>
           <tr><td>sha256(s)</td><td data-i18n="bi.sha256">Hash SHA-256 di s (usa la crate Rust sha2)</td></tr>
+          <tr><td>now()</td><td data-i18n="bi.now">Timestamp Unix corrente in secondi</td></tr>
+          <tr><td>format_date(ts)</td><td data-i18n="bi.formatdate">Formatta un timestamp come data UTC (crate chrono)</td></tr>
           <tr><td>abs(x)</td><td data-i18n="bi.abs">Valore assoluto</td></tr>
           <tr><td>min(a,b), max(a,b)</td><td data-i18n="bi.minmax">Il minore / il maggiore fra due numeri</td></tr>
           <tr><td>pow(base, esp)</td><td data-i18n="bi.pow">Potenza fra interi (esp ≥ 0)</td></tr>
@@ -429,7 +431,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "bi.remove":"Toglie l'elemento all'indice i","bi.contains":"Vero se la lista contiene x",
       "bi.sum":"Somma degli elementi (interi)","bi.sort":"Ordina la lista in ordine crescente",
       "bi.map":"Nuova lista con la funzione f su ogni elemento","bi.filter":"Gli elementi per cui la funzione p è vera","bi.reduce":"Accumula da init con f(acc, elemento)",
-      "bi.tojson":"Serializza x (scalare o record) in JSON","bi.fromjson":"Deserializza il JSON in un record (crate serde)","bi.sha256":"Hash SHA-256 di s (usa la crate Rust sha2)",
+      "bi.tojson":"Serializza x (scalare o record) in JSON","bi.fromjson":"Deserializza il JSON in un record (crate serde)","bi.sha256":"Hash SHA-256 di s (usa la crate Rust sha2)","bi.now":"Timestamp Unix corrente in secondi","bi.formatdate":"Formatta un timestamp come data UTC (crate chrono)",
       "bi.abs":"Valore assoluto","bi.minmax":"Il minore / il maggiore fra due numeri",
       "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
       "bi.sqrt":"Radice quadrata (ritorna un float)",
@@ -474,7 +476,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "bi.remove":"Removes the element at index i","bi.contains":"True if the list contains x",
       "bi.sum":"Sum of the elements (integers)","bi.sort":"Sorts the list in ascending order",
       "bi.map":"New list with function f applied to each element","bi.filter":"The elements for which function p is true","bi.reduce":"Folds from init with f(acc, element)",
-      "bi.tojson":"Serializes x (scalar or record) to JSON","bi.fromjson":"Deserializes JSON into a record (serde crate)","bi.sha256":"SHA-256 hash of s (uses the Rust crate sha2)",
+      "bi.tojson":"Serializes x (scalar or record) to JSON","bi.fromjson":"Deserializes JSON into a record (serde crate)","bi.sha256":"SHA-256 hash of s (uses the Rust crate sha2)","bi.now":"Current Unix timestamp in seconds","bi.formatdate":"Formats a timestamp as a UTC date (chrono crate)",
       "bi.abs":"Absolute value","bi.minmax":"The smaller / the larger of two numbers",
       "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
       "bi.sqrt":"Square root (returns a float)",

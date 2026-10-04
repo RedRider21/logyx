@@ -447,9 +447,12 @@ impl Codegen {
                     }
                     if name == "upper" || name == "lower" || name == "trim" || name == "substring"
                         || name == "join" || name == "replace" || name == "to_json"
-                        || name == "sha256"
+                        || name == "sha256" || name == "format_date"
                     {
                         return Some("string".into());
+                    }
+                    if name == "now" {
+                        return Some("int".into());
                     }
                     if name == "contains" || name == "has"
                         || name == "starts_with" || name == "ends_with"
@@ -1408,6 +1411,24 @@ impl Codegen {
                             self.expr(&args[0])?,
                             name,
                             self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "now" {
+                        if !args.is_empty() {
+                            return Err(LogyxError::new("now non accetta argomenti"));
+                        }
+                        return Ok("(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)".to_string());
+                    }
+                    if name == "format_date" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(
+                                "format_date accetta un solo argomento (timestamp)",
+                            ));
+                        }
+                        self.deps.insert("chrono".to_string(), "\"0.4\"".to_string());
+                        return Ok(format!(
+                            "chrono::DateTime::from_timestamp(({}), 0).unwrap().format(\"%Y-%m-%d %H:%M:%S\").to_string()",
+                            self.expr(&args[0])?
                         ));
                     }
                     if name == "from_json" {

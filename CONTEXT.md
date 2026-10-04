@@ -109,8 +109,12 @@ Il transpiler/compilatore tracciano le dipendenze (`deps`, valore = spec TOML).
 **Via generica alle crate: FATTA** — `use rust "crate" = "ver"` + `extern rust fn nome(p: tipo) -> tipo
 = "<espr Rust>"` (binding con corpo Rust; le extern girano solo con `build`, non nell'interprete). Suite
 34/34 (`examples/native_extern.logyx`, crate `hex`).
+**Date/tempo: FATTO** — `now()` (timestamp Unix, via `std`, non deterministico → fuori suite) e
+`format_date(ts)` (data UTC, crate `chrono`, deterministico → suite 35/35, `examples/native_date.logyx`).
+Tre crate reali agganciate finora: `sha2`, `serde`, `chrono`.
 **DA FARE:** extern con corpi Rust multi-riga/graffe (ora il corpo è una stringa senza `{`); `to_json`/
-`from_json` per float/liste/mappe; date/tempo (crate `chrono`); errori di rete/crate; web→WASM.
+`from_json` per float/liste/mappe; contenitori di record; `enum`; lambda inline; errori di rete/crate;
+**web→WASM** (grande obiettivo).
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.

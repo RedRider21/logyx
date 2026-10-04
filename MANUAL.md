@@ -231,6 +231,8 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `to_json(x)` | Serializza `x` (int, bool, string o record) in una stringa JSON |
 | `from_json(testo, Record)` | Deserializza il JSON `testo` in un record (usa la crate Rust `serde`) |
 | `sha256(s)` | Hash SHA-256 di `s` in esadecimale (usa la crate Rust `sha2`) |
+| `now()` | Timestamp Unix corrente in secondi (`int`) |
+| `format_date(ts)` | Formatta il timestamp Unix `ts` come data UTC `YYYY-MM-DD HH:MM:SS` (crate `chrono`) |
 
 In `map`/`filter`/`reduce` la funzione è il **nome di una funzione definita con `fn`** (non una lambda
 inline, per ora). Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`.

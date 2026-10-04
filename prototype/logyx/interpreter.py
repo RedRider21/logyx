@@ -1,9 +1,11 @@
 # Copyright (C) 2026 Daniele Deplano (RedRider21)
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+import datetime
 import hashlib
 import json
 import math
+import time
 
 from . import nodes as N
 from .tokens import T
@@ -279,6 +281,13 @@ class Interpreter:
         g.define("sha256", lambda s: hashlib.sha256(s.encode("utf-8")).hexdigest())
         g.define("starts_with", lambda s, p: s.startswith(p))
         g.define("ends_with", lambda s, p: s.endswith(p))
+        g.define("now", lambda: int(time.time()))
+        g.define(
+            "format_date",
+            lambda s: datetime.datetime.fromtimestamp(s, datetime.timezone.utc).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+        )
 
     def load(self, items):
         """Registra funzioni e route ed esegue le istruzioni di primo livello.

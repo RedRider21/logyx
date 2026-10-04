@@ -501,8 +501,11 @@ class RustTranspiler:
                     if tt is not None:
                         return tt
                 return None
-            if name in ("upper", "lower", "trim", "substring", "join", "replace", "to_json", "sha256"):
+            if name in ("upper", "lower", "trim", "substring", "join", "replace",
+                        "to_json", "sha256", "format_date"):
                 return "string"
+            if name == "now":
+                return "int"
             if name in ("contains", "has", "starts_with", "ends_with"):
                 return "bool"
             if name == "index_of":
@@ -893,6 +896,17 @@ class RustTranspiler:
                         raise LogyxError(f"{nm} accetta due argomenti: {nm}(stringa, parte)")
                     method = "starts_with" if nm == "starts_with" else "ends_with"
                     return f"({self.expr(e.args[0])}).{method}(({self.expr(e.args[1])}).as_str())"
+                if nm == "now":
+                    if len(e.args) != 0:
+                        raise LogyxError("now non accetta argomenti")
+                    return ("(std::time::SystemTime::now()"
+                            ".duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)")
+                if nm == "format_date":
+                    if len(e.args) != 1:
+                        raise LogyxError("format_date accetta un solo argomento (timestamp)")
+                    self.deps["chrono"] = '"0.4"'
+                    return ("chrono::DateTime::from_timestamp((" + self.expr(e.args[0])
+                            + "), 0).unwrap().format(\"%Y-%m-%d %H:%M:%S\").to_string()")
                 if nm == "from_json":
                     if len(e.args) != 2 or not isinstance(e.args[1], N.Identifier):
                         raise LogyxError("from_json richiede: from_json(testo, NomeRecord)")

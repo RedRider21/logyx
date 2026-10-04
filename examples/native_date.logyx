@@ -1,0 +1,13 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Date/tempo: format_date(timestamp) usa la crate chrono. Interprete e nativo.
+// (now() esiste ma non è deterministico, quindi non è in questo esempio.)
+//   python3 main.py       ../examples/native_date.logyx
+//   python3 main.py build ../examples/native_date.logyx
+
+fn main() {
+    print(format_date(0))
+    print(format_date(1000000000))
+    print(format_date(1700000000))
+}

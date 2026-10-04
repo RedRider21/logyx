@@ -421,6 +421,14 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <td><code>sha256(s)</code></td>
 <td>Hash SHA-256 di <code>s</code> in esadecimale (usa la crate Rust <code>sha2</code>)</td>
 </tr>
+<tr>
+<td><code>now()</code></td>
+<td>Timestamp Unix corrente in secondi (<code>int</code>)</td>
+</tr>
+<tr>
+<td><code>format_date(ts)</code></td>
+<td>Formatta il timestamp Unix <code>ts</code> come data UTC <code>YYYY-MM-DD HH:MM:SS</code> (crate <code>chrono</code>)</td>
+</tr>
 </tbody>
 </table>
 <p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione è il <strong>nome di una funzione definita con <code>fn</code></strong> (non una lambda
