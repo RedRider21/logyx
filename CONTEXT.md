@@ -144,8 +144,12 @@ nei `return`. Allineati i due backend; `ripeti(testo, volte)` reintrodotto in `n
 (non serve più l'annotazione `-> tipo`): `_infer_func_ret`/`infer_func_ret` raccolgono i tipi delle variabili
 locali (da `Decl`/`Assign`, ricorrendo in `if`/`while`/`for`/`match`) oltre a quelli dei parametri. Suite
 37/37 (`examples/native_localret.logyx`); `fattoriale` in `native_wasm` non ha più bisogno di `-> int`.
-**DA FARE web→WASM:** DOM dal codice Logyx (`set text of …`, `on "click" …` via import host/`web-sys`),
-Fase 2 (server HTTP + route/render), Fase 3 (isole `@start-client`, server-driven).
+**Web→WASM Fase 1 CHIUSA e verificata:** smoke test versionato `tests/wasm_smoke.sh`
+(+ `tests/wasm_smoke.mjs`) che compila gli esempi client a WASM ed esegue con Node il **collante JS
+reale** delle pagine generate (DOM simulato minimale), 13/13 su numeri+stringhe (round-trip, UTF-8
+accentato). Salta (codice 77) se mancano node/cargo/target wasm32.
+**DA FARE web→WASM:** **Fase 2 (server HTTP + route/render)** ← PROSSIMO; DOM dal codice Logyx
+(`set text of …`, `on "click" …` via import host/`web-sys`); Fase 3 (isole `@start-client`, server-driven).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; `enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli

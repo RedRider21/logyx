@@ -75,8 +75,11 @@ forma minima e onesta.
 - La **logica** `string→string` ecc. è normale codice di nucleo: gli esempi hanno un `main` che stampa i
   risultati e **entrano nella suite `conformance.sh`** (interprete vs compilatore nativo). `build-wasm`
   ignora `main`, quindi un unico file serve a entrambi.
-- Il **lato WASM** non è verificabile dalla suite: si usa uno **smoke test con Node** (istanzia il
-  `.wasm`, alloca una stringa, chiama la funzione, rilegge il risultato) — come già fatto in Fase 0.
+- Il **lato WASM** non è verificabile dalla suite di conformità: c'è uno **smoke test dedicato**,
+  `tests/wasm_smoke.sh` (+ `tests/wasm_smoke.mjs`). Compila gli esempi del client a WASM ed esegue con
+  Node il **collante JS reale** delle pagine generate (non una sua reimplementazione), con un DOM
+  simulato minimale, verificando numeri e stringhe (round-trip e UTF-8 accentato). Salta con codice 77
+  se mancano `node`/`cargo`/il target `wasm32`.
 
 ## Fuori scope (fasi successive)
 
