@@ -62,6 +62,19 @@ fn __json_float(x: f64) -> String {
     } else {
         format!("{}", x)
     }
+}
+
+fn __json_obj(mut entries: Vec<(String, String)>) -> String {
+    entries.sort();
+    let mut out = String::from("{");
+    for (i, (k, v)) in entries.iter().enumerate() {
+        if i > 0 { out.push(','); }
+        out.push_str(&__json_str(k));
+        out.push(':');
+        out.push_str(v);
+    }
+    out.push('}');
+    out
 }"#;
 
 fn fn_name(args: &[Expr], n: usize, idx: usize, usage: &str) -> R<String> {
@@ -145,6 +158,8 @@ pub struct Codegen {
     cur_types: HashMap<String, Option<String>>,
     // Per le variabili lista: tipo JSON dell'elemento (per `to_json`), es. "int" o "Persona".
     list_elem: HashMap<String, String>,
+    // Per le variabili mappa: (tipo chiave, tipo valore) JSON (per `to_json`).
+    map_val: HashMap<String, (String, String)>,
     uses_json: bool,
     uses_serde: bool,
     pub deps: HashMap<String, String>,
@@ -163,6 +178,7 @@ impl Codegen {
             kinds: HashMap::new(),
             cur_types: HashMap::new(),
             list_elem: HashMap::new(),
+            map_val: HashMap::new(),
             uses_json: false,
             uses_serde: false,
             deps: HashMap::new(),
@@ -948,6 +964,7 @@ impl Codegen {
         let mut declared: HashSet<String> = f.params.iter().map(|p| p.name.clone()).collect();
         self.kinds.clear();
         self.list_elem.clear();
+        self.map_val.clear();
         self.cur_types = pt.clone();
         let body = self.block(&f.body, &mut declared, 1)?;
         Ok(format!("fn {}({}){} {{\n{}\n}}", f.name, params, ret_str, body))
@@ -1209,6 +1226,23 @@ impl Codegen {
                     rust_expr, elem_json
                 ))
             }
+            t if t.starts_with("map<") && t.ends_with('>') => {
+                let inner = &t[4..t.len() - 1];
+                let comma = inner.find(',').ok_or_else(|| {
+                    LogyxError::new("to_json: tipo mappa malformato")
+                })?;
+                let (kt, vt) = (&inner[..comma], &inner[comma + 1..]);
+                if kt != "string" {
+                    return Err(LogyxError::new(
+                        "to_json di mappe: v0 supporta solo chiavi string",
+                    ));
+                }
+                let val_json = self.json_value("__v.clone()", vt)?;
+                Ok(format!(
+                    "__json_obj(({}).iter().map(|(__k, __v)| (__k.clone(), {})).collect::<Vec<(String, String)>>())",
+                    rust_expr, val_json
+                ))
+            }
             t if self.records.contains_key(t) => {
                 let fields = self.records[t].clone();
                 let mut fmt_parts = Vec::new();
@@ -1223,7 +1257,7 @@ impl Codegen {
                 Ok(format!("format!(\"{}\", {})", fmt, vals.join(", ")))
             }
             other => Err(LogyxError::new(format!(
-                "to_json non supporta il tipo '{}' (v0: int, float, bool, string, record, liste)",
+                "to_json non supporta il tipo '{}' (v0: int, float, bool, string, record, liste, mappe)",
                 other
             ))),
         }
@@ -1241,20 +1275,41 @@ impl Codegen {
                 let elem = self.json_type_of(first)?;
                 Some(format!("list<{}>", elem))
             }
-            Expr::Ident(n) => self.list_elem.get(n).map(|el| format!("list<{}>", el)),
+            Expr::Map(ps) => {
+                let (k, v) = ps.first()?;
+                let kt = self.json_type_of(k)?;
+                let vt = self.json_type_of(v)?;
+                Some(format!("map<{},{}>", kt, vt))
+            }
+            Expr::Ident(n) => {
+                if let Some(el) = self.list_elem.get(n) {
+                    return Some(format!("list<{}>", el));
+                }
+                self.map_val.get(n).map(|(kt, vt)| format!("map<{},{}>", kt, vt))
+            }
             _ => None,
         }
     }
 
-    /// Se `value` è una lista letterale non vuota, ricorda il tipo del suo elemento
-    /// per la variabile `name` (usato da `to_json`).
+    /// Se `value` è una lista o mappa letterale non vuota, ricorda i tipi dei suoi
+    /// elementi per la variabile `name` (usato da `to_json`).
     fn track_list_elem(&mut self, name: &str, value: &Expr) {
-        if let Expr::List(els) = value {
-            if let Some(first) = els.first() {
-                if let Some(el) = self.json_type_of(first) {
-                    self.list_elem.insert(name.to_string(), el);
+        match value {
+            Expr::List(els) => {
+                if let Some(first) = els.first() {
+                    if let Some(el) = self.json_type_of(first) {
+                        self.list_elem.insert(name.to_string(), el);
+                    }
                 }
             }
+            Expr::Map(ps) => {
+                if let Some((k, v)) = ps.first() {
+                    if let (Some(kt), Some(vt)) = (self.json_type_of(k), self.json_type_of(v)) {
+                        self.map_val.insert(name.to_string(), (kt, vt));
+                    }
+                }
+            }
+            _ => {}
         }
     }
 

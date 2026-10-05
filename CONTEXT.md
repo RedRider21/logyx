@@ -95,13 +95,15 @@ builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ce
 Limiti v0: campi scalari/string (no record annidati, no liste/mappe di record — prossimo giro di
 "clone uniforme" sui contenitori con elemento record).
 **JSON: serializzazione FATTA** (`design/json.md`): `to_json(x)` per int/**float**/bool/string/record
-(anche annidati) e **liste** (di qualunque tipo supportato, record e liste annidate inclusi), formato
-compatto, escape; ambiente dei tipi locali per la generazione type-directed. Float via helper condiviso
-`__json_float` (finiti interi → `3.0`; NaN/∞ rifiutati). Liste: tipo elemento dedotto da lista letterale
-o variabile-lista-letterale (mappa `list_elem`), serializzazione via `json_value`/`_json_value` con
-ramo `list<ELEM>` (ricorsivo). Tre backend allineati (interprete + transpiler + compiler), suite 38/38
-(`examples/native_json.logyx`). **DA FARE:** `from_json` (parser JSON), `to_json` di **mappe** (il
-backend non traccia il tipo dei valori).
+(anche annidati), **liste** (di qualunque tipo supportato, record e liste annidate inclusi) e **mappe**
+(v0: solo chiavi string), formato compatto, escape; ambiente dei tipi locali per la generazione
+type-directed. Float via helper condiviso `__json_float` (finiti interi → `3.0`; NaN/∞ rifiutati).
+Liste: tipo elemento dedotto da lista letterale o variabile-lista-letterale (mappa `list_elem`), ramo
+`list<ELEM>` in `json_value` (ricorsivo). Mappe: tipo valore dedotto da letterale o variabile
+(mappa `map_val`), ramo `map<K,V>`, chiavi ordinate via helper `__json_obj` (HashMap Rust non
+deterministico; UTF-8 byte-order == code-point order Python → conformi). Tre backend allineati
+(interprete + transpiler + compiler), suite 38/38 (`examples/native_json.logyx`). **DA FARE:**
+`from_json` oltre i record; chiavi di mappa non-string.
 **`match` generale: FATTO**: `match x { <valore> { } ... else { } }` (confronto per uguaglianza →
 if/else-if), distinto dal `match ok/err` degli errori; interprete+nativo, suite 30/30
 (`examples/native_matchval.logyx`).
@@ -144,8 +146,7 @@ locali (da `Decl`/`Assign`, ricorrendo in `if`/`while`/`for`/`match`) oltre a qu
 37/37 (`examples/native_localret.logyx`); `fattoriale` in `native_wasm` non ha più bisogno di `-> int`.
 **DA FARE web→WASM:** DOM dal codice Logyx (`set text of …`, `on "click" …` via import host/`web-sys`),
 Fase 2 (server HTTP + route/render), Fase 3 (isole `@start-client`, server-driven).
-**Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record / `to_json` di mappe;
-`enum`; lambda inline.
+**Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; `enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.

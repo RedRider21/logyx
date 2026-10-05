@@ -36,6 +36,19 @@ fn __json_float(x: f64) -> String {
     } else {
         format!("{}", x)
     }
+}
+
+fn __json_obj(mut entries: Vec<(String, String)>) -> String {
+    entries.sort();
+    let mut out = String::from("{");
+    for (i, (k, v)) in entries.iter().enumerate() {
+        if i > 0 { out.push(','); }
+        out.push_str(&__json_str(k));
+        out.push(':');
+        out.push_str(v);
+    }
+    out.push('}');
+    out
 }'''
 
 
@@ -205,6 +218,7 @@ class RustTranspiler:
         declared = set(f.params)
         self.kinds = {}  # nome -> "list" | "map" (categoria delle variabili locali)
         self.list_elem = {}  # nome lista -> tipo JSON dell'elemento (per to_json)
+        self.map_val = {}  # nome mappa -> (tipo chiave, tipo valore) JSON (per to_json)
         self.cur_types = {n: t for n, t in pt.items() if t}  # tipi noti (param + locali)
         body = self.block(f.body, declared, 1)
         return f"fn {f.name}({params}){ret_str} {{\n{body}\n}}"
@@ -731,6 +745,19 @@ class RustTranspiler:
                 f"{{ let __items: Vec<String> = ({rust_expr}).iter().map(|__x| {elem_json}).collect(); "
                 'format!("[{}]", __items.join(",")) }'
             )
+        if type_str.startswith("map<") and type_str.endswith(">"):
+            inner = type_str[4:-1]
+            comma = inner.find(",")
+            if comma < 0:
+                raise LogyxError("to_json: tipo mappa malformato")
+            kt, vt = inner[:comma], inner[comma + 1:]
+            if kt != "string":
+                raise LogyxError("to_json di mappe: v0 supporta solo chiavi string")
+            val_json = self._json_value("__v.clone()", vt)
+            return (
+                f"__json_obj(({rust_expr}).iter().map(|(__k, __v)| (__k.clone(), {val_json}))"
+                ".collect::<Vec<(String, String)>>())"
+            )
         if type_str in getattr(self, "records", {}):
             parts, args = [], []
             for fn, ft in self.records[type_str]:
@@ -739,7 +766,7 @@ class RustTranspiler:
             fmt = "{{" + ",".join(parts) + "}}"
             return 'format!("' + fmt + '", ' + ", ".join(args) + ")"
         raise LogyxError(
-            f"to_json non supporta il tipo '{type_str}' (v0: int, float, bool, string, record, liste)"
+            f"to_json non supporta il tipo '{type_str}' (v0: int, float, bool, string, record, liste, mappe)"
         )
 
     def _json_type_of(self, e):
@@ -754,18 +781,33 @@ class RustTranspiler:
                 if elem:
                     return f"list<{elem}>"
             return None
+        if type(e).__name__ == "MapLit":
+            if e.pairs:
+                k, v = e.pairs[0]
+                kt, vt = self._json_type_of(k), self._json_type_of(v)
+                if kt and vt:
+                    return f"map<{kt},{vt}>"
+            return None
         if isinstance(e, N.Identifier):
             el = getattr(self, "list_elem", {}).get(e.name)
             if el:
                 return f"list<{el}>"
+            mv = getattr(self, "map_val", {}).get(e.name)
+            if mv:
+                return f"map<{mv[0]},{mv[1]}>"
         return None
 
     def _track_list_elem(self, name, value):
-        """Se value è una lista letterale non vuota, ricorda il tipo del suo elemento."""
+        """Se value è una lista/mappa letterale non vuota, ricorda i tipi dei suoi elementi."""
         if type(value).__name__ == "ListLit" and value.elements:
             el = self._json_type_of(value.elements[0])
             if el:
                 self.list_elem[name] = el
+        elif type(value).__name__ == "MapLit" and value.pairs:
+            k, v = value.pairs[0]
+            kt, vt = self._json_type_of(k), self._json_type_of(v)
+            if kt and vt:
+                self.map_val[name] = (kt, vt)
 
     def _make_record_expr(self, name, args):
         fields = self.records[name]

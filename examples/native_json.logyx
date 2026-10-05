@@ -37,4 +37,10 @@ fn main() {
     print(to_json(parole))
     squadra = [Persona("Ada", 36), Persona("Guido", 45)]
     print(to_json(squadra))
+
+    // mappe (v0: chiavi string; chiavi ordinate per output deterministico)
+    prezzi = {"pane": 2, "latte": 1, "uova": 3}
+    print(to_json(prezzi))
+    rosa = {"cap": Persona("Ada", 36), "vice": Persona("Guido", 45)}
+    print(to_json(rosa))
 }

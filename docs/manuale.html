@@ -414,7 +414,7 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 </tr>
 <tr>
 <td><code>to_json(x)</code></td>
-<td>Serializza <code>x</code> (int, float, bool, string, record o lista) in una stringa JSON</td>
+<td>Serializza <code>x</code> (int, float, bool, string, record, lista o mappa) in una stringa JSON</td>
 </tr>
 <tr>
 <td><code>from_json(testo, Record)</code></td>
@@ -440,7 +440,9 @@ inline, per ora). Esempi: <code>examples/native_mapfilter.logyx</code>, <code>ex
 in formato compatto; le stringhe sono "escaped". I float finiti e interi escono con il decimale (<code>3.0</code>);
 le liste possono contenere qualunque tipo supportato, record e liste annidate inclusi — il tipo
 dell'elemento si deduce da una lista letterale o da una variabile a cui è stata assegnata una lista
-letterale (<code>numeri = [1,2,3]; to_json(numeri)</code>). <code>from_json(testo, Record)</code> fa l'inverso: deserializza
+letterale (<code>numeri = [1,2,3]; to_json(numeri)</code>). Anche le <strong>mappe</strong> sono serializzabili (v0: solo
+chiavi <code>string</code>); le chiavi escono <strong>ordinate</strong> così l'output è deterministico
+(<code>prezzi = {"pane":2,"latte":1}; to_json(prezzi)</code> → <code>{"latte":1,"pane":2}</code>). <code>from_json(testo, Record)</code> fa l'inverso: deserializza
 una stringa JSON in un record (campi scalari/string), usando la crate <code>serde</code>. Vedi
 <code>examples/native_json.logyx</code> e <code>examples/native_fromjson.logyx</code>.</p>
 <p>Nota: nelle <strong>stringhe letterali</strong> i caratteri <code>{</code> e <code>}</code> avviano l'interpolazione; per inserirli alla

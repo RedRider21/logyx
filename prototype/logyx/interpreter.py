@@ -280,6 +280,13 @@ class Interpreter:
                 return _json_escape(v)
             if isinstance(v, list):
                 return "[" + ",".join(_to_json(x) for x in v) + "]"
+            if isinstance(v, dict):
+                items = []
+                for k in sorted(v.keys()):
+                    if not isinstance(k, str):
+                        raise LogyxError("to_json di mappe: v0 supporta solo chiavi string")
+                    items.append(_json_escape(k) + ":" + _to_json(v[k]))
+                return "{" + ",".join(items) + "}"
             if isinstance(v, RecordValue):
                 parts = [
                     '"%s":%s' % (fn, _to_json(v.fields[fn]))

@@ -231,7 +231,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `map(lista, f)` | Nuova lista con la funzione `f` applicata a ogni elemento |
 | `filter(lista, p)` | Gli elementi della lista per cui la funzione `p` è vera |
 | `reduce(lista, init, f)` | Accumula da `init` applicando `f(acc, elemento)` |
-| `to_json(x)` | Serializza `x` (int, float, bool, string, record o lista) in una stringa JSON |
+| `to_json(x)` | Serializza `x` (int, float, bool, string, record, lista o mappa) in una stringa JSON |
 | `from_json(testo, Record)` | Deserializza il JSON `testo` in un record (usa la crate Rust `serde`) |
 | `sha256(s)` | Hash SHA-256 di `s` in esadecimale (usa la crate Rust `sha2`) |
 | `now()` | Timestamp Unix corrente in secondi (`int`) |
@@ -244,7 +244,9 @@ inline, per ora). Esempi: `examples/native_mapfilter.logyx`, `examples/native_re
 in formato compatto; le stringhe sono "escaped". I float finiti e interi escono con il decimale (`3.0`);
 le liste possono contenere qualunque tipo supportato, record e liste annidate inclusi — il tipo
 dell'elemento si deduce da una lista letterale o da una variabile a cui è stata assegnata una lista
-letterale (`numeri = [1,2,3]; to_json(numeri)`). `from_json(testo, Record)` fa l'inverso: deserializza
+letterale (`numeri = [1,2,3]; to_json(numeri)`). Anche le **mappe** sono serializzabili (v0: solo
+chiavi `string`); le chiavi escono **ordinate** così l'output è deterministico
+(`prezzi = {"pane":2,"latte":1}; to_json(prezzi)` → `{"latte":1,"pane":2}`). `from_json(testo, Record)` fa l'inverso: deserializza
 una stringa JSON in un record (campi scalari/string), usando la crate `serde`. Vedi
 `examples/native_json.logyx` e `examples/native_fromjson.logyx`.
 
