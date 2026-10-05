@@ -27,12 +27,14 @@ dipendenze, perfetta per un PoC; si aggancia col meccanismo crate già pronto (b
 
 ## Sotto-fasi
 
-- **Fase 2a — render HTML server-side nativo.** Il compilatore impara `route`/`render`/template e genera
-  l'HTML **esattamente come il prototipo** (interpolazione `{expr}` + HTML-escaping). Primo comando:
-  `logyxc render <file> <path>` → stampa l'HTML (stesso output di `python main.py render`). **Niente
-  server HTTP ancora, niente isole client** (un template con `@start-client` dà un errore chiaro
-  "client: Fase 2b"). *È il cuore della Fase 2 e il passo a minor rischio: verificabile per conformità
-  (confronto con il prototipo) senza nuove crate.*
+- **Fase 2a — render HTML server-side nativo. FATTA.** Il compilatore impara `route`/`render`/template e
+  genera l'HTML **esattamente come il prototipo** (interpolazione `{expr}` type-directed + HTML-escaping).
+  Comando `logyxc render <file> <path>` → stampa l'HTML (stesso output di `python main.py render`).
+  Niente server HTTP ancora; le isole `@start-client` e i costrutti `{for …}`/`{if …}` nel template danno
+  un errore chiaro (fasi successive). Conforme al prototipo: caso `render web_demo /` nella suite
+  (`tests/conformance.sh`, ora 39). Implementazione: lexer (cattura template), AST
+  (`Item::Route`/`Stmt::Render`), parser, codegen (`__route_N()` + `main` dispatcher sul path,
+  helper `__html_escape`/`__disp_float`).
 - **Fase 2b — server HTTP.** `logyxc build-server <file>` (e/o `logyxc serve`) avvolge il render in un
   server `tiny_http`: match sul path → render della route → risposta `text/html`. Serve anche gli asset
   statici (il `.wasm`/`.js` del client quando ci saranno).

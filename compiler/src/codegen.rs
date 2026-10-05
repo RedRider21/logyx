@@ -77,6 +77,15 @@ fn __json_obj(mut entries: Vec<(String, String)>) -> String {
     out
 }"#;
 
+/// Helper per il render HTML server-side (Fase 2): escaping e display identici al prototipo.
+const HTML_HELPER: &str = r#"fn __html_escape(s: &str) -> String {
+    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
+}
+
+fn __disp_float(x: f64) -> String {
+    if x.is_finite() && x.fract() == 0.0 { format!("{}", x as i64) } else { format!("{}", x) }
+}"#;
+
 fn fn_name(args: &[Expr], n: usize, idx: usize, usage: &str) -> R<String> {
     let base = usage.split('(').next().unwrap_or(usage);
     if args.len() != n {
@@ -111,6 +120,22 @@ fn is_cmp(op: &BinOp) -> bool {
         op,
         BinOp::Eq | BinOp::Ne | BinOp::Lt | BinOp::Le | BinOp::Gt | BinOp::Ge
     )
+}
+
+/// I caratteri `chars[i..]` iniziano con `lit`?
+fn slice_starts_with(chars: &[char], i: usize, lit: &str) -> bool {
+    let want: Vec<char> = lit.chars().collect();
+    if i + want.len() > chars.len() {
+        return false;
+    }
+    want.iter().enumerate().all(|(k, ch)| chars[i + k] == *ch)
+}
+
+/// Parsa una singola espressione Logyx da sorgente (per le interpolazioni dei template).
+fn parse_expr_src(src: &str) -> R<Expr> {
+    let toks = crate::lexer::Lexer::new(src, "<template>").tokenize()?;
+    let mut p = crate::parser::Parser::new(toks, "<template>".to_string());
+    p.parse_expression()
 }
 
 fn stringish(e: &Expr) -> bool {
@@ -162,6 +187,7 @@ pub struct Codegen {
     map_val: HashMap<String, (String, String)>,
     uses_json: bool,
     uses_serde: bool,
+    uses_html: bool,
     pub deps: HashMap<String, String>,
 }
 
@@ -181,6 +207,7 @@ impl Codegen {
             map_val: HashMap::new(),
             uses_json: false,
             uses_serde: false,
+            uses_html: false,
             deps: HashMap::new(),
         }
     }
@@ -233,9 +260,11 @@ impl Codegen {
     pub fn generate(&mut self, items: &[Item]) -> R<String> {
         self.uses_json = false;
         self.uses_serde = false;
+        self.uses_html = false;
         self.deps.clear();
         let mut funcs: Vec<Function> = Vec::new();
         let mut externs: Vec<ExternFn> = Vec::new();
+        let mut routes: Vec<(String, Vec<Stmt>)> = Vec::new();
         for it in items {
             match it {
                 Item::Func(f) => funcs.push(f.clone()),
@@ -247,6 +276,7 @@ impl Codegen {
                 }
                 Item::ExternFn(ex) => externs.push(ex.clone()),
                 Item::Import(_) => {} // già espansi dal resolver
+                Item::Route { path, body } => routes.push((path.clone(), body.clone())),
                 Item::Stmt(_) => {
                     return Err(LogyxError::new(
                         "il backend supporta solo definizioni di funzione \
@@ -255,8 +285,13 @@ impl Codegen {
                 }
             }
         }
-        if !funcs.iter().any(|f| f.name == "main") {
+        if routes.is_empty() && !funcs.iter().any(|f| f.name == "main") {
             return Err(LogyxError::new("manca 'fn main()': serve un punto d'ingresso"));
+        }
+        if !routes.is_empty() && funcs.iter().any(|f| f.name == "main") {
+            return Err(LogyxError::new(
+                "un file con route non deve definire anche 'fn main()' (il main è il server)",
+            ));
         }
         // firme delle funzioni extern (tipi dichiarati, non fallibili)
         for ex in &externs {
@@ -296,6 +331,23 @@ impl Codegen {
         let mut func_defs = Vec::new();
         for f in &funcs {
             func_defs.push(self.func(f)?);
+        }
+        // route: una fn per ciascuna (ritorna l'HTML) + un main dispatcher sul path.
+        let mut route_defs = Vec::new();
+        let mut arms = Vec::new();
+        for (idx, (path, body)) in routes.iter().enumerate() {
+            route_defs.push(self.route_fn(idx, body)?);
+            arms.push(format!("        {:?} => __route_{}(),", path, idx));
+        }
+        if !routes.is_empty() {
+            route_defs.push(format!(
+                "fn main() {{\n    \
+                 let args: Vec<String> = std::env::args().collect();\n    \
+                 let path = args.get(1).map(|s| s.as_str()).unwrap_or(\"/\");\n    \
+                 let html = match path {{\n{}\n        _ => {{ eprintln!(\"nessuna route per '{{}}'\", path); std::process::exit(1); }}\n    }};\n    \
+                 println!(\"{{}}\", html);\n}}",
+                arms.join("\n")
+            ));
         }
         // funzioni extern (corpo Rust fornito dall'utente)
         let mut extern_defs = Vec::new();
@@ -341,9 +393,13 @@ impl Codegen {
         if self.uses_json {
             out.push(JSON_HELPER.to_string());
         }
+        if self.uses_html {
+            out.push(HTML_HELPER.to_string());
+        }
         out.extend(structs);
         out.extend(extern_defs);
         out.extend(func_defs);
+        out.extend(route_defs);
         Ok(out.join("\n\n") + "\n")
     }
 
@@ -677,7 +733,7 @@ impl Codegen {
                     self.scan_stmts(eb, pt, ev, fname);
                 }
             }
-            Stmt::Break | Stmt::Continue | Stmt::Func(_) => {}
+            Stmt::Break | Stmt::Continue | Stmt::Func(_) | Stmt::Render { .. } => {}
         }
     }
 
@@ -970,6 +1026,97 @@ impl Codegen {
         Ok(format!("fn {}({}){} {{\n{}\n}}", f.name, params, ret_str, body))
     }
 
+    /// Genera la funzione di una route: nessun parametro, ritorna l'HTML (`String`).
+    fn route_fn(&mut self, idx: usize, body: &[Stmt]) -> R<String> {
+        if !body.iter().any(|s| matches!(s, Stmt::Render { .. })) {
+            return Err(LogyxError::new("una route deve contenere un 'render'"));
+        }
+        self.cur_fallible = false;
+        self.kinds.clear();
+        self.list_elem.clear();
+        self.map_val.clear();
+        self.cur_types = HashMap::new();
+        let mut declared: HashSet<String> = HashSet::new();
+        let bod = self.block(body, &mut declared, 1)?;
+        Ok(format!("fn __route_{}() -> String {{\n{}\n}}", idx, bod))
+    }
+
+    /// Dal template HTML grezzo costruisce un'espressione Rust `String`: testo
+    /// letterale verbatim, interpolazioni `{expr}` con HTML-escaping type-directed.
+    fn render_template(&mut self, raw: &str) -> R<String> {
+        self.uses_html = true;
+        let chars: Vec<char> = raw.chars().collect();
+        let n = chars.len();
+        let mut i = 0;
+        let mut body = String::from("{ let mut __h = String::new(); ");
+        let mut lit = String::new();
+        while i < n {
+            let c = chars[i];
+            if c == '{' {
+                if !lit.is_empty() {
+                    body += &format!("__h.push_str({}); ", rust_str_lit(&lit));
+                    lit.clear();
+                }
+                let mut depth = 1;
+                let mut j = i + 1;
+                let start = j;
+                while j < n && depth > 0 {
+                    if chars[j] == '{' {
+                        depth += 1;
+                    } else if chars[j] == '}' {
+                        depth -= 1;
+                    }
+                    j += 1;
+                }
+                if depth > 0 {
+                    return Err(LogyxError::new("interpolazione non terminata nel template"));
+                }
+                let hole: String = chars[start..j - 1].iter().collect();
+                body += &self.render_hole(&hole)?;
+                body.push(' ');
+                i = j;
+            } else if slice_starts_with(&chars, i, "@start-client") {
+                return Err(LogyxError::new(
+                    "isole client (@start-client) non ancora supportate dal compilatore (Fase 2c)",
+                ));
+            } else {
+                lit.push(c);
+                i += 1;
+            }
+        }
+        if !lit.is_empty() {
+            body += &format!("__h.push_str({}); ", rust_str_lit(&lit));
+        }
+        body.push_str("__h }");
+        Ok(body)
+    }
+
+    /// Un'interpolazione `{expr}` → `__h.push_str(&__html_escape(...));` type-directed.
+    fn render_hole(&mut self, hole: &str) -> R<String> {
+        let s = hole.trim();
+        if s.starts_with("for ") || s.starts_with("for\t") || s.starts_with("if ") || s.starts_with("if\t") {
+            return Err(LogyxError::new(
+                "i costrutti {for …}/{if …} nel template non sono ancora supportati (Fase 2b)",
+            ));
+        }
+        let e = parse_expr_src(s)?;
+        let ct = self.cur_types.clone();
+        let t = self.type_of(&e, &ct);
+        let ex = self.expr(&e)?;
+        let rendered = match t.as_deref() {
+            Some("string") => format!("__html_escape(&({}))", ex),
+            Some("int") | Some("bool") => format!("__html_escape(&format!(\"{{}}\", {}))", ex),
+            Some("float") => format!("__html_escape(&__disp_float({}))", ex),
+            _ => {
+                return Err(LogyxError::new(format!(
+                    "non riesco a dedurre il tipo dell'interpolazione '{}' nel template",
+                    s
+                )))
+            }
+        };
+        Ok(format!("__h.push_str(&{});", rendered))
+    }
+
     fn block(&mut self, stmts: &[Stmt], declared: &mut HashSet<String>, indent: usize) -> R<String> {
         let mut out = Vec::new();
         for s in stmts {
@@ -994,6 +1141,10 @@ impl Codegen {
                         Some(e) => Ok(format!("{pad}return {};", self.expr(e)?)),
                     }
                 }
+            }
+            Stmt::Render { template } => {
+                let html = self.render_template(template)?;
+                Ok(format!("{pad}return {};", html))
             }
             Stmt::Break => Ok(format!("{pad}break;")),
             Stmt::Continue => Ok(format!("{pad}continue;")),

@@ -27,8 +27,12 @@ fn main() {
         ("gen", Some(p)) => run_gen(p),
         ("build", Some(p)) => run_build(p),
         ("build-wasm", Some(p)) => run_build_wasm(p),
+        ("render", Some(p)) => {
+            let rp = args.get(3).map(|s| s.as_str()).unwrap_or("/");
+            run_render(p, rp)
+        }
         _ => {
-            eprintln!("uso: logyxc <tokens|parse|gen|build|build-wasm> <file.logyx>");
+            eprintln!("uso: logyxc <tokens|parse|gen|build|build-wasm|render> <file.logyx> [percorso-route]");
             exit(2);
         }
     };
@@ -341,6 +345,45 @@ function callFn(sig, raw) {{
         wasm = wasm_name,
         sigs = sigs
     )
+}
+
+/// Web Fase 2a: compila il file (route + render) a un binario server nativo e ne
+/// stampa l'HTML reso per il percorso `route_path` (come `python main.py render`).
+fn run_render(path: &str, route_path: &str) -> Result<(), error::LogyxError> {
+    let items = modules::load_program(path)?;
+    let mut cg = codegen::Codegen::new();
+    let rust = cg.generate(&items)?;
+    if !cg.deps.is_empty() {
+        return Err(error::LogyxError::new(
+            "render: i file con dipendenze da crate ('use rust') non sono ancora supportati",
+        ));
+    }
+    if !which("rustc") {
+        return Err(error::LogyxError::new("rustc non installato"));
+    }
+    let out_rs = change_ext(path, "rs");
+    std::fs::write(&out_rs, &rust).map_err(|e| error::LogyxError::new(format!("{out_rs}: {e}")))?;
+    let bin = strip_ext(path) + "_bin";
+    let comp = std::process::Command::new("rustc")
+        .args(["-O", &out_rs, "-o", &bin])
+        .output()
+        .map_err(|e| error::LogyxError::new(format!("rustc: {e}")))?;
+    if !comp.status.success() {
+        return Err(error::LogyxError::new(format!(
+            "rustc ha segnalato errori:\n{}",
+            String::from_utf8_lossy(&comp.stderr)
+        )));
+    }
+    let run = std::process::Command::new(&bin)
+        .arg(route_path)
+        .output()
+        .map_err(|e| error::LogyxError::new(format!("{bin}: {e}")))?;
+    print!("{}", String::from_utf8_lossy(&run.stdout));
+    if !run.status.success() {
+        eprint!("{}", String::from_utf8_lossy(&run.stderr));
+        return Err(error::LogyxError::new("render: route non trovata"));
+    }
+    Ok(())
 }
 
 fn build_rustc(path: &str, rust: &str) -> Result<(), error::LogyxError> {

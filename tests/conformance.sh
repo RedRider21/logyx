@@ -38,6 +38,24 @@ for c in $CASES; do
     fi
 done
 
+# Route: render server-side (web Fase 2a) — confronto `render <file> <path>` fra i due backend.
+WEB_CASES="web_demo:/"
+for wc in $WEB_CASES; do
+    file="${wc%%:*}"; rp="${wc##*:}"
+    f="$EXAMPLES/$file.logyx"
+    py=$( cd "$PROTO" && python3 main.py render "$f" "$rp" 2>/dev/null )
+    rs=$( "$LOGYXC" render "$f" "$rp" 2>/dev/null )
+    if [ "$py" = "$rs" ]; then
+        echo "  OK    render $file $rp"
+        pass=$((pass + 1))
+    else
+        echo "  DIFF  render $file $rp"
+        fail=$((fail + 1)); failed="$failed render:$file"
+        echo "    --- prototipo (python) ---"; echo "$py" | sed 's/^/    /'
+        echo "    --- compilatore (rust)  ---"; echo "$rs" | sed 's/^/    /'
+    fi
+done
+
 # Pulizia degli artefatti generati accanto agli esempi (sono comunque gitignored).
 rm -f "$EXAMPLES"/*.rs "$EXAMPLES"/*_bin; rm -rf "$EXAMPLES"/*_cargo
 

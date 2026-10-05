@@ -492,7 +492,26 @@ Logyx che gira nel browser come WASM.</p>
   generato.</li>
 </ul>
 <p>Vedi <code>design/web-wasm.md</code>, <code>design/web-wasm-fase1.md</code> e gli esempi <code>native_wasm</code>/<code>native_webstr</code>.
-DOM dal codice Logyx e server HTTP sono le fasi successive.
+DOM dal codice Logyx e server HTTP sono le fasi successive.</p>
+<h4 id="pagine-server-side-route-e-render-web-server-fase-2a">Pagine server-side: <code>route</code> e <code>render</code> (web → server, Fase 2a)</h4>
+<p>Il lato <strong>server</strong> del web: una <code>route</code> definisce il gestore di un percorso; al suo interno si calcolano
+valori (codice che gira sul server, compilato a nativo) e si rende un template HTML con <code>render</code>. Nel
+template, <code>{espressione}</code> interpola un valore, <strong>con HTML-escaping automatico</strong> (<code>&amp; &lt; &gt; "</code>).</p>
+<pre><code>fn saluto(nome) { return &quot;Ciao, &quot; + nome + &quot;!&quot; }
+
+route &quot;/&quot; {
+    titolo = saluto(&quot;mondo&quot;)
+    render &lt;html&gt;
+      &lt;body&gt;&lt;h1&gt;{titolo}&lt;/h1&gt;&lt;/body&gt;
+    &lt;/html&gt;
+}
+</code></pre>
+<p>Il comando <code>logyxc render &lt;file&gt; &lt;percorso&gt;</code> compila il file a un binario server nativo e stampa l'HTML
+reso per quel percorso (stesso output del prototipo <code>python main.py render</code>). Un file con <code>route</code> non
+deve definire <code>fn main</code> (il main è il server). Esempio: <code>examples/web_demo.logyx</code>.</p>
+<p>Non ancora supportati dal compilatore nativo (fasi successive): server HTTP in ascolto (<code>serve</code>), isole
+client <code>@start-client … @end-client</code>, costrutti <code>{for …}</code>/<code>{if …}</code> nel template. Vedi
+<code>design/web-wasm-fase2.md</code>.
 | <code>pow(base, esp)</code> | <code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>) |
 | <code>floor(x)</code> / <code>ceil(x)</code> | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | <code>sqrt(x)</code> | Radice quadrata (ritorna un float) |

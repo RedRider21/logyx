@@ -308,6 +308,31 @@ Logyx che gira nel browser come WASM.
 
 Vedi `design/web-wasm.md`, `design/web-wasm-fase1.md` e gli esempi `native_wasm`/`native_webstr`.
 DOM dal codice Logyx e server HTTP sono le fasi successive.
+
+#### Pagine server-side: `route` e `render` (web → server, Fase 2a)
+
+Il lato **server** del web: una `route` definisce il gestore di un percorso; al suo interno si calcolano
+valori (codice che gira sul server, compilato a nativo) e si rende un template HTML con `render`. Nel
+template, `{espressione}` interpola un valore, **con HTML-escaping automatico** (`& < > "`).
+
+```
+fn saluto(nome) { return "Ciao, " + nome + "!" }
+
+route "/" {
+    titolo = saluto("mondo")
+    render <html>
+      <body><h1>{titolo}</h1></body>
+    </html>
+}
+```
+
+Il comando `logyxc render <file> <percorso>` compila il file a un binario server nativo e stampa l'HTML
+reso per quel percorso (stesso output del prototipo `python main.py render`). Un file con `route` non
+deve definire `fn main` (il main è il server). Esempio: `examples/web_demo.logyx`.
+
+Non ancora supportati dal compilatore nativo (fasi successive): server HTTP in ascolto (`serve`), isole
+client `@start-client … @end-client`, costrutti `{for …}`/`{if …}` nel template. Vedi
+`design/web-wasm-fase2.md`.
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

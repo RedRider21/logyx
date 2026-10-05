@@ -84,6 +84,8 @@ pub enum Stmt {
         else_block: Option<Vec<Stmt>>,
     },
     Func(Function),
+    /// `render <template>`: template HTML grezzo (interpolazione risolta in codegen).
+    Render { template: String },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -122,4 +124,6 @@ pub enum Item {
     ExternFn(ExternFn),
     Import(String),
     Stmt(Stmt),
+    /// `route "<path>" { <stmt> … render <template> }` — handler server-side.
+    Route { path: String, body: Vec<Stmt> },
 }

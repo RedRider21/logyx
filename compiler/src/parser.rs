@@ -74,6 +74,15 @@ impl Parser {
 
     // --- programma ---
 
+    /// Parsa una singola espressione da sorgente (es. un'interpolazione di template).
+    pub fn parse_expression(&mut self) -> Result<Expr, LogyxError> {
+        let e = self.expression()?;
+        if !self.is(&TokenKind::Eof) {
+            return Err(self.error("espressione non valida nell'interpolazione del template"));
+        }
+        Ok(e)
+    }
+
     pub fn parse(&mut self) -> Result<Vec<Item>, LogyxError> {
         let mut items = Vec::new();
         while !self.is(&TokenKind::Eof) {
@@ -87,6 +96,8 @@ impl Parser {
                 items.push(Item::ExternFn(self.extern_fn()?));
             } else if self.is(&TokenKind::Fn) {
                 items.push(Item::Func(self.function()?));
+            } else if matches!(self.kind(), TokenKind::Ident(s) if s == "route") {
+                items.push(self.route_def()?);
             } else {
                 items.push(Item::Stmt(self.statement()?));
             }
@@ -195,6 +206,38 @@ impl Parser {
         unreachable!()
     }
 
+    fn route_def(&mut self) -> Result<Item, LogyxError> {
+        self.advance(); // 'route' (identificatore)
+        let t = self.expect(&TokenKind::Str(vec![]), "percorso della route")?;
+        let path = match t.kind {
+            TokenKind::Str(parts) if parts.len() == 1 => match &parts[0] {
+                StringPart::Lit(s) => s.clone(),
+                _ => {
+                    return Err(self.error(
+                        "il percorso della route deve essere una stringa semplice (senza interpolazione)",
+                    ))
+                }
+            },
+            _ => {
+                return Err(self.error(
+                    "il percorso della route deve essere una stringa semplice (senza interpolazione)",
+                ))
+            }
+        };
+        let body = self.block()?;
+        Ok(Item::Route { path, body })
+    }
+
+    fn render_stmt(&mut self) -> Result<Stmt, LogyxError> {
+        self.expect(&TokenKind::Render, "render")?;
+        if let TokenKind::Template(raw) = self.kind().clone() {
+            self.advance();
+            Ok(Stmt::Render { template: raw })
+        } else {
+            Err(self.error("dopo 'render' è atteso un template HTML che inizia con '<'"))
+        }
+    }
+
     fn function(&mut self) -> Result<Function, LogyxError> {
         self.expect(&TokenKind::Fn, "fn")?;
         let name = self.ident_name("nome di funzione")?;
@@ -289,6 +332,7 @@ impl Parser {
             TokenKind::Return => self.return_stmt(),
             TokenKind::Fail => self.fail_stmt(),
             TokenKind::Match => self.match_stmt(),
+            TokenKind::Render => self.render_stmt(),
             TokenKind::Break => {
                 self.advance();
                 Ok(Stmt::Break)

@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Lexer: dal sorgente Logyx alla lista di token. Porting del lexer del prototipo.
 //!
-//! Il nucleo del linguaggio; i costrutti web (`route`/`render`/`@...`) non sono
-//! gestiti da questo compilatore nativo e producono un errore chiaro, come nel
-//! transpiler del prototipo.
+//! Oltre al nucleo, riconosce il lato **server** del web (Fase 2a): `route` e
+//! `render`, con cattura grezza del template HTML (token `Template`). Le isole
+//! client `@start-client … @end-client` restano dentro il template (gestite più
+//! avanti); un `@` fuori da un template è un errore.
 
 use crate::error::LogyxError;
 use crate::token::{keyword, StringPart, Token, TokenKind};
@@ -84,8 +85,8 @@ impl Lexer {
             }
             if c == '@' {
                 return Err(self.err(
-                    "costrutti web/client (@..., route, render) non sono gestiti dal \
-                     compilatore nativo; usa il nucleo del linguaggio",
+                    "'@' inatteso: le isole client (@start-client … @end-client) sono \
+                     ammesse solo dentro un template dopo 'render'",
                 ));
             }
             if c == '"' {
@@ -97,7 +98,7 @@ impl Lexer {
                 continue;
             }
             if c.is_alphabetic() || c == '_' {
-                self.ident();
+                self.ident()?;
                 continue;
             }
             self.operator()?;
@@ -128,17 +129,128 @@ impl Lexer {
         }
     }
 
-    fn ident(&mut self) {
+    fn ident(&mut self) -> Result<(), LogyxError> {
         let (sl, sc) = (self.line, self.col);
         let start = self.i;
         while self.peek(0).is_alphanumeric() || self.peek(0) == '_' {
             self.advance();
         }
         let text: String = self.src[start..self.i].iter().collect();
+        if text == "render" {
+            // `render` innesca la cattura grezza del template HTML che segue.
+            self.push(TokenKind::Render, sl, sc);
+            self.template()?;
+            return Ok(());
+        }
         match keyword(&text) {
             Some(k) => self.push(k, sl, sc),
             None => self.push(TokenKind::Ident(text), sl, sc),
         }
+        Ok(())
+    }
+
+    // --- cattura del template dopo `render` (porting del lexer del prototipo) ---
+
+    /// Delimita il template HTML contando la profondità dei tag, saltando i buchi
+    /// di interpolazione `{...}` e le isole `@start-client … @end-client`.
+    fn template(&mut self) -> Result<(), LogyxError> {
+        while matches!(self.peek(0), ' ' | '\t' | '\r' | '\n') {
+            self.advance();
+        }
+        if self.peek(0) != '<' {
+            return Err(self.err("dopo 'render' è atteso un template che inizia con '<'"));
+        }
+        let (sl, sc) = (self.line, self.col);
+        let start = self.i;
+        let mut depth: i32 = 0;
+        let mut started = false;
+        while self.i < self.src.len() {
+            let c = self.peek(0);
+            if c == '{' {
+                self.skip_braces()?;
+                continue;
+            }
+            if c == '@' && self.matches_at("@start-client") {
+                self.skip_island()?;
+                continue;
+            }
+            if c == '<' {
+                let (closing, selfclose) = self.consume_tag()?;
+                if closing {
+                    depth -= 1;
+                } else if !selfclose {
+                    depth += 1;
+                    started = true;
+                } else if selfclose && depth == 0 {
+                    started = true;
+                }
+                if started && depth == 0 {
+                    break;
+                }
+                continue;
+            }
+            self.advance();
+        }
+        let raw: String = self.src[start..self.i].iter().collect();
+        self.push(TokenKind::Template(raw), sl, sc);
+        Ok(())
+    }
+
+    fn consume_tag(&mut self) -> Result<(bool, bool), LogyxError> {
+        self.advance(); // '<'
+        let closing = self.peek(0) == '/';
+        let mut last = '\0';
+        while self.i < self.src.len() && self.peek(0) != '>' {
+            last = self.advance();
+        }
+        if self.i >= self.src.len() {
+            return Err(self.err("tag del template non terminato (manca '>')"));
+        }
+        self.advance(); // '>'
+        Ok((closing, last == '/'))
+    }
+
+    fn skip_braces(&mut self) -> Result<(), LogyxError> {
+        self.advance(); // '{'
+        let mut depth = 1;
+        while self.i < self.src.len() && depth > 0 {
+            let c = self.advance();
+            if c == '{' {
+                depth += 1;
+            } else if c == '}' {
+                depth -= 1;
+            }
+        }
+        if depth > 0 {
+            return Err(self.err("interpolazione non terminata nel template (manca '}')"));
+        }
+        Ok(())
+    }
+
+    fn skip_island(&mut self) -> Result<(), LogyxError> {
+        self.consume_literal("@start-client");
+        while self.i < self.src.len() && !self.matches_at("@end-client") {
+            self.advance();
+        }
+        if self.i >= self.src.len() {
+            return Err(self.err("isola client non terminata (manca @end-client)"));
+        }
+        self.consume_literal("@end-client");
+        Ok(())
+    }
+
+    fn consume_literal(&mut self, lit: &str) {
+        for _ in 0..lit.chars().count() {
+            self.advance();
+        }
+    }
+
+    fn matches_at(&self, lit: &str) -> bool {
+        let chars: Vec<char> = lit.chars().collect();
+        if self.i + chars.len() > self.src.len() {
+            return false;
+        }
+        chars.iter().enumerate().all(|(k, ch)| self.src[self.i + k] == *ch)
     }
 
     fn string(&mut self) -> Result<(), LogyxError> {

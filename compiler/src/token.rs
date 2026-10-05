@@ -19,6 +19,8 @@ pub enum TokenKind {
     False,
     Nil,
     Ident(String),
+    /// Template HTML grezzo catturato dopo `render` (l'interpolazione si risolve in codegen).
+    Template(String),
     // parole chiave
     Fn,
     Return,
@@ -36,6 +38,7 @@ pub enum TokenKind {
     Record,
     Use,
     Extern,
+    Render,
     And,
     Or,
     Not,

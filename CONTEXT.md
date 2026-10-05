@@ -148,8 +148,17 @@ locali (da `Decl`/`Assign`, ricorrendo in `if`/`while`/`for`/`match`) oltre a qu
 (+ `tests/wasm_smoke.mjs`) che compila gli esempi client a WASM ed esegue con Node il **collante JS
 reale** delle pagine generate (DOM simulato minimale), 13/13 su numeri+stringhe (round-trip, UTF-8
 accentato). Salta (codice 77) se mancano node/cargo/target wasm32.
-**DA FARE web→WASM:** **Fase 2 (server HTTP + route/render)** ← PROSSIMO; DOM dal codice Logyx
-(`set text of …`, `on "click" …` via import host/`web-sys`); Fase 3 (isole `@start-client`, server-driven).
+**Web Fase 2a FATTA** (`design/web-wasm-fase2.md`): il compilatore nativo ora conosce il lato **server**
+`route "/" { … render <template> }`. Comando `logyxc render <file> <path>` genera un binario server e
+stampa l'HTML reso, **identico al prototipo** (`python main.py render`): interpolazione `{expr}`
+type-directed + HTML-escaping (`__html_escape`). Catena: lexer (nuovo token `Template`, cattura grezza
+bilanciando i tag), AST (`Item::Route`, `Stmt::Render`), parser (`route_def`/`render_stmt`,
+`parse_expression` pubblico per le interpolazioni), codegen (`route_fn` → `__route_N()`, `main`
+dispatcher sul path). Conformità: caso `render web_demo /` nella suite (ora **39/39**). Isole
+`@start-client` e `{for …}`/`{if …}` nel template → errore chiaro (fasi dopo).
+**DA FARE web→WASM:** **Fase 2b (server HTTP `tiny_http`: `build-server`/`serve`)** ← PROSSIMO; Fase 2c
+(isole `@start-client` servite: WASM Fase 1 + collante); `{for …}`/`{if …}` nel template; DOM dal codice
+Logyx; Fase 3 (server-driven).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; `enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
