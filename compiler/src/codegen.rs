@@ -426,18 +426,59 @@ impl Codegen {
     }
 
     fn infer_func_ret(&self, f: &Function) -> Option<String> {
-        let ptypes = &self.ptype[&f.name];
+        // tipi dei parametri + tipi dedotti delle variabili locali
+        let mut types = self.ptype[&f.name].clone();
+        self.collect_local_types(&f.body, &mut types);
         let mut values: Vec<&Expr> = Vec::new();
         collect_return_values(&f.body, &mut values);
         if values.is_empty() {
             return Some("__void__".into());
         }
         for v in values {
-            if let Some(t) = self.type_of(v, ptypes) {
+            if let Some(t) = self.type_of(v, &types) {
                 return Some(t);
             }
         }
         None
+    }
+
+    fn collect_local_types(&self, stmts: &[Stmt], types: &mut HashMap<String, Option<String>>) {
+        for s in stmts {
+            match s {
+                Stmt::Decl { name, value, .. } => {
+                    if let Some(vt) = self.type_of(value, types) {
+                        types.insert(name.clone(), Some(vt));
+                    }
+                }
+                Stmt::Assign { target: Expr::Ident(n), value } => {
+                    if let Some(vt) = self.type_of(value, types) {
+                        types.insert(n.clone(), Some(vt));
+                    }
+                }
+                Stmt::If { then_block, else_block, .. } => {
+                    self.collect_local_types(then_block, types);
+                    if let Some(eb) = else_block {
+                        self.collect_local_types(eb, types);
+                    }
+                }
+                Stmt::While { body, .. } | Stmt::For { body, .. } => {
+                    self.collect_local_types(body, types)
+                }
+                Stmt::Match { ok_block, err_block, .. } => {
+                    self.collect_local_types(ok_block, types);
+                    self.collect_local_types(err_block, types);
+                }
+                Stmt::MatchValue { cases, else_block, .. } => {
+                    for (_, blk) in cases {
+                        self.collect_local_types(blk, types);
+                    }
+                    if let Some(eb) = else_block {
+                        self.collect_local_types(eb, types);
+                    }
+                }
+                _ => {}
+            }
+        }
     }
 
     fn type_of(&self, e: &Expr, ptypes: &HashMap<String, Option<String>>) -> Option<String> {

@@ -1,0 +1,26 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Inferenza del tipo di ritorno dalle variabili locali (niente annotazione).
+//   python3 main.py       ../examples/native_localret.logyx
+//   python3 main.py build ../examples/native_localret.logyx
+
+fn fattoriale(n) {
+    r = 1
+    i = 2
+    while i <= n {
+        r = r * i
+        i = i + 1
+    }
+    return r
+}
+
+fn etichetta(nome) {
+    msg = "Ciao " + nome
+    return msg
+}
+
+fn main() {
+    print("5! = {fattoriale(5)}")
+    print(etichetta("Logyx"))
+}

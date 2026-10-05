@@ -119,10 +119,13 @@ Tre crate reali agganciate finora: `sha2`, `serde`, `chrono`.
 del nucleo con firma numerica (int/float/bool) a WebAssembly (target `wasm32-unknown-unknown`, export
 `#[export_name]` con conversione int→i32 per evitare i BigInt in JS) e genera una pagina HTML demo.
 Verificato con Node: `raddoppia(21)=42`, `fattoriale(5)=120`, ecc. (`examples/native_wasm.logyx`).
+**Inferenza tipi dei locali: FATTA** — il tipo di ritorno si deduce ora anche quando si fa `return <locale>`
+(non serve più l'annotazione `-> tipo`): `_infer_func_ret`/`infer_func_ret` raccolgono i tipi delle variabili
+locali (da `Decl`/`Assign`, ricorrendo in `if`/`while`/`for`/`match`) oltre a quelli dei parametri. Suite
+37/37 (`examples/native_localret.logyx`); `fattoriale` in `native_wasm` non ha più bisogno di `-> int`.
 **DA FARE web→WASM:** Fase 1 (stringhe + DOM/eventi via `wasm-bindgen`), Fase 2 (server HTTP + route/
 render), Fase 3 (isole `@start-client`, server-driven).
-**Altro DA FARE:** inferenza del tipo di ritorno per variabili locali (ora i `return <locale>` richiedono
-annotazione `-> tipo`); extern con corpi Rust multi-riga; `to_json`/`from_json` per float/liste/mappe;
+**Altro DA FARE:** extern con corpi Rust multi-riga; `to_json`/`from_json` per float/liste/mappe;
 `enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli

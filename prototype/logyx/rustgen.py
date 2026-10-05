@@ -418,15 +418,48 @@ class RustTranspiler:
                     ev[a.name].add(target_t)
 
     def _infer_func_ret(self, f):
-        ptypes = self.param_types[f.name]
+        types = self._local_types(f, self.param_types[f.name])
         value_rets = [r for r in self._returns(f.body) if r.value is not None]
         if not value_rets:
             return "__void__"
         for r in value_rets:
-            t = self._type_of(r.value, ptypes)
+            t = self._type_of(r.value, types)
             if t is not None:
                 return t
         return None
+
+    def _local_types(self, f, ptypes):
+        """Tipi dei parametri + tipi dedotti delle variabili locali (per l'inferenza)."""
+        types = dict(ptypes)
+        self._collect_local_types(f.body, types)
+        return types
+
+    def _collect_local_types(self, stmts, types):
+        for s in stmts:
+            t = type(s).__name__
+            if t == "Decl":
+                vt = self._type_of(s.value, types)
+                if vt:
+                    types[s.name] = vt
+            elif t == "Assign":
+                if isinstance(s.target, N.Identifier):
+                    vt = self._type_of(s.value, types)
+                    if vt:
+                        types[s.target.name] = vt
+            elif t == "If":
+                self._collect_local_types(s.then_block, types)
+                if s.else_block:
+                    self._collect_local_types(s.else_block, types)
+            elif t in ("While", "For"):
+                self._collect_local_types(s.body, types)
+            elif t == "Match":
+                self._collect_local_types(s.ok_block, types)
+                self._collect_local_types(s.err_block, types)
+            elif t == "MatchValue":
+                for _, blk in s.cases:
+                    self._collect_local_types(blk, types)
+                if s.else_block:
+                    self._collect_local_types(s.else_block, types)
 
     def _returns(self, stmts):
         for s in stmts:
