@@ -125,7 +125,8 @@ JS↔WASM tramite la **memoria lineare** del modulo (NIENTE `wasm-bindgen`). Il 
 wrapper ricostruisce la `String` e libera il buffer di input), un ritorno `string` è un puntatore a un
 blocco `[len:u32 LE][byte UTF-8]` (JS legge e poi libera). `numeric_exports`→`wasm_exports` accetta ora
 `int|float|bool|string`. Pagina HTML generata interattiva (campi di testo + eventi nel collante JS, firme
-in un descrittore `SIGS`). Esempio `examples/native_webstr.logyx` (saluta/grida/lunghezza/vuoto/grado):
+in un descrittore `SIGS`). Esempio `examples/native_webstr.logyx`
+(saluta/grida/lunghezza/vuoto/grado/ripeti/etichetta, con `str()` int→string e concat):
 suite 38/38 (la logica string→string entra nella suite via `main`), lato WASM verificato con Node
 (round-trip, UTF-8 con accenti, 2000 chiamate senza problemi di memoria).
 **Concat `String + String` type-aware: FATTA** — il codegen ora riconosce la concatenazione di stringhe

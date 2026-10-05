@@ -40,6 +40,10 @@ fn ripeti(testo: string, volte) {
     return r
 }
 
+fn etichetta(nome, eta: int) {
+    return nome + " (" + str(eta) + ")"
+}
+
 fn main() {
     print(saluta("mondo"))
     print(grida("logyx"))
@@ -48,4 +52,5 @@ fn main() {
     print(grado("ciao", 2))
     print(grado("ciao", 1))
     print(ripeti("ab", 3))
+    print(etichetta("Ada", 36))
 }
