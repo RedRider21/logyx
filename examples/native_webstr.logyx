@@ -1,0 +1,40 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Web -> WASM (Fase 1): funzioni su stringhe compilate a WebAssembly e chiamate dal browser.
+// Le stringhe passano il confine JS<->WASM tramite la memoria lineare del modulo.
+//   python3 main.py          ../examples/native_webstr.logyx   (interprete)
+//   logyxc build             ../examples/native_webstr.logyx   (nativo)
+//   logyxc build-wasm        ../examples/native_webstr.logyx   (genera .wasm + pagina .html)
+
+fn saluta(nome) {
+    return "Ciao " + nome
+}
+
+fn grida(testo) {
+    return upper(testo)
+}
+
+fn lunghezza(testo: string) {
+    return len(testo)
+}
+
+fn vuoto(testo: string) {
+    return len(testo) == 0
+}
+
+fn grado(testo, livello) {
+    if livello > 1 {
+        return upper(testo)
+    }
+    return testo
+}
+
+fn main() {
+    print(saluta("mondo"))
+    print(grida("logyx"))
+    print(lunghezza("ciao"))
+    print(vuoto(""))
+    print(grado("ciao", 2))
+    print(grado("ciao", 1))
+}

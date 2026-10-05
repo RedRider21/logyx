@@ -119,14 +119,25 @@ Tre crate reali agganciate finora: `sha2`, `serde`, `chrono`.
 del nucleo con firma numerica (int/float/bool) a WebAssembly (target `wasm32-unknown-unknown`, export
 `#[export_name]` con conversione int→i32 per evitare i BigInt in JS) e genera una pagina HTML demo.
 Verificato con Node: `raddoppia(21)=42`, `fattoriale(5)=120`, ecc. (`examples/native_wasm.logyx`).
+**Web→WASM: Fase 1 FATTA** (`design/web-wasm-fase1.md`): passaggio di **stringhe** oltre il confine
+JS↔WASM tramite la **memoria lineare** del modulo (NIENTE `wasm-bindgen`). Il modulo esporta
+`__logyx_alloc`/`__logyx_free`; un parametro `string` diventa la coppia WASM `(ptr:i32, len:i32)` (il
+wrapper ricostruisce la `String` e libera il buffer di input), un ritorno `string` è un puntatore a un
+blocco `[len:u32 LE][byte UTF-8]` (JS legge e poi libera). `numeric_exports`→`wasm_exports` accetta ora
+`int|float|bool|string`. Pagina HTML generata interattiva (campi di testo + eventi nel collante JS, firme
+in un descrittore `SIGS`). Esempio `examples/native_webstr.logyx` (saluta/grida/lunghezza/vuoto/grado):
+suite 38/38 (la logica string→string entra nella suite via `main`), lato WASM verificato con Node
+(round-trip, UTF-8 con accenti, 2000 chiamate senza problemi di memoria). Limite noto emerso: il codegen
+NON gestisce la concatenazione `String + String` in un **assegnamento** (`r = r + testo`) — funziona solo
+nei `return` (via `format!`); aggirato nell'esempio.
 **Inferenza tipi dei locali: FATTA** — il tipo di ritorno si deduce ora anche quando si fa `return <locale>`
 (non serve più l'annotazione `-> tipo`): `_infer_func_ret`/`infer_func_ret` raccolgono i tipi delle variabili
 locali (da `Decl`/`Assign`, ricorrendo in `if`/`while`/`for`/`match`) oltre a quelli dei parametri. Suite
 37/37 (`examples/native_localret.logyx`); `fattoriale` in `native_wasm` non ha più bisogno di `-> int`.
-**DA FARE web→WASM:** Fase 1 (stringhe + DOM/eventi via `wasm-bindgen`), Fase 2 (server HTTP + route/
-render), Fase 3 (isole `@start-client`, server-driven).
-**Altro DA FARE:** extern con corpi Rust multi-riga; `to_json`/`from_json` per float/liste/mappe;
-`enum`; lambda inline.
+**DA FARE web→WASM:** DOM dal codice Logyx (`set text of …`, `on "click" …` via import host/`web-sys`),
+Fase 2 (server HTTP + route/render), Fase 3 (isole `@start-client`, server-driven).
+**Altro DA FARE:** concatenazione `String + String` negli assegnamenti nel codegen (ora solo nei `return`);
+extern con corpi Rust multi-riga; `to_json`/`from_json` per float/liste/mappe; `enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.

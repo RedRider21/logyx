@@ -278,21 +278,31 @@ fn main() {
 - Le funzioni `extern` girano **solo con `build`** (il nativo), non nell'interprete. Vedi
   `examples/native_extern.logyx`.
 
-#### Compilare a WebAssembly (web → WASM, Fase 0)
+#### Compilare a WebAssembly (web → WASM)
 
 Primo passo verso la visione "un sorgente, server + client": il comando `build-wasm` compila le funzioni
-del **nucleo con firma numerica** (`int`/`float`/`bool`) a **WebAssembly** e genera una pagina HTML che
-le invoca dal browser.
+con firma fatta di `int`/`float`/`bool`/`string` a **WebAssembly** e genera una pagina HTML interattiva
+che le invoca dal browser.
 
 ```
-logyxc build-wasm examples/native_wasm.logyx
-# → native_wasm.wasm + native_wasm.html
+logyxc build-wasm examples/native_wasm.logyx     # funzioni numeriche
+logyxc build-wasm examples/native_webstr.logyx   # funzioni su stringhe
+# → <file>.wasm + <file>.html
 # servi la cartella (python3 -m http.server) e apri la pagina
 ```
 
-Nella pagina ogni funzione esportata ha i suoi input e un pulsante "calcola": è Logyx che gira nel
-browser come WASM. (Fase 0: solo tipi numerici; stringhe, DOM/eventi e server arriveranno con
-`wasm-bindgen`. Vedi `design/web-wasm.md` e `examples/native_wasm.logyx`.)
+Nella pagina ogni funzione esportata ha i suoi campi (numerici o di testo) e un pulsante "esegui": è
+Logyx che gira nel browser come WASM.
+
+- **Fase 0 — numeri** (`int`/`float`/`bool`): esportati come funzioni "C", chiamati da JS con `Number`.
+- **Fase 1 — stringhe**: le stringhe attraversano il confine JS↔WASM tramite la **memoria lineare** del
+  modulo (il modulo esporta `__logyx_alloc`/`__logyx_free`; i parametri stringa arrivano come coppia
+  `ptr, len`, i ritorni stringa come puntatore a un blocco con prefisso di lunghezza). Niente
+  `wasm-bindgen`: solo il target `wasm32-unknown-unknown`. L'interattività (eventi) vive nel collante JS
+  generato.
+
+Vedi `design/web-wasm.md`, `design/web-wasm-fase1.md` e gli esempi `native_wasm`/`native_webstr`.
+DOM dal codice Logyx e server HTTP sono le fasi successive.
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

@@ -17,7 +17,7 @@ type R<T> = Result<T, LogyxError>;
 /// Firma di una funzione esportabile verso WASM (tipi numerici).
 pub struct ExportSig {
     pub name: String,
-    pub params: Vec<(String, String)>, // (nome, tipo Logyx: "int"/"float"/"bool")
+    pub params: Vec<(String, String)>, // (nome, tipo Logyx: "int"/"float"/"bool"/"string")
     pub ret: String,                   // tipo Logyx
 }
 
@@ -160,8 +160,10 @@ impl Codegen {
 
     /// Funzioni fra `names` con firma interamente numerica (int/float/bool),
     /// esportabili verso WASM senza wasm-bindgen. Da chiamare dopo `generate`.
-    pub fn numeric_exports(&self, names: &[String]) -> Vec<ExportSig> {
-        let numeric = |t: &str| matches!(t, "int" | "float" | "bool");
+    /// Funzioni esportabili a WASM: firma fatta di tipi `int|float|bool|string`
+    /// (Fase 0 solo numerici; Fase 1 aggiunge `string` via memoria lineare).
+    pub fn wasm_exports(&self, names: &[String]) -> Vec<ExportSig> {
+        let supported = |t: &str| matches!(t, "int" | "float" | "bool" | "string");
         let mut out = Vec::new();
         for name in names {
             if name == "main" {
@@ -172,14 +174,14 @@ impl Codegen {
                 _ => continue,
             };
             let ret = match self.rets.get(name) {
-                Some(Some(r)) if numeric(r) => r.clone(),
+                Some(Some(r)) if supported(r) => r.clone(),
                 _ => continue,
             };
             let mut params = Vec::new();
             let mut ok = true;
             for pn in order {
                 match pt.get(pn) {
-                    Some(Some(t)) if numeric(t) => params.push((pn.clone(), t.clone())),
+                    Some(Some(t)) if supported(t) => params.push((pn.clone(), t.clone())),
                     _ => {
                         ok = false;
                         break;

@@ -52,9 +52,13 @@ Si parte dal **client (WASM)**, la parte distintiva; il server può poi appoggia
   **nucleo** (niente DOM), le compila a WASM con `wasm-bindgen`, e genera una paginetta HTML che importa
   il modulo e chiama una funzione (es. `fn raddoppia(n: int) -> int` invocata da un bottone). Dimostra
   che un sorgente Logyx gira nel browser. *Nessun DOM dal lato Logyx ancora.*
-- **Fase 1 — DOM minimo dal client.** Builtin/sintassi per leggere/scrivere elementi e reagire a eventi
-  (`set text of "#out" to …`, `on "click" of "#btn" { … }`, già abbozzati nel prototipo), generati come
-  chiamate `web-sys`. Il client Logyx manipola la pagina.
+- **Fase 1 — stringhe oltre il confine + interattività. FATTA** (vedi [`web-wasm-fase1.md`](web-wasm-fase1.md)).
+  Scelta effettiva: **niente `wasm-bindgen`** — le stringhe attraversano il confine JS↔WASM tramite la
+  **memoria lineare** (helper `__logyx_alloc`/`__logyx_free`, parametri stringa come coppia `ptr,len`,
+  ritorni stringa come puntatore a `[len u32][byte]`). La pagina generata è interattiva (campi di testo +
+  eventi nel collante JS). Firme ammesse: `int|float|bool|string`. Esempio `examples/native_webstr.logyx`,
+  verificato con Node. *Manipolare il DOM dal codice Logyx* (`set text of …`, `on "click" …` via import
+  host/`web-sys`) resta un fronte successivo.
 - **Fase 2 — Server HTTP.** `route "/" { render <html>… }` compilato a un server nativo (crate HTTP) che
   serve HTML + WASM. Riuso del parser template del prototipo, portato nel compilatore.
 - **Fase 3 — Modello integrato.** Isole `@start-client` che dividono il sorgente; server-driven con

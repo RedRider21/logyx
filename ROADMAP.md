@@ -75,7 +75,7 @@ Oggi esistono solo come abbozzi nel vecchio motore Python; **non** ancora nel co
 | Web server | routing, HTTP, sessioni, template `render` | 🟡 (prototipo) |
 | Database | query, connessioni, ORM leggero | ⏳ |
 | Client | DOM, eventi, `fetch`, isole `@start-client`→JS | 🟡 (prototipo) |
-| Target | **WebAssembly (client): Fase 0 fatta** — `logyxc build-wasm` compila funzioni numeriche a WASM, invocabili dal browser (`design/web-wasm.md`, `examples/native_wasm.logyx`); desktop/mobile ⏳ | 🟡 |
+| Target | **WebAssembly (client): Fasi 0+1 fatte** — `logyxc build-wasm` compila a WASM funzioni con firma `int`/`float`/`bool`/`string` (le stringhe via memoria lineare, senza `wasm-bindgen`), con pagina HTML interattiva (`design/web-wasm.md`, `design/web-wasm-fase1.md`, `examples/native_wasm.logyx`, `examples/native_webstr.logyx`); DOM dal codice Logyx + server HTTP ⏳ | 🟡 |
 
 ---
 

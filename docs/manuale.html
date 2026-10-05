@@ -467,17 +467,27 @@ fn main() {
 <li>Le funzioni <code>extern</code> girano <strong>solo con <code>build</code></strong> (il nativo), non nell'interprete. Vedi
   <code>examples/native_extern.logyx</code>.</li>
 </ul>
-<h4 id="compilare-a-webassembly-web-wasm-fase-0">Compilare a WebAssembly (web → WASM, Fase 0)</h4>
+<h4 id="compilare-a-webassembly-web-wasm">Compilare a WebAssembly (web → WASM)</h4>
 <p>Primo passo verso la visione "un sorgente, server + client": il comando <code>build-wasm</code> compila le funzioni
-del <strong>nucleo con firma numerica</strong> (<code>int</code>/<code>float</code>/<code>bool</code>) a <strong>WebAssembly</strong> e genera una pagina HTML che
-le invoca dal browser.</p>
-<pre><code>logyxc build-wasm examples/native_wasm.logyx
-# → native_wasm.wasm + native_wasm.html
+con firma fatta di <code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code> a <strong>WebAssembly</strong> e genera una pagina HTML interattiva
+che le invoca dal browser.</p>
+<pre><code>logyxc build-wasm examples/native_wasm.logyx     # funzioni numeriche
+logyxc build-wasm examples/native_webstr.logyx   # funzioni su stringhe
+# → &lt;file&gt;.wasm + &lt;file&gt;.html
 # servi la cartella (python3 -m http.server) e apri la pagina
 </code></pre>
-<p>Nella pagina ogni funzione esportata ha i suoi input e un pulsante "calcola": è Logyx che gira nel
-browser come WASM. (Fase 0: solo tipi numerici; stringhe, DOM/eventi e server arriveranno con
-<code>wasm-bindgen</code>. Vedi <code>design/web-wasm.md</code> e <code>examples/native_wasm.logyx</code>.)
+<p>Nella pagina ogni funzione esportata ha i suoi campi (numerici o di testo) e un pulsante "esegui": è
+Logyx che gira nel browser come WASM.</p>
+<ul>
+<li><strong>Fase 0 — numeri</strong> (<code>int</code>/<code>float</code>/<code>bool</code>): esportati come funzioni "C", chiamati da JS con <code>Number</code>.</li>
+<li><strong>Fase 1 — stringhe</strong>: le stringhe attraversano il confine JS↔WASM tramite la <strong>memoria lineare</strong> del
+  modulo (il modulo esporta <code>__logyx_alloc</code>/<code>__logyx_free</code>; i parametri stringa arrivano come coppia
+  <code>ptr, len</code>, i ritorni stringa come puntatore a un blocco con prefisso di lunghezza). Niente
+  <code>wasm-bindgen</code>: solo il target <code>wasm32-unknown-unknown</code>. L'interattività (eventi) vive nel collante JS
+  generato.</li>
+</ul>
+<p>Vedi <code>design/web-wasm.md</code>, <code>design/web-wasm-fase1.md</code> e gli esempi <code>native_wasm</code>/<code>native_webstr</code>.
+DOM dal codice Logyx e server HTTP sono le fasi successive.
 | <code>pow(base, esp)</code> | <code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>) |
 | <code>floor(x)</code> / <code>ceil(x)</code> | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | <code>sqrt(x)</code> | Radice quadrata (ritorna un float) |
