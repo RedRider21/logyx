@@ -60,7 +60,9 @@ Si parte dal **client (WASM)**, la parte distintiva; il server può poi appoggia
   verificato con Node. *Manipolare il DOM dal codice Logyx* (`set text of …`, `on "click" …` via import
   host/`web-sys`) resta un fronte successivo.
 - **Fase 2 — Server HTTP.** `route "/" { render <html>… }` compilato a un server nativo (crate HTTP) che
-  serve HTML + WASM. Riuso del parser template del prototipo, portato nel compilatore.
+  serve HTML + WASM. Riuso del parser template del prototipo, portato nel compilatore. **Design dedicato:**
+  [`web-wasm-fase2.md`](web-wasm-fase2.md) — sotto-fasi 2a (render HTML nativo), 2b (server `tiny_http`),
+  2c (isole client servite).
 - **Fase 3 — Modello integrato.** Isole `@start-client` che dividono il sorgente; server-driven con
   WebSocket + diff del DOM (serializzati in JSON); poi RPC/idratazione.
 
