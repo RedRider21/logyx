@@ -367,7 +367,8 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r3.h">Isole client → JavaScript</b><span data-i18n="status.r3.p">Blocchi @start-client compilati a JS: eventi, stato, aggiornamento del DOM.</span></div></div>
         <div class="row"><div class="st">🟡</div><div class="tx"><b data-i18n="status.r4.h">Transpiler Rust (sottoinsieme tipizzato)</b><span data-i18n="status.r4.p">Aritmetica, stringhe, controllo di flusso, funzioni con inferenza dei tipi, liste e mappe, moduli e gestione errori (→ Result).</span></div></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r5.h">Compilatore in Rust (Fase 1 del bootstrap)</b><span data-i18n="status.r5.p">logyxc: lexer, parser, inferenza dei tipi e backend in Rust, verificato conforme al prototipo su tutti gli esempi.</span></div></div>
-        <div class="row"><div class="st">⏳</div><div class="tx"><b data-i18n="status.r6.h">Prossimo traguardo: self-hosting</b><span data-i18n="status.r6.p">Riscrivere il compilatore in Logyx stesso, così da non dipendere più né da Python né da Rust.</span></div></div>
+        <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r6.h">Ecosistema Rust e WebAssembly</b><span data-i18n="status.r6.p">Qualsiasi crate di crates.io via <code>use rust</code>; le funzioni del nucleo si compilano a WebAssembly per il browser (anteprima).</span></div></div>
+        <div class="row"><div class="st">⏳</div><div class="tx"><b data-i18n="status.r7.h">Prossimi: web completo e self-hosting</b><span data-i18n="status.r7.p">DOM e server da un solo sorgente; poi riscrivere il compilatore in Logyx stesso.</span></div></div>
       </div>
     </div>
   </section>
@@ -451,7 +452,8 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "status.r3.h":"Isole client → JavaScript","status.r3.p":"Blocchi @start-client compilati a JS: eventi, stato, aggiornamento del DOM.",
       "status.r4.h":"Transpiler Rust (sottoinsieme tipizzato)","status.r4.p":"Aritmetica, stringhe, controllo di flusso, funzioni con inferenza dei tipi, liste e mappe, moduli e gestione errori (→ Result).",
       "status.r5.h":"Compilatore in Rust (Fase 1 del bootstrap)","status.r5.p":"logyxc: lexer, parser, inferenza dei tipi e backend in Rust, verificato conforme al prototipo su tutti gli esempi.",
-      "status.r6.h":"Prossimo traguardo: self-hosting","status.r6.p":"Riscrivere il compilatore in Logyx stesso, così da non dipendere più né da Python né da Rust.",
+      "status.r6.h":"Ecosistema Rust e WebAssembly","status.r6.p":"Qualsiasi crate di crates.io via use rust; le funzioni del nucleo si compilano a WebAssembly per il browser (anteprima).",
+      "status.r7.h":"Prossimi: web completo e self-hosting","status.r7.p":"DOM e server da un solo sorgente; poi riscrivere il compilatore in Logyx stesso.",
       "start.h":"Come iniziare","start.sub":"Il prototipo gira con il solo Python 3.8+ (nessuna dipendenza). Rust serve solo, in opzione, per compilare a nativo.",
       "footer.author":"di Daniele Deplano (RedRider21)","footer.license":"Licenza AGPL-3.0. Software libero.",
       "a11y.top":"Torna su"
@@ -496,7 +498,8 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "status.r3.h":"Client islands → JavaScript","status.r3.p":"@start-client blocks compiled to JS: events, state, DOM updates.",
       "status.r4.h":"Rust transpiler (typed subset)","status.r4.p":"Arithmetic, strings, control flow, functions with type inference, lists and maps, modules and error handling (→ Result).",
       "status.r5.h":"Compiler in Rust (bootstrap, phase 1)","status.r5.p":"logyxc: lexer, parser, type inference and backend in Rust, verified conformant to the prototype on every example.",
-      "status.r6.h":"Next milestone: self-hosting","status.r6.p":"Rewrite the compiler in Logyx itself, so it no longer depends on Python or Rust.",
+      "status.r6.h":"Rust ecosystem and WebAssembly","status.r6.p":"Any crate from crates.io via use rust; core functions compile to WebAssembly for the browser (preview).",
+      "status.r7.h":"Next: full web and self-hosting","status.r7.p":"DOM and server from a single source; then rewrite the compiler in Logyx itself.",
       "start.h":"Getting started","start.sub":"The prototype runs on Python 3.8+ alone (no dependencies). Rust is optional, only to compile to native.",
       "footer.author":"by Daniele Deplano (RedRider21)","footer.license":"AGPL-3.0 licensed. Free software.",
       "a11y.top":"Back to top"

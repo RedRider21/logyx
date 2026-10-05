@@ -8,6 +8,9 @@ build/
 examples/*.rs
 *_bin
 *_cargo/
+*_wasm/
+examples/*.wasm
+examples/*.html
 
 # Python
 __pycache__/

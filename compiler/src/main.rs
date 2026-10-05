@@ -26,8 +26,9 @@ fn main() {
         ("parse", Some(p)) => run_parse(p),
         ("gen", Some(p)) => run_gen(p),
         ("build", Some(p)) => run_build(p),
+        ("build-wasm", Some(p)) => run_build_wasm(p),
         _ => {
-            eprintln!("uso: logyxc <tokens|parse|gen|build> <file.logyx>");
+            eprintln!("uso: logyxc <tokens|parse|gen|build|build-wasm> <file.logyx>");
             exit(2);
         }
     };
@@ -57,6 +58,187 @@ fn run_build(path: &str) -> Result<(), error::LogyxError> {
     } else {
         build_cargo(path, &rust, &deps)
     }
+}
+
+/// Fase 0 web→WASM: compila le funzioni del nucleo a WebAssembly (tipi numerici)
+/// e genera una pagina HTML che le invoca dal browser.
+fn run_build_wasm(path: &str) -> Result<(), error::LogyxError> {
+    use ast::Item;
+    let items = modules::load_program(path)?;
+    let mut cg = codegen::Codegen::new();
+    let rust = cg.generate(&items)?;
+    let deps = cg.deps.clone();
+    let names: Vec<String> = items
+        .iter()
+        .filter_map(|it| if let Item::Func(f) = it { Some(f.name.clone()) } else { None })
+        .collect();
+    let exports = cg.numeric_exports(&names);
+    if exports.is_empty() {
+        return Err(error::LogyxError::new(
+            "build-wasm: nessuna funzione con firma numerica da esportare \
+             (la Fase 0 supporta int/float/bool)",
+        ));
+    }
+    // wrapper esportati verso WASM. int -> i32 (così JS usa Number, non BigInt).
+    let wasm_ty = |t: &str| if t == "float" { "f64" } else { "i32" };
+    let arg_in = |n: &str, t: &str| match t {
+        "int" => format!("{n} as i64"),
+        "bool" => format!("({n} != 0)"),
+        _ => n.to_string(), // float
+    };
+    let mut wrappers = String::new();
+    for e in &exports {
+        let params = e
+            .params
+            .iter()
+            .map(|(n, t)| format!("{}: {}", n, wasm_ty(t)))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let argvals = e
+            .params
+            .iter()
+            .map(|(n, t)| arg_in(n, t))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let call = format!("{}({})", e.name, argvals);
+        let body = match e.ret.as_str() {
+            "int" => format!("({call}) as i32"),
+            "bool" => format!("({call}) as i32"),
+            _ => call, // float
+        };
+        wrappers += &format!(
+            "#[export_name = \"{}\"]\npub extern \"C\" fn __wasm_{}({}) -> {} {{ {} }}\n\n",
+            e.name,
+            e.name,
+            params,
+            wasm_ty(&e.ret),
+            body
+        );
+    }
+    let lib = format!("#![allow(dead_code, unused)]\n\n{}\n{}", rust, wrappers);
+    // crate cdylib
+    let dir = format!("{}_wasm", strip_ext(path));
+    std::fs::create_dir_all(format!("{dir}/src")).map_err(|e| error::LogyxError::new(format!("{dir}: {e}")))?;
+    let mut toml = String::from(
+        "[package]\nname = \"logyxwasm\"\nversion = \"0.0.1\"\nedition = \"2021\"\n\n\
+         [lib]\ncrate-type = [\"cdylib\"]\npath = \"src/lib.rs\"\n\n[dependencies]\n",
+    );
+    let mut keys: Vec<&String> = deps.keys().collect();
+    keys.sort();
+    for k in &keys {
+        toml += &format!("{} = {}\n", k, deps[*k]);
+    }
+    toml += "\n[profile.release]\nopt-level = \"z\"\nlto = true\n";
+    std::fs::write(format!("{dir}/Cargo.toml"), toml)
+        .map_err(|e| error::LogyxError::new(format!("{dir}/Cargo.toml: {e}")))?;
+    std::fs::write(format!("{dir}/src/lib.rs"), lib)
+        .map_err(|e| error::LogyxError::new(format!("{dir}/src/lib.rs: {e}")))?;
+    if !which("cargo") {
+        return Err(error::LogyxError::new("cargo non installato"));
+    }
+    let comp = std::process::Command::new("cargo")
+        .args(["build", "--release", "--target", "wasm32-unknown-unknown"])
+        .current_dir(&dir)
+        .output()
+        .map_err(|e| error::LogyxError::new(format!("cargo: {e}")))?;
+    if !comp.status.success() {
+        return Err(error::LogyxError::new(format!(
+            "cargo ha segnalato errori:\n{}",
+            String::from_utf8_lossy(&comp.stderr)
+        )));
+    }
+    let wasm_src = format!("{dir}/target/wasm32-unknown-unknown/release/logyxwasm.wasm");
+    let base = strip_ext(path);
+    let wasm_out = format!("{base}.wasm");
+    let html_out = format!("{base}.html");
+    std::fs::copy(&wasm_src, &wasm_out).map_err(|e| error::LogyxError::new(format!("{wasm_out}: {e}")))?;
+    let wasm_name = std::path::Path::new(&wasm_out)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or(wasm_out.clone());
+    std::fs::write(&html_out, wasm_demo_html(&wasm_name))
+        .map_err(|e| error::LogyxError::new(format!("{html_out}: {e}")))?;
+    let fn_list: Vec<String> = exports
+        .iter()
+        .map(|e| format!("{}({})", e.name, e.params.len()))
+        .collect();
+    println!("// WASM generato: {wasm_out}");
+    println!("// Pagina demo: {html_out}  (funzioni: {})", fn_list.join(", "));
+    let html_name = wasm_name.replace(".wasm", ".html");
+    println!("Apri nel browser servendo la cartella, es.:");
+    println!("  python3 -m http.server --directory {} 8000", parent_dir(&html_out));
+    println!("  poi apri http://localhost:8000/{html_name}");
+    Ok(())
+}
+
+fn parent_dir(p: &str) -> String {
+    std::path::Path::new(p)
+        .parent()
+        .map(|d| d.to_string_lossy().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| ".".to_string())
+}
+
+fn wasm_demo_html(wasm_name: &str) -> String {
+    format!(
+        r#"<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logyx → WebAssembly</title>
+<style>
+  body{{font-family:-apple-system,Segoe UI,Roboto,sans-serif; max-width:640px; margin:40px auto; padding:0 20px; color:#171a2b}}
+  h1{{letter-spacing:-.02em}}
+  .fn{{border:1px solid #e3e5ef; border-radius:12px; padding:14px 16px; margin:12px 0}}
+  code{{font-family:ui-monospace,monospace; color:#5b4be1; font-weight:600}}
+  input{{width:70px; padding:4px 6px; margin:0 2px}}
+  button{{margin-left:8px; padding:5px 12px; border-radius:8px; border:1px solid #5b4be1; background:#5b4be1; color:#fff; cursor:pointer}}
+  .res{{font-weight:700; color:#5b4be1; margin-left:8px}}
+</style>
+</head>
+<body>
+<h1>Logyx → WebAssembly</h1>
+<p>Funzioni del nucleo di Logyx compilate a WASM e invocate direttamente nel browser.</p>
+<div id="app">caricamento…</div>
+<script>
+(async () => {{
+  const app = document.getElementById("app");
+  try {{
+    const bytes = await (await fetch("{wasm}")).arrayBuffer();
+    const {{ instance }} = await WebAssembly.instantiate(bytes, {{}});
+    const ex = instance.exports;
+    app.innerHTML = "";
+    for (const name of Object.keys(ex)) {{
+      const f = ex[name];
+      if (typeof f !== "function") continue;
+      const arity = f.length;
+      const div = document.createElement("div"); div.className = "fn";
+      const lab = document.createElement("span"); lab.innerHTML = "<code>" + name + "</code> ( ";
+      div.appendChild(lab);
+      const inputs = [];
+      for (let i = 0; i < arity; i++) {{
+        const inp = document.createElement("input"); inp.type = "number"; inp.value = "0";
+        inputs.push(inp); div.appendChild(inp);
+        if (i < arity - 1) div.appendChild(document.createTextNode(", "));
+      }}
+      div.appendChild(document.createTextNode(" )"));
+      const btn = document.createElement("button"); btn.textContent = "calcola";
+      const res = document.createElement("span"); res.className = "res";
+      btn.onclick = () => {{ res.textContent = "= " + f(...inputs.map(x => Number(x.value))); }};
+      div.appendChild(btn); div.appendChild(res);
+      app.appendChild(div);
+    }}
+  }} catch (e) {{
+    app.textContent = "Errore nel caricare il WASM: " + e + " (servi la pagina via http, non file://)";
+  }}
+}})();
+</script>
+</body>
+</html>
+"#,
+        wasm = wasm_name
+    )
 }
 
 fn build_rustc(path: &str, rust: &str) -> Result<(), error::LogyxError> {

@@ -1,0 +1,33 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Web → WASM (Fase 0): funzioni del nucleo compilate a WebAssembly e chiamate dal browser.
+//   python3 main.py       ../examples/native_wasm.logyx     (interprete)
+//   logyxc build-wasm      ../examples/native_wasm.logyx     (genera .wasm + pagina .html)
+
+fn raddoppia(n) {
+    return n * 2
+}
+
+fn somma(a, b) {
+    return a + b
+}
+
+fn fattoriale(n) -> int {
+    r = 1
+    i = 2
+    while i <= n {
+        r = r * i
+        i = i + 1
+    }
+    return r
+}
+
+fn pari(n) {
+    return n % 2 == 0
+}
+
+fn main() {
+    print(raddoppia(21))
+    print(fattoriale(5))
+}

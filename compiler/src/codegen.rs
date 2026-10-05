@@ -14,6 +14,13 @@ use crate::error::LogyxError;
 
 type R<T> = Result<T, LogyxError>;
 
+/// Firma di una funzione esportabile verso WASM (tipi numerici).
+pub struct ExportSig {
+    pub name: String,
+    pub params: Vec<(String, String)>, // (nome, tipo Logyx: "int"/"float"/"bool")
+    pub ret: String,                   // tipo Logyx
+}
+
 fn ty(t: &str) -> R<&'static str> {
     match t {
         "int" => Ok("i64"),
@@ -149,6 +156,41 @@ impl Codegen {
             uses_serde: false,
             deps: HashMap::new(),
         }
+    }
+
+    /// Funzioni fra `names` con firma interamente numerica (int/float/bool),
+    /// esportabili verso WASM senza wasm-bindgen. Da chiamare dopo `generate`.
+    pub fn numeric_exports(&self, names: &[String]) -> Vec<ExportSig> {
+        let numeric = |t: &str| matches!(t, "int" | "float" | "bool");
+        let mut out = Vec::new();
+        for name in names {
+            if name == "main" {
+                continue;
+            }
+            let (pt, order) = match (self.ptype.get(name), self.param_order.get(name)) {
+                (Some(p), Some(o)) => (p, o),
+                _ => continue,
+            };
+            let ret = match self.rets.get(name) {
+                Some(Some(r)) if numeric(r) => r.clone(),
+                _ => continue,
+            };
+            let mut params = Vec::new();
+            let mut ok = true;
+            for pn in order {
+                match pt.get(pn) {
+                    Some(Some(t)) if numeric(t) => params.push((pn.clone(), t.clone())),
+                    _ => {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+            if ok {
+                out.push(ExportSig { name: name.clone(), params, ret });
+            }
+        }
+        out
     }
 
     /// Tipo Rust di un tipo Logyx (base o nome di record).

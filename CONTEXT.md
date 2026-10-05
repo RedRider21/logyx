@@ -115,9 +115,15 @@ Tre crate reali agganciate finora: `sha2`, `serde`, `chrono`.
 **Contenitori di record: FATTI** — liste e mappe di record (`Vec<T>`/`HashMap<K,T>`) funzionano con il
 "clone uniforme" già in piedi; record ora derivano anche `PartialEq` (per `contains`/`==`). Suite 36/36
 (`examples/native_recordlist.logyx`).
-**DA FARE:** extern con corpi Rust multi-riga/graffe (ora il corpo è una stringa senza `{`); `to_json`/
-`from_json` per float/liste/mappe; `enum`; lambda inline; errori di rete/crate; **web→WASM** (grande
-obiettivo).
+**Web→WASM: Fase 0 FATTA** (`design/web-wasm.md`): comando `logyxc build-wasm <file>` compila le funzioni
+del nucleo con firma numerica (int/float/bool) a WebAssembly (target `wasm32-unknown-unknown`, export
+`#[export_name]` con conversione int→i32 per evitare i BigInt in JS) e genera una pagina HTML demo.
+Verificato con Node: `raddoppia(21)=42`, `fattoriale(5)=120`, ecc. (`examples/native_wasm.logyx`).
+**DA FARE web→WASM:** Fase 1 (stringhe + DOM/eventi via `wasm-bindgen`), Fase 2 (server HTTP + route/
+render), Fase 3 (isole `@start-client`, server-driven).
+**Altro DA FARE:** inferenza del tipo di ritorno per variabili locali (ora i `return <locale>` richiedono
+annotazione `-> tipo`); extern con corpi Rust multi-riga; `to_json`/`from_json` per float/liste/mappe;
+`enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.
