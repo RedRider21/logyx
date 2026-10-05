@@ -776,6 +776,13 @@ class RustTranspiler:
             return self._stringish(e.left) or self._stringish(e.right)
         return False
 
+    def _is_string_expr(self, e):
+        """Come `_stringish`, ma usa anche i tipi noti (param + locali): così
+        `r = r + testo` fra due `String` genera `format!`, non `r + testo`."""
+        if self._stringish(e):
+            return True
+        return self._type_of(e, getattr(self, "cur_types", {})) == "string"
+
     def expr(self, e):
         t = type(e).__name__
         if t == "Literal":
@@ -800,7 +807,7 @@ class RustTranspiler:
         if t == "Unary":
             return ("!" if e.op == "not" else "-") + self.expr(e.operand)
         if t == "Binary":
-            if e.op == "+" and (self._stringish(e.left) or self._stringish(e.right)):
+            if e.op == "+" and (self._is_string_expr(e.left) or self._is_string_expr(e.right)):
                 return f'format!("{{}}{{}}", {self.expr(e.left)}, {self.expr(e.right)})'
             return f"({self.expr(e.left)} {e.op} {self.expr(e.right)})"
         if t == "Logical":

@@ -127,17 +127,20 @@ blocco `[len:u32 LE][byte UTF-8]` (JS legge e poi libera). `numeric_exports`→`
 `int|float|bool|string`. Pagina HTML generata interattiva (campi di testo + eventi nel collante JS, firme
 in un descrittore `SIGS`). Esempio `examples/native_webstr.logyx` (saluta/grida/lunghezza/vuoto/grado):
 suite 38/38 (la logica string→string entra nella suite via `main`), lato WASM verificato con Node
-(round-trip, UTF-8 con accenti, 2000 chiamate senza problemi di memoria). Limite noto emerso: il codegen
-NON gestisce la concatenazione `String + String` in un **assegnamento** (`r = r + testo`) — funziona solo
-nei `return` (via `format!`); aggirato nell'esempio.
+(round-trip, UTF-8 con accenti, 2000 chiamate senza problemi di memoria).
+**Concat `String + String` type-aware: FATTA** — il codegen ora riconosce la concatenazione di stringhe
+anche quando non c'è un letterale nella catena (es. `r = r + testo` fra due `String`): `is_string_expr`/
+`_is_string_expr` consultano l'ambiente dei tipi correnti (`cur_types`) oltre all'euristica `stringish`,
+così si genera `format!("{}{}", …)` invece di `r + testo` (che in Rust non compila). Prima funzionava solo
+nei `return`. Allineati i due backend; `ripeti(testo, volte)` reintrodotto in `native_webstr`, suite 38/38.
 **Inferenza tipi dei locali: FATTA** — il tipo di ritorno si deduce ora anche quando si fa `return <locale>`
 (non serve più l'annotazione `-> tipo`): `_infer_func_ret`/`infer_func_ret` raccolgono i tipi delle variabili
 locali (da `Decl`/`Assign`, ricorrendo in `if`/`while`/`for`/`match`) oltre a quelli dei parametri. Suite
 37/37 (`examples/native_localret.logyx`); `fattoriale` in `native_wasm` non ha più bisogno di `-> int`.
 **DA FARE web→WASM:** DOM dal codice Logyx (`set text of …`, `on "click" …` via import host/`web-sys`),
 Fase 2 (server HTTP + route/render), Fase 3 (isole `@start-client`, server-driven).
-**Altro DA FARE:** concatenazione `String + String` negli assegnamenti nel codegen (ora solo nei `return`);
-extern con corpi Rust multi-riga; `to_json`/`from_json` per float/liste/mappe; `enum`; lambda inline.
+**Altro DA FARE:** extern con corpi Rust multi-riga; `to_json`/`from_json` per float/liste/mappe;
+`enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.

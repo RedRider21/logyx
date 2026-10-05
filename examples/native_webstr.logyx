@@ -30,6 +30,16 @@ fn grado(testo, livello) {
     return testo
 }
 
+fn ripeti(testo: string, volte) {
+    r = ""
+    i = 0
+    while i < volte {
+        r = r + testo
+        i = i + 1
+    }
+    return r
+}
+
 fn main() {
     print(saluta("mondo"))
     print(grida("logyx"))
@@ -37,4 +47,5 @@ fn main() {
     print(vuoto(""))
     print(grado("ciao", 2))
     print(grado("ciao", 1))
+    print(ripeti("ab", 3))
 }

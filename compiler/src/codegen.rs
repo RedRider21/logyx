@@ -1214,6 +1214,13 @@ impl Codegen {
         }
     }
 
+    /// Un'espressione è una stringa? Riconosce i letterali (`stringish`) e, grazie
+    /// all'ambiente dei tipi correnti, anche le variabili/espressioni di tipo `string`
+    /// (così `r = r + testo` fra `String` genera `format!`, non `r + testo`).
+    fn is_string_expr(&self, e: &Expr) -> bool {
+        stringish(e) || self.type_of(e, &self.cur_types) == Some("string".to_string())
+    }
+
     fn expr(&mut self, e: &Expr) -> R<String> {
         match e {
             Expr::Int(v) => Ok(format!("{v}i64")),
@@ -1241,7 +1248,7 @@ impl Codegen {
                 Ok(format!("{}{}", if *op == UnOp::Not { "!" } else { "-" }, s))
             }
             Expr::Binary { op, left, right } => {
-                if *op == BinOp::Add && (stringish(left) || stringish(right)) {
+                if *op == BinOp::Add && (self.is_string_expr(left) || self.is_string_expr(right)) {
                     Ok(format!(
                         "format!(\"{{}}{{}}\", {}, {})",
                         self.expr(left)?,
