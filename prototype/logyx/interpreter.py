@@ -262,20 +262,33 @@ class Interpreter:
             out.append('"')
             return "".join(out)
 
+        def _fmt_float(x):
+            if x != x or x in (float("inf"), float("-inf")):
+                raise LogyxError("to_json: float non finito")
+            if float(x).is_integer():
+                return "%d.0" % int(x)
+            return repr(x)
+
         def _to_json(v):
             if isinstance(v, bool):
                 return "true" if v else "false"
             if isinstance(v, int):
                 return str(v)
+            if isinstance(v, float):
+                return _fmt_float(v)
             if isinstance(v, str):
                 return _json_escape(v)
+            if isinstance(v, list):
+                return "[" + ",".join(_to_json(x) for x in v) + "]"
             if isinstance(v, RecordValue):
                 parts = [
                     '"%s":%s' % (fn, _to_json(v.fields[fn]))
                     for fn, _ in self.records[v.type_name]
                 ]
                 return "{" + ",".join(parts) + "}"
-            raise LogyxError("to_json non supporta questo tipo (v0: int, bool, string, record)")
+            raise LogyxError(
+                "to_json non supporta questo tipo (v0: int, float, bool, string, record, liste)"
+            )
 
         g.define("to_json", _to_json)
         g.define("sha256", lambda s: hashlib.sha256(s.encode("utf-8")).hexdigest())

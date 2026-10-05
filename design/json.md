@@ -8,10 +8,15 @@ Obiettivo: serializzare i valori di Logyx in JSON, valorizzando i record appena 
 
 - **Solo serializzazione**: `to_json(x)` → stringa JSON. La **deserializzazione** (`from_json`) è
   rimandata: richiede un parser JSON scritto a mano nel compilatore (fronte a sé).
-- Tipi supportati: **int**, **bool**, **string** e **record** (con campi di questi tipi, anche record
-  annidati — la serializzazione è ricorsiva).
-- **Esclusi per ora**: `float` (il formato testuale di un float può divergere tra Python e Rust →
-  rischio di non-conformità), liste e mappe (il backend non traccia il tipo degli elementi).
+- Tipi supportati: **int**, **float**, **bool**, **string**, **record** (con campi di questi tipi, anche
+  record annidati) e **liste** (di qualunque tipo supportato, record e liste annidate inclusi) — la
+  serializzazione è ricorsiva.
+- **float**: formato condiviso dai due backend (helper `__json_float`): i finiti interi escono con il
+  decimale (`3.0`), gli altri con `format!("{}", x)` (Rust) / `repr` (Python), che per i float "puliti"
+  usati negli esempi coincidono; i non finiti (NaN/∞) sono rifiutati (non sono JSON validi).
+- **liste**: il tipo dell'elemento si deduce da una lista letterale o da una variabile a cui è stata
+  assegnata una lista letterale (mappa `list_elem`); non da liste prodotte da `map`/`split`/ecc.
+- **Esclusi per ora**: **mappe** (il backend non traccia il tipo dei valori).
 
 ## Perché serve tracciare i tipi delle variabili locali
 

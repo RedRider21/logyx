@@ -414,7 +414,7 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 </tr>
 <tr>
 <td><code>to_json(x)</code></td>
-<td>Serializza <code>x</code> (int, bool, string o record) in una stringa JSON</td>
+<td>Serializza <code>x</code> (int, float, bool, string, record o lista) in una stringa JSON</td>
 </tr>
 <tr>
 <td><code>from_json(testo, Record)</code></td>
@@ -436,10 +436,13 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 </table>
 <p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione è il <strong>nome di una funzione definita con <code>fn</code></strong> (non una lambda
 inline, per ora). Esempi: <code>examples/native_mapfilter.logyx</code>, <code>examples/native_reduce.logyx</code>.</p>
-<p><code>to_json</code> serializza <strong>int</strong>, <strong>bool</strong>, <strong>string</strong> e <strong>record</strong> (anche annidati), in formato compatto;
-le stringhe sono "escaped". <code>from_json(testo, Record)</code> fa l'inverso: deserializza una stringa JSON in un
-record (campi scalari/string), usando la crate <code>serde</code>. Vedi <code>examples/native_json.logyx</code> e
-<code>examples/native_fromjson.logyx</code>.</p>
+<p><code>to_json</code> serializza <strong>int</strong>, <strong>float</strong>, <strong>bool</strong>, <strong>string</strong>, <strong>record</strong> (anche annidati) e <strong>liste</strong>,
+in formato compatto; le stringhe sono "escaped". I float finiti e interi escono con il decimale (<code>3.0</code>);
+le liste possono contenere qualunque tipo supportato, record e liste annidate inclusi — il tipo
+dell'elemento si deduce da una lista letterale o da una variabile a cui è stata assegnata una lista
+letterale (<code>numeri = [1,2,3]; to_json(numeri)</code>). <code>from_json(testo, Record)</code> fa l'inverso: deserializza
+una stringa JSON in un record (campi scalari/string), usando la crate <code>serde</code>. Vedi
+<code>examples/native_json.logyx</code> e <code>examples/native_fromjson.logyx</code>.</p>
 <p>Nota: nelle <strong>stringhe letterali</strong> i caratteri <code>{</code> e <code>}</code> avviano l'interpolazione; per inserirli alla
 lettera (es. in un JSON scritto a mano) vanno escapati con <code>\{</code> e <code>\}</code>.</p>
 <h3 id="librerie-esterne-crates-rust">Librerie esterne (crates Rust)</h3>

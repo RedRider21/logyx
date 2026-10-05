@@ -28,6 +28,14 @@ _JSON_HELPER = r'''fn __json_str(s: &str) -> String {
     }
     out.push('"');
     out
+}
+
+fn __json_float(x: f64) -> String {
+    if x.is_finite() && x.fract() == 0.0 {
+        format!("{}.0", x)
+    } else {
+        format!("{}", x)
+    }
 }'''
 
 
@@ -196,6 +204,7 @@ class RustTranspiler:
             ret_str = "" if ret == "__void__" else f" -> {self.ty(ret)}"
         declared = set(f.params)
         self.kinds = {}  # nome -> "list" | "map" (categoria delle variabili locali)
+        self.list_elem = {}  # nome lista -> tipo JSON dell'elemento (per to_json)
         self.cur_types = {n: t for n, t in pt.items() if t}  # tipi noti (param + locali)
         body = self.block(f.body, declared, 1)
         return f"fn {f.name}({params}){ret_str} {{\n{body}\n}}"
@@ -634,6 +643,7 @@ class RustTranspiler:
             k = self._value_kind(s.value)
             if k:
                 self.kinds[s.name] = k
+            self._track_list_elem(s.name, s.value)
             vt = self._type_of(s.value, self.cur_types)
             if vt:
                 self.cur_types[s.name] = vt
@@ -646,6 +656,7 @@ class RustTranspiler:
             k = self._value_kind(s.value)
             if k:
                 self.kinds[name] = k
+            self._track_list_elem(name, s.value)
             vt = self._type_of(s.value, self.cur_types)
             if vt:
                 self.cur_types[name] = vt
@@ -709,8 +720,17 @@ class RustTranspiler:
     def _json_value(self, rust_expr, type_str):
         if type_str in ("int", "bool"):
             return f'format!("{{}}", ({rust_expr}))'
+        if type_str == "float":
+            return f"__json_float(({rust_expr}))"
         if type_str == "string":
             return f"__json_str(&({rust_expr}))"
+        if type_str.startswith("list<") and type_str.endswith(">"):
+            elem = type_str[5:-1]
+            elem_json = self._json_value("__x.clone()", elem)
+            return (
+                f"{{ let __items: Vec<String> = ({rust_expr}).iter().map(|__x| {elem_json}).collect(); "
+                'format!("[{}]", __items.join(",")) }'
+            )
         if type_str in getattr(self, "records", {}):
             parts, args = [], []
             for fn, ft in self.records[type_str]:
@@ -719,8 +739,33 @@ class RustTranspiler:
             fmt = "{{" + ",".join(parts) + "}}"
             return 'format!("' + fmt + '", ' + ", ".join(args) + ")"
         raise LogyxError(
-            f"to_json non supporta il tipo '{type_str}' (v0: int, bool, string, record)"
+            f"to_json non supporta il tipo '{type_str}' (v0: int, float, bool, string, record, liste)"
         )
+
+    def _json_type_of(self, e):
+        """Tipo JSON di un'espressione per to_json: i tipi noti, più le liste
+        (letterali o variabili) come 'list<ELEM>'."""
+        t = self._type_of(e, getattr(self, "cur_types", {}))
+        if t:
+            return t
+        if type(e).__name__ == "ListLit":
+            if e.elements:
+                elem = self._json_type_of(e.elements[0])
+                if elem:
+                    return f"list<{elem}>"
+            return None
+        if isinstance(e, N.Identifier):
+            el = getattr(self, "list_elem", {}).get(e.name)
+            if el:
+                return f"list<{el}>"
+        return None
+
+    def _track_list_elem(self, name, value):
+        """Se value è una lista letterale non vuota, ricorda il tipo del suo elemento."""
+        if type(value).__name__ == "ListLit" and value.elements:
+            el = self._json_type_of(value.elements[0])
+            if el:
+                self.list_elem[name] = el
 
     def _make_record_expr(self, name, args):
         fields = self.records[name]
@@ -926,7 +971,7 @@ class RustTranspiler:
                 if nm == "to_json":
                     if len(e.args) != 1:
                         raise LogyxError("to_json accetta un solo argomento")
-                    ta = self._type_of(e.args[0], getattr(self, "cur_types", {}))
+                    ta = self._json_type_of(e.args[0])
                     if not ta:
                         raise LogyxError("to_json: non riesco a dedurre il tipo dell'argomento")
                     self.uses_json = True

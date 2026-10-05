@@ -25,4 +25,16 @@ fn main() {
 
     print(to_json(42))
     print(to_json("con \"virgolette\" e \\ backslash"))
+
+    // float e liste (v0: liste letterali o variabili lista)
+    print(to_json(3.0))
+    print(to_json(2.5))
+    numeri = [1, 2, 3]
+    print(to_json(numeri))
+    reali = [1.5, 2.0, 3.25]
+    print(to_json(reali))
+    parole = ["alfa", "beta"]
+    print(to_json(parole))
+    squadra = [Persona("Ada", 36), Persona("Guido", 45)]
+    print(to_json(squadra))
 }

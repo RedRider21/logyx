@@ -54,6 +54,14 @@ const JSON_HELPER: &str = r#"fn __json_str(s: &str) -> String {
     }
     out.push('"');
     out
+}
+
+fn __json_float(x: f64) -> String {
+    if x.is_finite() && x.fract() == 0.0 {
+        format!("{}.0", x)
+    } else {
+        format!("{}", x)
+    }
 }"#;
 
 fn fn_name(args: &[Expr], n: usize, idx: usize, usage: &str) -> R<String> {
@@ -135,6 +143,8 @@ pub struct Codegen {
     cur_fallible: bool,
     kinds: HashMap<String, String>,
     cur_types: HashMap<String, Option<String>>,
+    // Per le variabili lista: tipo JSON dell'elemento (per `to_json`), es. "int" o "Persona".
+    list_elem: HashMap<String, String>,
     uses_json: bool,
     uses_serde: bool,
     pub deps: HashMap<String, String>,
@@ -152,6 +162,7 @@ impl Codegen {
             cur_fallible: false,
             kinds: HashMap::new(),
             cur_types: HashMap::new(),
+            list_elem: HashMap::new(),
             uses_json: false,
             uses_serde: false,
             deps: HashMap::new(),
@@ -936,6 +947,7 @@ impl Codegen {
         };
         let mut declared: HashSet<String> = f.params.iter().map(|p| p.name.clone()).collect();
         self.kinds.clear();
+        self.list_elem.clear();
         self.cur_types = pt.clone();
         let body = self.block(&f.body, &mut declared, 1)?;
         Ok(format!("fn {}({}){} {{\n{}\n}}", f.name, params, ret_str, body))
@@ -1027,6 +1039,7 @@ impl Codegen {
                 if let Some(k) = value_kind(value) {
                     self.kinds.insert(name.clone(), k.to_string());
                 }
+                self.track_list_elem(name, value);
                 if let Some(vt) = self.type_of(value, &self.cur_types.clone()) {
                     self.cur_types.insert(name.clone(), Some(vt));
                 }
@@ -1045,6 +1058,7 @@ impl Codegen {
                 if let Some(k) = value_kind(value) {
                     self.kinds.insert(name.clone(), k.to_string());
                 }
+                self.track_list_elem(&name, value);
                 if let Some(vt) = self.type_of(value, &self.cur_types.clone()) {
                     self.cur_types.insert(name.clone(), Some(vt));
                 }
@@ -1184,7 +1198,17 @@ impl Codegen {
     fn json_value(&self, rust_expr: &str, type_str: &str) -> R<String> {
         match type_str {
             "int" | "bool" => Ok(format!("format!(\"{{}}\", ({}))", rust_expr)),
+            "float" => Ok(format!("__json_float(({}))", rust_expr)),
             "string" => Ok(format!("__json_str(&({}))", rust_expr)),
+            t if t.starts_with("list<") && t.ends_with('>') => {
+                let elem = &t[5..t.len() - 1];
+                let elem_json = self.json_value("__x.clone()", elem)?;
+                Ok(format!(
+                    "{{ let __items: Vec<String> = ({}).iter().map(|__x| {}).collect(); \
+                     format!(\"[{{}}]\", __items.join(\",\")) }}",
+                    rust_expr, elem_json
+                ))
+            }
             t if self.records.contains_key(t) => {
                 let fields = self.records[t].clone();
                 let mut fmt_parts = Vec::new();
@@ -1199,9 +1223,38 @@ impl Codegen {
                 Ok(format!("format!(\"{}\", {})", fmt, vals.join(", ")))
             }
             other => Err(LogyxError::new(format!(
-                "to_json non supporta il tipo '{}' (v0: int, bool, string, record)",
+                "to_json non supporta il tipo '{}' (v0: int, float, bool, string, record, liste)",
                 other
             ))),
+        }
+    }
+
+    /// Tipo JSON di un'espressione passata a `to_json`: i tipi noti via `type_of`,
+    /// più le liste (letterali o variabili) come `list<ELEM>`.
+    fn json_type_of(&self, e: &Expr) -> Option<String> {
+        if let Some(t) = self.type_of(e, &self.cur_types) {
+            return Some(t);
+        }
+        match e {
+            Expr::List(els) => {
+                let first = els.first()?;
+                let elem = self.json_type_of(first)?;
+                Some(format!("list<{}>", elem))
+            }
+            Expr::Ident(n) => self.list_elem.get(n).map(|el| format!("list<{}>", el)),
+            _ => None,
+        }
+    }
+
+    /// Se `value` è una lista letterale non vuota, ricorda il tipo del suo elemento
+    /// per la variabile `name` (usato da `to_json`).
+    fn track_list_elem(&mut self, name: &str, value: &Expr) {
+        if let Expr::List(els) = value {
+            if let Some(first) = els.first() {
+                if let Some(el) = self.json_type_of(first) {
+                    self.list_elem.insert(name.to_string(), el);
+                }
+            }
         }
     }
 
@@ -1563,8 +1616,7 @@ impl Codegen {
                         if args.len() != 1 {
                             return Err(LogyxError::new("to_json accetta un solo argomento"));
                         }
-                        let ct = self.cur_types.clone();
-                        let ta = self.type_of(&args[0], &ct).ok_or_else(|| {
+                        let ta = self.json_type_of(&args[0]).ok_or_else(|| {
                             LogyxError::new("to_json: non riesco a dedurre il tipo dell'argomento")
                         })?;
                         self.uses_json = true;
