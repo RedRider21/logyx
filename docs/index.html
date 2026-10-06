@@ -368,7 +368,8 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
         <div class="row"><div class="st">🟡</div><div class="tx"><b data-i18n="status.r4.h">Transpiler Rust (sottoinsieme tipizzato)</b><span data-i18n="status.r4.p">Aritmetica, stringhe, controllo di flusso, funzioni con inferenza dei tipi, liste e mappe, moduli e gestione errori (→ Result).</span></div></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r5.h">Compilatore in Rust (Fase 1 del bootstrap)</b><span data-i18n="status.r5.p">logyxc: lexer, parser, inferenza dei tipi e backend in Rust, conforme al prototipo; compila anche a WebAssembly (build-wasm) e genera un server HTTP (serve).</span></div></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r6.h">Ecosistema Rust e WebAssembly</b><span data-i18n="status.r6.p">Qualsiasi crate di crates.io via <code>use rust</code>; le funzioni con numeri e stringhe si compilano a WebAssembly per il browser, con pagina interattiva (anteprima).</span></div></div>
-        <div class="row"><div class="st">⏳</div><div class="tx"><b data-i18n="status.r7.h">Prossimi: web completo e self-hosting</b><span data-i18n="status.r7.p">DOM e server da un solo sorgente; poi riscrivere il compilatore in Logyx stesso.</span></div></div>
+        <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r7.h">Web da un solo sorgente, nel compilatore nativo</b><span data-i18n="status.r7.p">route + render (con {for}/{if}) servito via HTTP e isole client @start-client → JavaScript, dallo stesso logyxc.</span></div></div>
+        <div class="row"><div class="st">⏳</div><div class="tx"><b data-i18n="status.r8.h">Prossimi: modello integrato e self-hosting</b><span data-i18n="status.r8.p">Server-driven (diff del DOM) e poi riscrivere il compilatore in Logyx stesso.</span></div></div>
       </div>
     </div>
   </section>
@@ -463,7 +464,8 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "status.r4.h":"Transpiler Rust (sottoinsieme tipizzato)","status.r4.p":"Aritmetica, stringhe, controllo di flusso, funzioni con inferenza dei tipi, liste e mappe, moduli e gestione errori (→ Result).",
       "status.r5.h":"Compilatore in Rust (Fase 1 del bootstrap)","status.r5.p":"logyxc: lexer, parser, inferenza dei tipi e backend in Rust, conforme al prototipo; compila anche a WebAssembly (build-wasm) e genera un server HTTP (serve).",
       "status.r6.h":"Ecosistema Rust e WebAssembly","status.r6.p":"Qualsiasi crate di crates.io via use rust; le funzioni con numeri e stringhe si compilano a WebAssembly per il browser, con pagina interattiva (anteprima).",
-      "status.r7.h":"Prossimi: web completo e self-hosting","status.r7.p":"DOM e server da un solo sorgente; poi riscrivere il compilatore in Logyx stesso.",
+      "status.r7.h":"Web da un solo sorgente, nel compilatore nativo","status.r7.p":"route + render (con {for}/{if}) servito via HTTP e isole client @start-client → JavaScript, dallo stesso logyxc.",
+      "status.r8.h":"Prossimi: modello integrato e self-hosting","status.r8.p":"Server-driven (diff del DOM) e poi riscrivere il compilatore in Logyx stesso.",
       "start.h":"Come iniziare","start.sub":"Il prototipo gira con il solo Python 3.8+ (nessuna dipendenza). Rust serve solo, in opzione, per compilare a nativo.",
       "start.native":"Il compilatore nativo <code>logyxc</code> (in <code>compiler/</code>, build con <code>cargo build --release</code>) aggiunge WebAssembly e il server HTTP:",
       "footer.author":"di Daniele Deplano (RedRider21)","footer.license":"Licenza AGPL-3.0. Software libero.",
@@ -510,7 +512,8 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "status.r4.h":"Rust transpiler (typed subset)","status.r4.p":"Arithmetic, strings, control flow, functions with type inference, lists and maps, modules and error handling (→ Result).",
       "status.r5.h":"Compiler in Rust (bootstrap, phase 1)","status.r5.p":"logyxc: lexer, parser, type inference and backend in Rust, conformant to the prototype; also compiles to WebAssembly (build-wasm) and generates an HTTP server (serve).",
       "status.r6.h":"Rust ecosystem and WebAssembly","status.r6.p":"Any crate from crates.io via use rust; functions over numbers and strings compile to WebAssembly for the browser, with an interactive page (preview).",
-      "status.r7.h":"Next: full web and self-hosting","status.r7.p":"DOM and server from a single source; then rewrite the compiler in Logyx itself.",
+      "status.r7.h":"Web from a single source, in the native compiler","status.r7.p":"route + render (with {for}/{if}) served over HTTP and @start-client islands → JavaScript, all from logyxc.",
+      "status.r8.h":"Next: integrated model and self-hosting","status.r8.p":"Server-driven (DOM diffing) and then rewriting the compiler in Logyx itself.",
       "start.h":"Getting started","start.sub":"The prototype runs on Python 3.8+ alone (no dependencies). Rust is optional, only to compile to native.",
       "start.native":"The native compiler <code>logyxc</code> (in <code>compiler/</code>, built with <code>cargo build --release</code>) adds WebAssembly and the HTTP server:",
       "footer.author":"by Daniele Deplano (RedRider21)","footer.license":"AGPL-3.0 licensed. Free software.",
