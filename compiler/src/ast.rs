@@ -126,4 +126,6 @@ pub enum Item {
     Stmt(Stmt),
     /// `route "<path>" { <stmt> … render <template> }` — handler server-side.
     Route { path: String, body: Vec<Stmt> },
+    /// `enum Nome { VarA, VarB, … }` — varianti senza payload (v0).
+    Enum { name: String, variants: Vec<String> },
 }

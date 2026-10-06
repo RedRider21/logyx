@@ -227,6 +227,29 @@ fn main() {
   si iterano, indicizzano e se ne accede ai campi (`gente[0].nome`, `for p in gente { p.eta }`). Vedi
   `examples/native_recordlist.logyx`.
 
+### Enum ✅
+
+Un `enum` è un tipo con un insieme chiuso di **varianti** (v0: senza dati associati).
+
+```
+enum Colore { Rosso, Verde, Blu }
+
+c = Colore.Verde          // accesso qualificato alla variante
+c == Colore.Verde         // confronto → true
+
+match c {
+    Colore.Rosso { return "rosso" }
+    Colore.Verde { return "verde" }
+    else         { return "altro" }
+}
+```
+
+- **Definizione:** `enum Nome { VarA, VarB, ... }`.
+- **Uso:** `Nome.Variante` (accesso qualificato); confrontabile con `==` e usabile in `match` per valore.
+- Passabile/ritornabile dalle funzioni (annota il tipo: `fn f(c: Colore)`). In Rust diventa un `enum` con
+  `#[derive(Clone, PartialEq)]`. Vedi `examples/native_enum.logyx`.
+- v0: varianti **senza payload** (niente `Cerchio(raggio)`); i dati associati arriveranno più avanti.
+
 ## 7. Collezioni 🟡
 
 Liste e mappe: letterali, indicizzazione, `len`, iterazione con `for`.

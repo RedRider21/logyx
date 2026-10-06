@@ -1,0 +1,21 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// enum (v0): varianti senza payload, accesso qualificato, == e match per valore.
+
+enum Colore { Rosso, Verde, Blu }
+
+fn nome_colore(c: Colore) {
+    match c {
+        Colore.Rosso { return "rosso" }
+        Colore.Verde { return "verde" }
+        else { return "blu o altro" }
+    }
+}
+
+fn main() {
+    c = Colore.Verde
+    print(nome_colore(c))
+    print(c == Colore.Verde)
+    print(c == Colore.Rosso)
+}

@@ -56,6 +56,24 @@ class RecordValue:
         )
 
 
+class EnumValue:
+    """Valore di una variante di enum (v0: senza payload)."""
+
+    def __init__(self, type_name, variant):
+        self.type_name = type_name
+        self.variant = variant
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, EnumValue)
+            and self.type_name == other.type_name
+            and self.variant == other.variant
+        )
+
+    def __hash__(self):
+        return hash((self.type_name, self.variant))
+
+
 def html_escape(s):
     return (
         s.replace("&", "&amp;")
@@ -141,6 +159,8 @@ def logyx_str(v):
     if isinstance(v, RecordValue):
         inner = ", ".join(f"{k}: {logyx_str(val)}" for k, val in v.fields.items())
         return f"{v.type_name}({inner})"
+    if isinstance(v, EnumValue):
+        return f"{v.type_name}.{v.variant}"
     return str(v)
 
 
@@ -163,6 +183,7 @@ class Interpreter:
         self.globals = Environment()
         self.routes = {}
         self.records = {}  # nome -> lista di (nome_campo, tipo)
+        self.enums = {}    # nome -> lista di varianti
         self._install_builtins()
 
     def _install_builtins(self):
@@ -329,6 +350,8 @@ class Interpreter:
                 self.routes[item.path] = item
             elif isinstance(item, N.RecordDef):
                 self.records[item.name] = item.fields
+            elif isinstance(item, N.EnumDef):
+                self.enums[item.name] = item.variants
             elif isinstance(item, N.UseRust):
                 pass  # dipendenze crate: rilevanti solo per 'build'
             elif isinstance(item, N.ExternFn):
@@ -674,6 +697,13 @@ class Interpreter:
         return RecordValue(name, {fname: val for (fname, _), val in zip(fields, args)})
 
     def ex_Field(self, n, env):
+        # variante di enum: Nome.Variante (Nome è un enum, non una variabile)
+        if isinstance(n.target, N.Identifier) and n.target.name in self.enums:
+            if n.name in self.enums[n.target.name]:
+                return EnumValue(n.target.name, n.name)
+            raise LogyxError(
+                f"l'enum '{n.target.name}' non ha la variante '{n.name}'"
+            )
         target = self.eval(n.target, env)
         if isinstance(target, RecordValue) and n.name in target.fields:
             return target.fields[n.name]

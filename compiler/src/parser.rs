@@ -91,6 +91,8 @@ impl Parser {
                 items.push(self.import_item()?);
             } else if self.is(&TokenKind::Record) {
                 items.push(Item::Record(self.record_def()?));
+            } else if self.is(&TokenKind::Enum) {
+                items.push(self.enum_def()?);
             } else if self.is(&TokenKind::Use) {
                 items.push(self.use_rust()?);
             } else if self.is(&TokenKind::Extern) {
@@ -104,6 +106,25 @@ impl Parser {
             }
         }
         Ok(items)
+    }
+
+    fn enum_def(&mut self) -> Result<Item, LogyxError> {
+        self.expect(&TokenKind::Enum, "enum")?;
+        let name = self.ident_name("nome dell'enum")?;
+        self.expect(&TokenKind::LBrace, "{")?;
+        let mut variants = Vec::new();
+        if !self.is(&TokenKind::RBrace) {
+            variants.push(self.ident_name("nome di variante")?);
+            while self.is(&TokenKind::Comma) {
+                self.advance();
+                if self.is(&TokenKind::RBrace) {
+                    break;
+                }
+                variants.push(self.ident_name("nome di variante")?);
+            }
+        }
+        self.expect(&TokenKind::RBrace, "}")?;
+        Ok(Item::Enum { name, variants })
     }
 
     fn record_def(&mut self) -> Result<RecordDef, LogyxError> {

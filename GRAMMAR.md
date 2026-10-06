@@ -28,7 +28,7 @@ Booleano       := "true" | "false"
 Nullo          := "nil"
 ```
 
-Parole chiave riservate (v0): `fn return if else while for in const import fail match break continue record use extern and or not true false nil route render`
+Parole chiave riservate (v0): `fn return if else while for in const import fail match break continue record enum use extern and or not true false nil route render`
 più i marcatori di confine `@server @client @start-client @end-client`. Dentro `match` i rami sono
 etichettati da `ok` ed `err` (parole contestuali), e `error` compare nei tipi fallibili `T | error`.
 
@@ -119,10 +119,11 @@ route "/" {
 
 ```
 programma    := elemento*
-elemento     := funzione | route | dichiarazione | import | record | useRust | externRust
+elemento     := funzione | route | dichiarazione | import | record | enum | useRust | externRust
 import       := "import" STRINGA           // percorso di un file .logyx
 record       := "record" IDENT "{" campo ("," campo)* "}"
 campo        := IDENT ":" tipo
+enum         := "enum" IDENT "{" IDENT ("," IDENT)* "}"   // varianti senza payload (v0)
 useRust      := "use" "rust" STRINGA "=" STRINGA               // dipendenza crate
 externRust   := "extern" "rust" "fn" IDENT "(" parametri ")" "->" tipo "=" STRINGA  // corpo Rust
 // costruzione: Nome(v1, v2, ...) posizionale · accesso campo: espressione "." IDENT

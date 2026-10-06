@@ -47,6 +47,8 @@ class Parser:
                 items.append(self.import_stmt())
             elif self.at(T.RECORD):
                 items.append(self.record_def())
+            elif self.at(T.ENUM):
+                items.append(self.enum_def())
             elif self.at(T.USE):
                 items.append(self.use_rust())
             elif self.at(T.EXTERN):
@@ -73,6 +75,21 @@ class Parser:
                 fields.append(self.record_field())
         self.expect(T.RBRACE)
         return N.RecordDef(name, fields)
+
+    def enum_def(self):
+        self.expect(T.ENUM)
+        name = self.expect(T.IDENT, "nome dell'enum").value
+        self.expect(T.LBRACE)
+        variants = []
+        if not self.at(T.RBRACE):
+            variants.append(self.expect(T.IDENT, "nome di variante").value)
+            while self.at(T.COMMA):
+                self.advance()
+                if self.at(T.RBRACE):
+                    break
+                variants.append(self.expect(T.IDENT, "nome di variante").value)
+        self.expect(T.RBRACE)
+        return N.EnumDef(name, variants)
 
     def record_field(self):
         fname = self.expect(T.IDENT, "nome del campo").value

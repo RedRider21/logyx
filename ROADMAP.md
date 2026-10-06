@@ -34,7 +34,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | Parametri con default; numero variabile di argomenti | ⏳ | 3 |
 | **Record/struct** (tipi con campi, anche in liste/mappe) | ✅ | — |
 | `match` generale (sui valori, con `else`) | ✅ | — |
-| `enum` (tipi somma) | ⏳ | 3 |
+| `enum` (tipi somma) | 🟢 varianti semplici (senza payload) fatte, `==`/`match`; payload ⏳ | 3 |
 | Tuple; `for` con indice | ⏳ | 4 |
 | Costanti globali a primo livello; conversioni esplicite (`int()`, `float()`) | 🟡 | 3 |
 

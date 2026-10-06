@@ -308,6 +308,16 @@ ada.nome                      // accesso ai campi → "Ada"
 
 gente = [Persona("Ada", 36), Persona("Bruno", 40)]   // liste/mappe di record
 gente[0].nome                 // "Ada"</pre></div>
+      <div class="code-wrap" style="margin-top:22px"><pre>// enum (insieme chiuso di varianti)
+enum Colore { Rosso, Verde, Blu }
+
+c = Colore.Verde              // accesso qualificato
+c == Colore.Verde             // true
+match c {
+    Colore.Rosso { "rosso" }
+    Colore.Verde { "verde" }
+    else         { "altro" }
+}</pre></div>
       <div class="code-wrap" style="margin-top:22px"><pre>// librerie esterne: qualsiasi crate di crates.io
 use rust "hex" = "0.4"
 

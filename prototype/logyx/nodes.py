@@ -141,6 +141,12 @@ class RecordDef:
 
 
 @dataclass
+class EnumDef:
+    name: str
+    variants: List[str]  # varianti senza payload (v0)
+
+
+@dataclass
 class UseRust:
     crate: str
     version: str

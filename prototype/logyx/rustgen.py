@@ -82,9 +82,10 @@ class RustTranspiler:
     def transpile(self, items):
         funcs = [i for i in items if isinstance(i, N.FunctionDef)]
         records = [i for i in items if isinstance(i, N.RecordDef)]
+        enums = [i for i in items if isinstance(i, N.EnumDef)]
         externs = [i for i in items if isinstance(i, N.ExternFn)]
         uses = [i for i in items if isinstance(i, N.UseRust)]
-        allowed = (N.FunctionDef, N.RecordDef, N.ExternFn, N.UseRust)
+        allowed = (N.FunctionDef, N.RecordDef, N.EnumDef, N.ExternFn, N.UseRust)
         others = [i for i in items if not isinstance(i, allowed)]
         if others:
             raise LogyxError(
@@ -94,6 +95,7 @@ class RustTranspiler:
         if not any(f.name == "main" for f in funcs):
             raise LogyxError("manca 'fn main()': serve un punto d'ingresso")
         self.records = {r.name: r.fields for r in records}
+        self.enums = {e.name: e.variants for e in enums}
         self.param_types = {
             f.name: dict(zip(f.params, f.param_types or [None] * len(f.params))) for f in funcs
         }
@@ -129,6 +131,9 @@ class RustTranspiler:
         for name in sorted(self.records):
             fields = ", ".join(f"{fn}: {self.ty(ft)}" for fn, ft in self.records[name])
             struct_defs.append(f"#[derive({derive})]\nstruct {name} {{ {fields} }}")
+        for name in sorted(self.enums):
+            variants = ", ".join(self.enums[name])
+            struct_defs.append(f"#[derive(Clone, PartialEq)]\nenum {name} {{ {variants} }}")
         pieces = []
         if self.uses_serde:
             pieces.append("use serde::{Serialize, Deserialize};")
@@ -509,6 +514,10 @@ class RustTranspiler:
         if t == "Try":
             return self._type_of(e.operand, ptypes)
         if t == "Field":
+            # variante di enum: Nome.Variante -> tipo Nome
+            if isinstance(e.target, N.Identifier) and e.target.name in getattr(self, "enums", {}):
+                if e.name in self.enums[e.target.name]:
+                    return e.target.name
             tt = self._type_of(e.target, ptypes)
             for fn, ft in getattr(self, "records", {}).get(tt, []):
                 if fn == e.name:
@@ -586,7 +595,7 @@ class RustTranspiler:
             raise LogyxError("il transpiler v0 richiede tipi espliciti su parametri e tipo di ritorno")
         if t in _TYPES:
             return _TYPES[t]
-        if t in getattr(self, "records", {}):
+        if t in getattr(self, "records", {}) or t in getattr(self, "enums", {}):
             return t
         raise LogyxError(f"tipo non supportato dal transpiler v0: '{t}'")
 
@@ -931,6 +940,10 @@ class RustTranspiler:
                 return f"{self.expr(e.target)}.get(&({self.expr(e.index)})).unwrap().clone()"
             return f"{self.expr(e.target)}[({self.expr(e.index)}) as usize].clone()"
         if t == "Field":
+            # variante di enum: Nome.Variante -> Nome::Variante
+            if isinstance(e.target, N.Identifier) and e.target.name in getattr(self, "enums", {}):
+                if e.name in self.enums[e.target.name]:
+                    return f"{e.target.name}::{e.name}"
             return f"{self.expr(e.target)}.{e.name}.clone()"
         if t == "Call":
             if isinstance(e.callee, N.Identifier) and e.callee.name in getattr(self, "records", {}):

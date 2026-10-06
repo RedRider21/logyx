@@ -208,6 +208,7 @@ pub struct Codegen {
     rets: HashMap<String, Option<String>>,
     fallible: HashMap<String, bool>,
     records: HashMap<String, Vec<(String, String)>>,
+    enums: HashMap<String, Vec<String>>,
     tmp: usize,
     cur_fallible: bool,
     kinds: HashMap<String, String>,
@@ -232,6 +233,7 @@ impl Codegen {
             rets: HashMap::new(),
             fallible: HashMap::new(),
             records: HashMap::new(),
+            enums: HashMap::new(),
             tmp: 0,
             cur_fallible: false,
             kinds: HashMap::new(),
@@ -291,7 +293,7 @@ impl Codegen {
 
     /// Tipo Rust di un tipo Logyx (base o nome di record).
     fn rust_type(&self, t: &str) -> R<String> {
-        if self.records.contains_key(t) {
+        if self.records.contains_key(t) || self.enums.contains_key(t) {
             return Ok(t.to_string());
         }
         Ok(ty(t)?.to_string())
@@ -317,6 +319,9 @@ impl Codegen {
                 Item::ExternFn(ex) => externs.push(ex.clone()),
                 Item::Import(_) => {} // già espansi dal resolver
                 Item::Route { path, body } => routes.push((path.clone(), body.clone())),
+                Item::Enum { name, variants } => {
+                    self.enums.insert(name.clone(), variants.clone());
+                }
                 Item::Stmt(_) => {
                     return Err(LogyxError::new(
                         "il backend supporta solo definizioni di funzione \
@@ -428,6 +433,13 @@ impl Codegen {
                 name,
                 parts.join(", ")
             ));
+        }
+        // enum (varianti senza payload): derive Clone + PartialEq per confronto e match.
+        let mut enum_names: Vec<String> = self.enums.keys().cloned().collect();
+        enum_names.sort();
+        for name in &enum_names {
+            let variants = self.enums[name].join(", ");
+            structs.push(format!("#[derive(Clone, PartialEq)]\nenum {} {{ {} }}", name, variants));
         }
         let mut out = Vec::new();
         if self.uses_serde {
@@ -701,6 +713,14 @@ impl Codegen {
                 None
             }
             Expr::Field { target, name } => {
+                // accesso a una variante di enum: Nome.Variante → tipo Nome
+                if let Expr::Ident(e) = &**target {
+                    if let Some(variants) = self.enums.get(e) {
+                        if variants.iter().any(|v| v == name) {
+                            return Some(e.clone());
+                        }
+                    }
+                }
                 let tt = self.type_of(target, ptypes)?;
                 self.records
                     .get(&tt)
@@ -1734,6 +1754,14 @@ impl Codegen {
                 ))
             }
             Expr::Field { target, name } => {
+                // variante di enum: Nome.Variante → Nome::Variante
+                if let Expr::Ident(e) = &**target {
+                    if let Some(variants) = self.enums.get(e) {
+                        if variants.iter().any(|v| v == name) {
+                            return Ok(format!("{}::{}", e, name));
+                        }
+                    }
+                }
                 Ok(format!("{}.{}.clone()", self.expr(target)?, name))
             }
             Expr::Call { callee, args } => {
