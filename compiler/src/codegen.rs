@@ -1438,6 +1438,15 @@ impl Codegen {
                 }
             }
         }
+        // iterazione su mappa: sulle chiavi ordinate (HashMap non ha ordine → deterministico)
+        if let Expr::Ident(n) = iterable {
+            if self.kinds.get(n).map(|s| s.as_str()) == Some("map") {
+                let b = self.block(body, declared, indent + 1)?;
+                return Ok(format!(
+                    "{pad}for {var} in {{ let mut __k: Vec<_> = ({n}).keys().cloned().collect(); __k.sort(); __k }} {{\n{b}\n{pad}}}"
+                ));
+            }
+        }
         // iterazione su lista (per valore; cloned() vale per scalari e per String)
         let it = self.expr(iterable)?;
         let b = self.block(body, declared, indent + 1)?;

@@ -706,6 +706,12 @@ class RustTranspiler:
                 lo, hi = self.expr(it.args[0]), self.expr(it.args[1])
             body = self.block(s.body, declared, indent + 1)
             return pad + f"for {s.var} in ({lo})..({hi}) {{\n" + body + "\n" + pad + "}"
+        # iterazione su mappa: sulle chiavi ordinate (HashMap non ha ordine → deterministico)
+        if isinstance(it, N.Identifier) and getattr(self, "kinds", {}).get(it.name) == "map":
+            body = self.block(s.body, declared, indent + 1)
+            keys_expr = ("{ let mut __k: Vec<_> = (" + it.name
+                         + ").keys().cloned().collect(); __k.sort(); __k }")
+            return pad + f"for {s.var} in " + keys_expr + " {\n" + body + "\n" + pad + "}"
         # iterazione su lista: per valore; cloned() vale sia per gli scalari sia per String
         body = self.block(s.body, declared, indent + 1)
         return pad + f"for {s.var} in ({self.expr(it)}).iter().cloned() {{\n" + body + "\n" + pad + "}"

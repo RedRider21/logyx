@@ -238,13 +238,18 @@ len(xs)          // 3
 for x in xs { ... }
 
 m = {"nome": "Ada"}
-m["nome"]            // "Ada"
-has(m, "nome")       // true
+m["nome"]              // "Ada"
+has(m, "nome")         // true
+keys(m)                // chiavi, ordinate (deterministico)
+values(m)              // valori, nell'ordine delle chiavi
+for k in m { ... }     // itera le chiavi della mappa, ordinate
 ```
 
 Mutazioni: `push(lista, x)` aggiunge `x` in coda, `remove(lista, i)` toglie l'elemento all'indice `i`,
-`sort(lista)` ordina in place. Altre operazioni: `sum(lista)`, `contains(lista, x)`, `has(mappa, chiave)`.
-Non ancora: `map`/`filter`/`reduce`, slicing, `keys`/`values` e iterazione sui valori di mappa. ⏳
+`sort(lista)` ordina in place. Altre operazioni: `sum(lista)`, `contains(lista, x)`, `has(mappa, chiave)`,
+`map`/`filter`/`reduce` (con funzioni nominate). Le chiavi di mappa si iterano **ordinate** (`for k in m`,
+`keys(m)`): l'ordine è deterministico, quindi prototipo e compilatore nativo danno lo stesso risultato.
+Non ancora: slicing, lambda inline. ⏳
 
 ## 8. Stringhe e interpolazione ✅
 

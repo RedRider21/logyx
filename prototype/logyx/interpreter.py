@@ -499,7 +499,7 @@ class Interpreter:
     def st_For(self, s, env):
         iterable = self.eval(s.iterable, env)
         if isinstance(iterable, dict):
-            iterable = list(iterable.keys())
+            iterable = sorted(iterable.keys())  # chiavi ordinate (deterministico, come nel nativo)
         for value in iterable:
             child = Environment(env)
             child.define(s.var, value)

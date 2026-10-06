@@ -379,12 +379,17 @@ len(xs)          // 3
 for x in xs { ... }
 
 m = {&quot;nome&quot;: &quot;Ada&quot;}
-m[&quot;nome&quot;]            // &quot;Ada&quot;
-has(m, &quot;nome&quot;)       // true
+m[&quot;nome&quot;]              // &quot;Ada&quot;
+has(m, &quot;nome&quot;)         // true
+keys(m)                // chiavi, ordinate (deterministico)
+values(m)              // valori, nell'ordine delle chiavi
+for k in m { ... }     // itera le chiavi della mappa, ordinate
 </code></pre>
 <p>Mutazioni: <code>push(lista, x)</code> aggiunge <code>x</code> in coda, <code>remove(lista, i)</code> toglie l'elemento all'indice <code>i</code>,
-<code>sort(lista)</code> ordina in place. Altre operazioni: <code>sum(lista)</code>, <code>contains(lista, x)</code>, <code>has(mappa, chiave)</code>.
-Non ancora: <code>map</code>/<code>filter</code>/<code>reduce</code>, slicing, <code>keys</code>/<code>values</code> e iterazione sui valori di mappa. ⏳</p>
+<code>sort(lista)</code> ordina in place. Altre operazioni: <code>sum(lista)</code>, <code>contains(lista, x)</code>, <code>has(mappa, chiave)</code>,
+<code>map</code>/<code>filter</code>/<code>reduce</code> (con funzioni nominate). Le chiavi di mappa si iterano <strong>ordinate</strong> (<code>for k in m</code>,
+<code>keys(m)</code>): l'ordine è deterministico, quindi prototipo e compilatore nativo danno lo stesso risultato.
+Non ancora: slicing, lambda inline. ⏳</p>
 <h2 id="8-stringhe-e-interpolazione">8. Stringhe e interpolazione ✅</h2>
 <pre><code>nome = &quot;Logyx&quot;
 print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!

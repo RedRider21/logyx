@@ -1,0 +1,11 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Iterazione diretta su una mappa: for k in mappa (chiavi ordinate, deterministico).
+
+fn main() {
+    prezzi = {"pane": 2, "latte": 1, "uova": 3}
+    for k in prezzi {
+        print(k + ": " + str(prezzi[k]))
+    }
+}
