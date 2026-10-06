@@ -86,6 +86,15 @@ pub enum Stmt {
     Func(Function),
     /// `render <template>`: template HTML grezzo (interpolazione risolta in codegen).
     Render { template: String },
+    /// `match x { Variante(bind…) { … } … else { … } }` su un enum con payload.
+    MatchEnum { subject: Expr, cases: Vec<EnumCase>, else_block: Option<Vec<Stmt>> },
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct EnumCase {
+    pub variant: String,
+    pub binds: Vec<String>,
+    pub block: Vec<Stmt>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -126,6 +135,6 @@ pub enum Item {
     Stmt(Stmt),
     /// `route "<path>" { <stmt> … render <template> }` — handler server-side.
     Route { path: String, body: Vec<Stmt> },
-    /// `enum Nome { VarA, VarB, … }` — varianti senza payload (v0).
-    Enum { name: String, variants: Vec<String> },
+    /// `enum Nome { VarA, VarB(tipo, …), … }` — varianti con payload posizionale opzionale.
+    Enum { name: String, variants: Vec<(String, Vec<TypeRef>)> },
 }

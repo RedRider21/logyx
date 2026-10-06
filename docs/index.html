@@ -308,15 +308,18 @@ ada.nome                      // accesso ai campi → "Ada"
 
 gente = [Persona("Ada", 36), Persona("Bruno", 40)]   // liste/mappe di record
 gente[0].nome                 // "Ada"</pre></div>
-      <div class="code-wrap" style="margin-top:22px"><pre>// enum (insieme chiuso di varianti)
-enum Colore { Rosso, Verde, Blu }
+      <div class="code-wrap" style="margin-top:22px"><pre>// enum: varianti, anche con payload
+enum Forma {
+    Cerchio(float),
+    Rettangolo(float, float),
+    Punto
+}
 
-c = Colore.Verde              // accesso qualificato
-c == Colore.Verde             // true
-match c {
-    Colore.Rosso { "rosso" }
-    Colore.Verde { "verde" }
-    else         { "altro" }
+f = Forma.Cerchio(2.0)        // costruzione con payload
+match f {                     // il match lega i dati
+    Cerchio(r)       { 3.14 * r * r }
+    Rettangolo(b, h) { b * h }
+    Punto            { 0.0 }
 }</pre></div>
       <div class="code-wrap" style="margin-top:22px"><pre>// librerie esterne: qualsiasi crate di crates.io
 use rust "hex" = "0.4"

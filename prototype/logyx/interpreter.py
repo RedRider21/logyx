@@ -57,21 +57,23 @@ class RecordValue:
 
 
 class EnumValue:
-    """Valore di una variante di enum (v0: senza payload)."""
+    """Valore di una variante di enum (con payload posizionale opzionale)."""
 
-    def __init__(self, type_name, variant):
+    def __init__(self, type_name, variant, values=None):
         self.type_name = type_name
         self.variant = variant
+        self.values = values or []
 
     def __eq__(self, other):
         return (
             isinstance(other, EnumValue)
             and self.type_name == other.type_name
             and self.variant == other.variant
+            and self.values == other.values
         )
 
     def __hash__(self):
-        return hash((self.type_name, self.variant))
+        return hash((self.type_name, self.variant, tuple(self.values)))
 
 
 def html_escape(s):
@@ -351,7 +353,7 @@ class Interpreter:
             elif isinstance(item, N.RecordDef):
                 self.records[item.name] = item.fields
             elif isinstance(item, N.EnumDef):
-                self.enums[item.name] = item.variants
+                self.enums[item.name] = [v[0] for v in item.variants]  # nomi delle varianti
             elif isinstance(item, N.UseRust):
                 pass  # dipendenze crate: rilevanti solo per 'build'
             elif isinstance(item, N.ExternFn):
@@ -564,6 +566,18 @@ class Interpreter:
         if s.else_block is not None:
             self.exec_block(s.else_block, env)
 
+    def st_MatchEnum(self, s, env):
+        subject = self.eval(s.subject, env)
+        for variant, binds, block in s.cases:
+            if isinstance(subject, EnumValue) and subject.variant == variant:
+                child = Environment(env)
+                for name, value in zip(binds, subject.values):
+                    child.define(name, value)
+                self._exec_all(block, child)
+                return
+        if s.else_block is not None:
+            self.exec_block(s.else_block, env)
+
     def st_Render(self, s, env):
         raise _Response(self.render_template(s.raw, env))
 
@@ -660,6 +674,11 @@ class Interpreter:
             raise LogyxError("indice non valido")
 
     def ex_Call(self, n, env):
+        # costruzione di variante enum con payload: E.Var(args) -> EnumValue
+        if isinstance(n.callee, N.Field) and isinstance(n.callee.target, N.Identifier):
+            ename = n.callee.target.name
+            if ename in self.enums and n.callee.name in self.enums[ename]:
+                return EnumValue(ename, n.callee.name, [self.eval(a, env) for a in n.args])
         if isinstance(n.callee, N.Identifier):
             cname = n.callee.name
             if cname in self.records:

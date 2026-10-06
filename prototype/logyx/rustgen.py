@@ -132,8 +132,13 @@ class RustTranspiler:
             fields = ", ".join(f"{fn}: {self.ty(ft)}" for fn, ft in self.records[name])
             struct_defs.append(f"#[derive({derive})]\nstruct {name} {{ {fields} }}")
         for name in sorted(self.enums):
-            variants = ", ".join(self.enums[name])
-            struct_defs.append(f"#[derive(Clone, PartialEq)]\nenum {name} {{ {variants} }}")
+            vs = []
+            for vname, payload in self.enums[name]:
+                if payload:
+                    vs.append(f"{vname}({', '.join(self.ty(t) for t in payload)})")
+                else:
+                    vs.append(vname)
+            struct_defs.append(f"#[derive(Clone, PartialEq)]\nenum {name} {{ {', '.join(vs)} }}")
         pieces = []
         if self.uses_serde:
             pieces.append("use serde::{Serialize, Deserialize};")
@@ -173,6 +178,11 @@ class RustTranspiler:
             elif t == "MatchValue":
                 if self._expr_has_try(s.subject) \
                         or any(self._body_has_fail_or_try(blk) for _, blk in s.cases) \
+                        or (s.else_block and self._body_has_fail_or_try(s.else_block)):
+                    return True
+            elif t == "MatchEnum":
+                if self._expr_has_try(s.subject) \
+                        or any(self._body_has_fail_or_try(blk) for _, _, blk in s.cases) \
                         or (s.else_block and self._body_has_fail_or_try(s.else_block)):
                     return True
         return False
@@ -333,6 +343,12 @@ class RustTranspiler:
             self._scan_expr(s.subject, pt, ev)
             if s.else_block:
                 self._scan_stmts(s.else_block, pt, ev, fname)
+        elif t == "MatchEnum":
+            self._scan_expr(s.subject, pt, ev)
+            for _, _, blk in s.cases:
+                self._scan_stmts(blk, pt, ev, fname)
+            if s.else_block:
+                self._scan_stmts(s.else_block, pt, ev, fname)
 
     @staticmethod
     def _cond_bool(cond, ev):
@@ -488,6 +504,11 @@ class RustTranspiler:
                     self._collect_local_types(blk, types)
                 if s.else_block:
                     self._collect_local_types(s.else_block, types)
+            elif t == "MatchEnum":
+                for _, _, blk in s.cases:
+                    self._collect_local_types(blk, types)
+                if s.else_block:
+                    self._collect_local_types(s.else_block, types)
 
     def _returns(self, stmts):
         for s in stmts:
@@ -508,15 +529,26 @@ class RustTranspiler:
                     yield from self._returns(blk)
                 if s.else_block:
                     yield from self._returns(s.else_block)
+            elif t == "MatchEnum":
+                for _, _, blk in s.cases:
+                    yield from self._returns(blk)
+                if s.else_block:
+                    yield from self._returns(s.else_block)
 
     def _type_of(self, e, ptypes):
         t = type(e).__name__
         if t == "Try":
             return self._type_of(e.operand, ptypes)
+        if t == "Call":
+            # costruzione di variante enum con payload: E.Var(args) -> tipo E
+            if (isinstance(e.callee, N.Field) and isinstance(e.callee.target, N.Identifier)
+                    and e.callee.target.name in getattr(self, "enums", {})
+                    and any(v[0] == e.callee.name for v in self.enums[e.callee.target.name])):
+                return e.callee.target.name
         if t == "Field":
             # variante di enum: Nome.Variante -> tipo Nome
             if isinstance(e.target, N.Identifier) and e.target.name in getattr(self, "enums", {}):
-                if e.name in self.enums[e.target.name]:
+                if any(v[0] == e.name for v in self.enums[e.target.name]):
                     return e.target.name
             tt = self._type_of(e.target, ptypes)
             for fn, ft in getattr(self, "records", {}).get(tt, []):
@@ -644,6 +676,37 @@ class RustTranspiler:
                 else:
                     out += " else {\n" + body + "\n" + pad + "}"
             return out or (pad + "{}")
+        if t == "MatchEnum":
+            etype = self._type_of(s.subject, self.cur_types)
+            if not etype or etype not in self.enums:
+                raise LogyxError(
+                    "match su enum: non riesco a dedurre il tipo del soggetto "
+                    "(annota il tipo del parametro)"
+                )
+            variants = dict(self.enums[etype])  # nome variante -> tipi del payload
+            subj = self.expr(s.subject)
+            if type(s.subject).__name__ == "Identifier":
+                subj += ".clone()"
+            arm = "    " * (indent + 1)
+            saved = dict(self.cur_types)
+            out = pad + f"match {subj} {{\n"
+            for variant, binds, block in s.cases:
+                payload = variants.get(variant, [])
+                pat = f"{etype}::{variant}({', '.join(binds)})" if binds else f"{etype}::{variant}"
+                self.cur_types = dict(saved)
+                decl = set(declared)
+                for i, b in enumerate(binds):
+                    decl.add(b)
+                    if i < len(payload):
+                        self.cur_types[b] = payload[i]
+                body = self.block(block, decl, indent + 2)
+                out += arm + f"{pat} => {{\n" + body + "\n" + arm + "}\n"
+            if s.else_block is not None:
+                self.cur_types = dict(saved)
+                body = self.block(s.else_block, set(declared), indent + 2)
+                out += arm + "_ => {\n" + body + "\n" + arm + "}\n"
+            self.cur_types = saved
+            return out + pad + "}"
         if t == "If":
             out = pad + f"if {self.expr(s.cond)} {{\n"
             out += self.block(s.then_block, declared, indent + 1) + "\n" + pad + "}"
@@ -940,12 +1003,18 @@ class RustTranspiler:
                 return f"{self.expr(e.target)}.get(&({self.expr(e.index)})).unwrap().clone()"
             return f"{self.expr(e.target)}[({self.expr(e.index)}) as usize].clone()"
         if t == "Field":
-            # variante di enum: Nome.Variante -> Nome::Variante
+            # variante di enum senza payload: Nome.Variante -> Nome::Variante
             if isinstance(e.target, N.Identifier) and e.target.name in getattr(self, "enums", {}):
-                if e.name in self.enums[e.target.name]:
+                if any(v[0] == e.name for v in self.enums[e.target.name]):
                     return f"{e.target.name}::{e.name}"
             return f"{self.expr(e.target)}.{e.name}.clone()"
         if t == "Call":
+            # costruzione di variante enum con payload: E.Var(args) -> E::Var(args)
+            if (isinstance(e.callee, N.Field) and isinstance(e.callee.target, N.Identifier)
+                    and e.callee.target.name in getattr(self, "enums", {})
+                    and any(v[0] == e.callee.name for v in self.enums[e.callee.target.name])):
+                vals = ", ".join(self._arg(a) for a in e.args)
+                return f"{e.callee.target.name}::{e.callee.name}({vals})"
             if isinstance(e.callee, N.Identifier) and e.callee.name in getattr(self, "records", {}):
                 return self._make_record_expr(e.callee.name, e.args)
             if isinstance(e.callee, N.Identifier):

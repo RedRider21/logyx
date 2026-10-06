@@ -123,7 +123,8 @@ elemento     := funzione | route | dichiarazione | import | record | enum | useR
 import       := "import" STRINGA           // percorso di un file .logyx
 record       := "record" IDENT "{" campo ("," campo)* "}"
 campo        := IDENT ":" tipo
-enum         := "enum" IDENT "{" IDENT ("," IDENT)* "}"   // varianti senza payload (v0)
+enum         := "enum" IDENT "{" variante ("," variante)* "}"
+variante     := IDENT ( "(" tipo ("," tipo)* ")" )?       // payload posizionale opzionale
 useRust      := "use" "rust" STRINGA "=" STRINGA               // dipendenza crate
 externRust   := "extern" "rust" "fn" IDENT "(" parametri ")" "->" tipo "=" STRINGA  // corpo Rust
 // costruzione: Nome(v1, v2, ...) posizionale · accesso campo: espressione "." IDENT
@@ -145,9 +146,11 @@ istruzione   := dichiarazione | assegnazione | if | while | for
               | espressione | render | isolaClient
 isolaClient  := "@start-client" istruzione* "@end-client"
 
-match        := matchValore | matchErrori
+match        := matchValore | matchErrori | matchEnum
 matchValore  := "match" espressione "{" (espressione blocco)* ("else" blocco)? "}"
 matchErrori  := "match" espressione "{" "ok" IDENT blocco "err" IDENT blocco "}"
+matchEnum    := "match" espressione "{" (variantePat blocco)* ("else" blocco)? "}"   // enum con payload
+variantePat  := IDENT ( "(" IDENT ("," IDENT)* ")" )?       // Variante oppure Variante(bind, …)
 
 if           := "if" espressione blocco ("else" "if" espressione blocco)* ("else" blocco)?
 while        := "while" espressione blocco

@@ -178,11 +178,14 @@ corpo. Esempio `examples/web_loop.logyx`, conforme al prototipo (suite **41/41**
 server-side del compilatore è a parità col prototipo.
 **DA FARE web→WASM:** servire asset statici (il `.wasm` del client, se si vorrà calcolo WASM nel
 browser); DOM dal codice Logyx via `wasm-bindgen`; Fase 3 (server-driven, WebSocket + diff del DOM).
-**`enum`: FATTO (v0)** — `enum Nome { VarA, VarB }` (varianti senza payload); accesso qualificato
-`Nome.Variante`, confronto `==` e `match` per valore (riusa `MatchValue`). In Rust `enum` con
-`#[derive(Clone, PartialEq)]`; nel codegen `self.enums`, `Field` su enum → `E::V`, `type_of` → `E`.
-Tre backend, `examples/native_enum.logyx`, suite **44/44**. **DA FARE enum:** varianti con **payload**
-(`Cerchio(raggio)`) e match che lega i dati — fronte successivo (chiave per il self-hosting: AST/token).
+**`enum`: FATTO** — varianti con/senza **payload**: `enum Forma { Cerchio(float), Rettangolo(float,float),
+Punto }`. Accesso/costruzione `Nome.Var` o `Nome.Var(args)`; confronto `==` e `match`. Il match su enum
+**con payload** è un nuovo `Stmt::MatchEnum`/`N.MatchEnum` (rami `Variante(bind…)` che **legano** i campi):
+il parser lo riconosce quando un pattern è `Call(Ident, [soli Ident])`; gli enum **senza** payload restano
+su `MatchValue` (confronto `==`). Codegen: `self.enums` = varianti con tipi payload; costruzione →
+`E::V(args)`; `MatchEnum` → `match … { E::V(b1,b2) => … _ => … }` con i bind in `cur_types` (tipi dal
+payload). Tre backend, `examples/native_enum.logyx` + `native_enumpayload.logyx`, suite **45/45**.
+**DA FARE enum:** varianti con payload **nominale** (campi con nome) e match annidati, se serviranno.
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli

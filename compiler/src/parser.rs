@@ -114,17 +114,35 @@ impl Parser {
         self.expect(&TokenKind::LBrace, "{")?;
         let mut variants = Vec::new();
         if !self.is(&TokenKind::RBrace) {
-            variants.push(self.ident_name("nome di variante")?);
+            variants.push(self.enum_variant()?);
             while self.is(&TokenKind::Comma) {
                 self.advance();
                 if self.is(&TokenKind::RBrace) {
                     break;
                 }
-                variants.push(self.ident_name("nome di variante")?);
+                variants.push(self.enum_variant()?);
             }
         }
         self.expect(&TokenKind::RBrace, "}")?;
         Ok(Item::Enum { name, variants })
+    }
+
+    /// Una variante: `Nome` oppure `Nome(tipo, tipo, …)` (payload posizionale).
+    fn enum_variant(&mut self) -> Result<(String, Vec<TypeRef>), LogyxError> {
+        let name = self.ident_name("nome di variante")?;
+        let mut payload = Vec::new();
+        if self.is(&TokenKind::LParen) {
+            self.advance();
+            if !self.is(&TokenKind::RParen) {
+                payload.push(self.type_ref()?);
+                while self.is(&TokenKind::Comma) {
+                    self.advance();
+                    payload.push(self.type_ref()?);
+                }
+            }
+            self.expect(&TokenKind::RParen, ")")?;
+        }
+        Ok((name, payload))
     }
 
     fn record_def(&mut self) -> Result<RecordDef, LogyxError> {
@@ -479,6 +497,44 @@ impl Parser {
                 }
             }
             self.expect(&TokenKind::RBrace, "}")?;
+            // match su enum con payload: se almeno un pattern è `Variante(bind, …)`
+            // (chiamata con soli identificatori), è un MatchEnum con binding.
+            let is_enum = cases.iter().any(|(p, _)| match p {
+                Expr::Call { callee, args } => {
+                    matches!(&**callee, Expr::Ident(_))
+                        && args.iter().all(|a| matches!(a, Expr::Ident(_)))
+                }
+                _ => false,
+            });
+            if is_enum {
+                let mut ecases = Vec::new();
+                for (pat, block) in cases {
+                    let (variant, binds) = match pat {
+                        Expr::Call { callee, args } => {
+                            let v = match *callee {
+                                Expr::Ident(n) => n,
+                                _ => return Err(self.error("pattern di variante non valido")),
+                            };
+                            let mut bs = Vec::new();
+                            for a in args {
+                                match a {
+                                    Expr::Ident(b) => bs.push(b),
+                                    _ => return Err(self.error(
+                                        "in un pattern di variante gli argomenti devono essere nomi (binding)",
+                                    )),
+                                }
+                            }
+                            (v, bs)
+                        }
+                        Expr::Ident(v) => (v, Vec::new()),
+                        _ => return Err(self.error(
+                            "in 'match' su enum i rami sono 'Variante(bind…)' o 'Variante'",
+                        )),
+                    };
+                    ecases.push(EnumCase { variant, binds, block });
+                }
+                return Ok(Stmt::MatchEnum { subject, cases: ecases, else_block });
+            }
             return Ok(Stmt::MatchValue { subject, cases, else_block });
         }
         let (mut okv, mut okb, mut errv, mut errb) = (None, None, None, None);

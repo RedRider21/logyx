@@ -229,26 +229,46 @@ fn main() {
 
 ### Enum ✅
 
-Un `enum` è un tipo con un insieme chiuso di **varianti** (v0: senza dati associati).
+Un `enum` è un tipo con un insieme chiuso di **varianti**. Le varianti possono avere un **payload**
+(dati associati, posizionali e tipizzati).
 
 ```
+// varianti semplici: confronto con == e match per valore
 enum Colore { Rosso, Verde, Blu }
 
 c = Colore.Verde          // accesso qualificato alla variante
-c == Colore.Verde         // confronto → true
-
+c == Colore.Verde         // → true
 match c {
     Colore.Rosso { return "rosso" }
     Colore.Verde { return "verde" }
     else         { return "altro" }
 }
+
+// varianti con payload: match che lega i dati
+enum Forma {
+    Cerchio(float),
+    Rettangolo(float, float),
+    Punto
+}
+
+fn area(f: Forma) {
+    match f {
+        Cerchio(r)       { return 3.14 * r * r }   // r legato al payload
+        Rettangolo(b, h) { return b * h }
+        Punto            { return 0.0 }
+    }
+}
+
+a = area(Forma.Cerchio(2.0))                       // costruzione: Nome.Variante(args)
 ```
 
-- **Definizione:** `enum Nome { VarA, VarB, ... }`.
-- **Uso:** `Nome.Variante` (accesso qualificato); confrontabile con `==` e usabile in `match` per valore.
-- Passabile/ritornabile dalle funzioni (annota il tipo: `fn f(c: Colore)`). In Rust diventa un `enum` con
-  `#[derive(Clone, PartialEq)]`. Vedi `examples/native_enum.logyx`.
-- v0: varianti **senza payload** (niente `Cerchio(raggio)`); i dati associati arriveranno più avanti.
+- **Definizione:** `enum Nome { VarA, VarB(tipo, ...), ... }` (payload posizionale opzionale).
+- **Costruzione:** `Nome.Variante` (senza payload) oppure `Nome.Variante(v1, v2)` (con payload).
+- **Uso:** confronto con `==` e `match` — per le varianti **senza payload** il match confronta per valore;
+  per quelle **con payload** i rami `Variante(bind, ...)` **legano** i campi a nuovi nomi (usa `else` o
+  copri tutte le varianti). In Rust diventa un `enum` con `#[derive(Clone, PartialEq)]`.
+- Passabile/ritornabile dalle funzioni (annota il tipo: `fn f(c: Colore)`).
+  Vedi `examples/native_enum.logyx` e `examples/native_enumpayload.logyx`.
 
 ## 7. Collezioni 🟡
 

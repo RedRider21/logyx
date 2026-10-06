@@ -208,7 +208,8 @@ pub struct Codegen {
     rets: HashMap<String, Option<String>>,
     fallible: HashMap<String, bool>,
     records: HashMap<String, Vec<(String, String)>>,
-    enums: HashMap<String, Vec<String>>,
+    // nome enum -> varianti, ciascuna (nome, tipi del payload posizionale)
+    enums: HashMap<String, Vec<(String, Vec<String>)>>,
     tmp: usize,
     cur_fallible: bool,
     kinds: HashMap<String, String>,
@@ -438,8 +439,19 @@ impl Codegen {
         let mut enum_names: Vec<String> = self.enums.keys().cloned().collect();
         enum_names.sort();
         for name in &enum_names {
-            let variants = self.enums[name].join(", ");
-            structs.push(format!("#[derive(Clone, PartialEq)]\nenum {} {{ {} }}", name, variants));
+            let mut vs = Vec::new();
+            for (vname, payload) in &self.enums[name] {
+                if payload.is_empty() {
+                    vs.push(vname.clone());
+                } else {
+                    let mut types = Vec::new();
+                    for t in payload {
+                        types.push(self.rust_type(t)?);
+                    }
+                    vs.push(format!("{}({})", vname, types.join(", ")));
+                }
+            }
+            structs.push(format!("#[derive(Clone, PartialEq)]\nenum {} {{ {} }}", name, vs.join(", ")));
         }
         let mut out = Vec::new();
         if self.uses_serde {
@@ -655,6 +667,16 @@ impl Codegen {
                 None
             }
             Expr::Call { callee, args } => {
+                // costruzione di variante enum con payload: E.Var(args) -> tipo E
+                if let Expr::Field { target, name } = &**callee {
+                    if let Expr::Ident(e) = &**target {
+                        if let Some(variants) = self.enums.get(e) {
+                            if variants.iter().any(|(v, _)| v == name) {
+                                return Some(e.clone());
+                            }
+                        }
+                    }
+                }
                 if let Expr::Ident(name) = &**callee {
                     if name == "str" {
                         return Some("string".into());
@@ -716,7 +738,7 @@ impl Codegen {
                 // accesso a una variante di enum: Nome.Variante → tipo Nome
                 if let Expr::Ident(e) = &**target {
                     if let Some(variants) = self.enums.get(e) {
-                        if variants.iter().any(|v| v == name) {
+                        if variants.iter().any(|(v, _)| v == name) {
                             return Some(e.clone());
                         }
                     }
@@ -792,6 +814,15 @@ impl Codegen {
                     self.scan_stmts(blk, pt, ev, fname);
                 }
                 self.scan_expr(subject, pt, ev);
+                if let Some(eb) = else_block {
+                    self.scan_stmts(eb, pt, ev, fname);
+                }
+            }
+            Stmt::MatchEnum { subject, cases, else_block } => {
+                self.scan_expr(subject, pt, ev);
+                for c in cases {
+                    self.scan_stmts(&c.block, pt, ev, fname);
+                }
                 if let Some(eb) = else_block {
                     self.scan_stmts(eb, pt, ev, fname);
                 }
@@ -1345,6 +1376,59 @@ impl Codegen {
                 }
                 Ok(out)
             }
+            Stmt::MatchEnum { subject, cases, else_block } => {
+                let ct = self.cur_types.clone();
+                let etype = self.type_of(subject, &ct).ok_or_else(|| {
+                    LogyxError::new(
+                        "match su enum: non riesco a dedurre il tipo del soggetto \
+                         (annota il tipo del parametro)",
+                    )
+                })?;
+                let variants = self.enums.get(&etype).cloned().ok_or_else(|| {
+                    LogyxError::new(format!("match: '{}' non è un enum", etype))
+                })?;
+                // clona il soggetto se è una variabile, così resta usabile dopo il match
+                let subj = match subject {
+                    Expr::Ident(_) => format!("{}.clone()", self.expr(subject)?),
+                    _ => self.expr(subject)?,
+                };
+                let arm = "    ".repeat(indent + 1);
+                let mut out = format!("{pad}match {subj} {{\n");
+                for case in cases {
+                    let payload = variants
+                        .iter()
+                        .find(|(v, _)| *v == case.variant)
+                        .map(|(_, p)| p.clone())
+                        .ok_or_else(|| {
+                            LogyxError::new(format!(
+                                "la variante '{}' non appartiene all'enum '{}'",
+                                case.variant, etype
+                            ))
+                        })?;
+                    let pat = if case.binds.is_empty() {
+                        format!("{}::{}", etype, case.variant)
+                    } else {
+                        format!("{}::{}({})", etype, case.variant, case.binds.join(", "))
+                    };
+                    self.cur_types = ct.clone();
+                    let mut decl = declared.clone();
+                    for (i, b) in case.binds.iter().enumerate() {
+                        decl.insert(b.clone());
+                        self.cur_types.insert(b.clone(), payload.get(i).cloned());
+                    }
+                    let body = self.block(&case.block, &mut decl, indent + 2)?;
+                    out += &format!("{arm}{pat} => {{\n{body}\n{arm}}}\n");
+                }
+                if let Some(eb) = else_block {
+                    self.cur_types = ct.clone();
+                    let mut decl = declared.clone();
+                    let body = self.block(eb, &mut decl, indent + 2)?;
+                    out += &format!("{arm}_ => {{\n{body}\n{arm}}}\n");
+                }
+                out += &format!("{pad}}}");
+                self.cur_types = ct;
+                Ok(out)
+            }
             Stmt::Match { subject, ok_var, ok_block, err_var, err_block } => {
                 let subj = self.expr(subject)?;
                 let mut ok_decl = declared.clone();
@@ -1757,7 +1841,7 @@ impl Codegen {
                 // variante di enum: Nome.Variante → Nome::Variante
                 if let Expr::Ident(e) = &**target {
                     if let Some(variants) = self.enums.get(e) {
-                        if variants.iter().any(|v| v == name) {
+                        if variants.iter().any(|(v, _)| v == name) {
                             return Ok(format!("{}::{}", e, name));
                         }
                     }
@@ -1765,6 +1849,20 @@ impl Codegen {
                 Ok(format!("{}.{}.clone()", self.expr(target)?, name))
             }
             Expr::Call { callee, args } => {
+                // costruzione di variante enum con payload: E.Var(a, b) -> E::Var(a, b)
+                if let Expr::Field { target, name } = &**callee {
+                    if let Expr::Ident(e) = &**target {
+                        if let Some(variants) = self.enums.get(e) {
+                            if variants.iter().any(|(v, _)| v == name) {
+                                let mut vals = Vec::new();
+                                for a in args {
+                                    vals.push(self.arg(a)?);
+                                }
+                                return Ok(format!("{}::{}({})", e, name, vals.join(", ")));
+                            }
+                        }
+                    }
+                }
                 if let Expr::Ident(name) = &**callee {
                     if name == "print" {
                         return Err(LogyxError::new(
@@ -2115,6 +2213,14 @@ fn collect_return_values<'a>(stmts: &'a [Stmt], out: &mut Vec<&'a Expr>) {
             Stmt::MatchValue { cases, else_block, .. } => {
                 for (_, blk) in cases {
                     collect_return_values(blk, out);
+                }
+                if let Some(eb) = else_block {
+                    collect_return_values(eb, out);
+                }
+            }
+            Stmt::MatchEnum { cases, else_block, .. } => {
+                for c in cases {
+                    collect_return_values(&c.block, out);
                 }
                 if let Some(eb) = else_block {
                     collect_return_values(eb, out);

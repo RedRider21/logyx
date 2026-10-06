@@ -372,24 +372,44 @@ fn main() {
   <code>examples/native_recordlist.logyx</code>.</li>
 </ul>
 <h3 id="enum">Enum ✅</h3>
-<p>Un <code>enum</code> è un tipo con un insieme chiuso di <strong>varianti</strong> (v0: senza dati associati).</p>
-<pre><code>enum Colore { Rosso, Verde, Blu }
+<p>Un <code>enum</code> è un tipo con un insieme chiuso di <strong>varianti</strong>. Le varianti possono avere un <strong>payload</strong>
+(dati associati, posizionali e tipizzati).</p>
+<pre><code>// varianti semplici: confronto con == e match per valore
+enum Colore { Rosso, Verde, Blu }
 
 c = Colore.Verde          // accesso qualificato alla variante
-c == Colore.Verde         // confronto → true
-
+c == Colore.Verde         // → true
 match c {
     Colore.Rosso { return &quot;rosso&quot; }
     Colore.Verde { return &quot;verde&quot; }
     else         { return &quot;altro&quot; }
 }
+
+// varianti con payload: match che lega i dati
+enum Forma {
+    Cerchio(float),
+    Rettangolo(float, float),
+    Punto
+}
+
+fn area(f: Forma) {
+    match f {
+        Cerchio(r)       { return 3.14 * r * r }   // r legato al payload
+        Rettangolo(b, h) { return b * h }
+        Punto            { return 0.0 }
+    }
+}
+
+a = area(Forma.Cerchio(2.0))                       // costruzione: Nome.Variante(args)
 </code></pre>
 <ul>
-<li><strong>Definizione:</strong> <code>enum Nome { VarA, VarB, ... }</code>.</li>
-<li><strong>Uso:</strong> <code>Nome.Variante</code> (accesso qualificato); confrontabile con <code>==</code> e usabile in <code>match</code> per valore.</li>
-<li>Passabile/ritornabile dalle funzioni (annota il tipo: <code>fn f(c: Colore)</code>). In Rust diventa un <code>enum</code> con
-  <code>#[derive(Clone, PartialEq)]</code>. Vedi <code>examples/native_enum.logyx</code>.</li>
-<li>v0: varianti <strong>senza payload</strong> (niente <code>Cerchio(raggio)</code>); i dati associati arriveranno più avanti.</li>
+<li><strong>Definizione:</strong> <code>enum Nome { VarA, VarB(tipo, ...), ... }</code> (payload posizionale opzionale).</li>
+<li><strong>Costruzione:</strong> <code>Nome.Variante</code> (senza payload) oppure <code>Nome.Variante(v1, v2)</code> (con payload).</li>
+<li><strong>Uso:</strong> confronto con <code>==</code> e <code>match</code> — per le varianti <strong>senza payload</strong> il match confronta per valore;
+  per quelle <strong>con payload</strong> i rami <code>Variante(bind, ...)</code> <strong>legano</strong> i campi a nuovi nomi (usa <code>else</code> o
+  copri tutte le varianti). In Rust diventa un <code>enum</code> con <code>#[derive(Clone, PartialEq)]</code>.</li>
+<li>Passabile/ritornabile dalle funzioni (annota il tipo: <code>fn f(c: Colore)</code>).
+  Vedi <code>examples/native_enum.logyx</code> e <code>examples/native_enumpayload.logyx</code>.</li>
 </ul>
 <h2 id="7-collezioni">7. Collezioni 🟡</h2>
 <p>Liste e mappe: letterali, indicizzazione, <code>len</code>, iterazione con <code>for</code>.</p>

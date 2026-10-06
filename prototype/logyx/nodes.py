@@ -143,7 +143,7 @@ class RecordDef:
 @dataclass
 class EnumDef:
     name: str
-    variants: List[str]  # varianti senza payload (v0)
+    variants: List[Tuple[str, List[str]]]  # (nome variante, tipi del payload posizionale)
 
 
 @dataclass
@@ -190,6 +190,13 @@ class Match:
 class MatchValue:
     subject: Any
     cases: List[Tuple[Any, List[Any]]]  # (pattern, blocco)
+    else_block: Optional[List[Any]]
+
+
+@dataclass
+class MatchEnum:
+    subject: Any
+    cases: List[Tuple[str, List[str], List[Any]]]  # (variante, binding, blocco)
     else_block: Optional[List[Any]]
 
 

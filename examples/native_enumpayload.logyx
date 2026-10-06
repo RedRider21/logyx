@@ -1,0 +1,24 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// enum con payload: varianti con dati e match che lega i campi.
+
+enum Forma {
+    Cerchio(float),
+    Rettangolo(float, float),
+    Punto
+}
+
+fn area(f: Forma) {
+    match f {
+        Cerchio(r) { return 3.14 * r * r }
+        Rettangolo(b, h) { return b * h }
+        Punto { return 0.0 }
+    }
+}
+
+fn main() {
+    print(area(Forma.Cerchio(2.0)))
+    print(area(Forma.Rettangolo(3.0, 4.0)))
+    print(area(Forma.Punto))
+}

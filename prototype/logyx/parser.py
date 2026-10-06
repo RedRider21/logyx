@@ -82,14 +82,27 @@ class Parser:
         self.expect(T.LBRACE)
         variants = []
         if not self.at(T.RBRACE):
-            variants.append(self.expect(T.IDENT, "nome di variante").value)
+            variants.append(self.enum_variant())
             while self.at(T.COMMA):
                 self.advance()
                 if self.at(T.RBRACE):
                     break
-                variants.append(self.expect(T.IDENT, "nome di variante").value)
+                variants.append(self.enum_variant())
         self.expect(T.RBRACE)
         return N.EnumDef(name, variants)
+
+    def enum_variant(self):
+        vname = self.expect(T.IDENT, "nome di variante").value
+        payload = []
+        if self.at(T.LPAREN):
+            self.advance()
+            if not self.at(T.RPAREN):
+                payload.append(self.type_ref())
+                while self.at(T.COMMA):
+                    self.advance()
+                    payload.append(self.type_ref())
+            self.expect(T.RPAREN)
+        return (vname, payload)
 
     def record_field(self):
         fname = self.expect(T.IDENT, "nome del campo").value
@@ -334,6 +347,26 @@ class Parser:
                 blk = self.block()
                 cases.append((pat, blk))
         self.expect(T.RBRACE)
+        # match su enum con payload: se almeno un pattern è `Variante(bind, ...)`
+        is_enum = any(
+            type(p).__name__ == "Call"
+            and type(p.callee).__name__ == "Identifier"
+            and all(type(a).__name__ == "Identifier" for a in p.args)
+            for p, _ in cases
+        )
+        if is_enum:
+            ecases = []
+            for p, blk in cases:
+                tp = type(p).__name__
+                if tp == "Call":
+                    variant = p.callee.name
+                    binds = [a.name for a in p.args]
+                elif tp == "Identifier":
+                    variant, binds = p.name, []
+                else:
+                    self.error("in 'match' su enum i rami sono 'Variante(bind…)' o 'Variante'", self.peek())
+                ecases.append((variant, binds, blk))
+            return N.MatchEnum(subject, ecases, else_block)
         return N.MatchValue(subject, cases, else_block)
 
     def _match_result(self, subject):
