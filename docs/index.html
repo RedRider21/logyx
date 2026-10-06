@@ -329,7 +329,7 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
           <tr><td>map(lista, f)</td><td data-i18n="bi.map">Nuova lista con la funzione f su ogni elemento</td></tr>
           <tr><td>filter(lista, p)</td><td data-i18n="bi.filter">Gli elementi per cui la funzione p è vera</td></tr>
           <tr><td>reduce(lista, init, f)</td><td data-i18n="bi.reduce">Accumula da init con f(acc, elemento)</td></tr>
-          <tr><td>to_json(x)</td><td data-i18n="bi.tojson">Serializza x (scalare o record) in JSON</td></tr>
+          <tr><td>to_json(x)</td><td data-i18n="bi.tojson">Serializza x (scalare, record, lista o mappa) in JSON</td></tr>
           <tr><td>from_json(testo, Record)</td><td data-i18n="bi.fromjson">Deserializza il JSON in un record (crate serde)</td></tr>
           <tr><td>sha256(s)</td><td data-i18n="bi.sha256">Hash SHA-256 di s (usa la crate Rust sha2)</td></tr>
           <tr><td>now()</td><td data-i18n="bi.now">Timestamp Unix corrente in secondi</td></tr>
@@ -366,7 +366,7 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r2.h">Web lato server</b><span data-i18n="status.r2.p">route + render con interpolazione, escaping e blocchi { for } / { if }.</span></div></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r3.h">Isole client → JavaScript</b><span data-i18n="status.r3.p">Blocchi @start-client compilati a JS: eventi, stato, aggiornamento del DOM.</span></div></div>
         <div class="row"><div class="st">🟡</div><div class="tx"><b data-i18n="status.r4.h">Transpiler Rust (sottoinsieme tipizzato)</b><span data-i18n="status.r4.p">Aritmetica, stringhe, controllo di flusso, funzioni con inferenza dei tipi, liste e mappe, moduli e gestione errori (→ Result).</span></div></div>
-        <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r5.h">Compilatore in Rust (Fase 1 del bootstrap)</b><span data-i18n="status.r5.p">logyxc: lexer, parser, inferenza dei tipi e backend in Rust, verificato conforme al prototipo su tutti gli esempi.</span></div></div>
+        <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r5.h">Compilatore in Rust (Fase 1 del bootstrap)</b><span data-i18n="status.r5.p">logyxc: lexer, parser, inferenza dei tipi e backend in Rust, conforme al prototipo; compila anche a WebAssembly (build-wasm) e genera un server HTTP (serve).</span></div></div>
         <div class="row"><div class="st">✅</div><div class="tx"><b data-i18n="status.r6.h">Ecosistema Rust e WebAssembly</b><span data-i18n="status.r6.p">Qualsiasi crate di crates.io via <code>use rust</code>; le funzioni con numeri e stringhe si compilano a WebAssembly per il browser, con pagina interattiva (anteprima).</span></div></div>
         <div class="row"><div class="st">⏳</div><div class="tx"><b data-i18n="status.r7.h">Prossimi: web completo e self-hosting</b><span data-i18n="status.r7.p">DOM e server da un solo sorgente; poi riscrivere il compilatore in Logyx stesso.</span></div></div>
       </div>
@@ -445,7 +445,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.remove":"Toglie l'elemento all'indice i","bi.contains":"Vero se la lista contiene x",
       "bi.sum":"Somma degli elementi (interi)","bi.sort":"Ordina la lista in ordine crescente",
       "bi.map":"Nuova lista con la funzione f su ogni elemento","bi.filter":"Gli elementi per cui la funzione p è vera","bi.reduce":"Accumula da init con f(acc, elemento)",
-      "bi.tojson":"Serializza x (scalare o record) in JSON","bi.fromjson":"Deserializza il JSON in un record (crate serde)","bi.sha256":"Hash SHA-256 di s (usa la crate Rust sha2)","bi.now":"Timestamp Unix corrente in secondi","bi.formatdate":"Formatta un timestamp come data UTC (crate chrono)",
+      "bi.tojson":"Serializza x (scalare, record, lista o mappa) in JSON","bi.fromjson":"Deserializza il JSON in un record (crate serde)","bi.sha256":"Hash SHA-256 di s (usa la crate Rust sha2)","bi.now":"Timestamp Unix corrente in secondi","bi.formatdate":"Formatta un timestamp come data UTC (crate chrono)",
       "bi.abs":"Valore assoluto","bi.minmax":"Il minore / il maggiore fra due numeri",
       "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
       "bi.sqrt":"Radice quadrata (ritorna un float)",
@@ -461,7 +461,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "status.r2.h":"Web lato server","status.r2.p":"route + render con interpolazione, escaping e blocchi { for } / { if }.",
       "status.r3.h":"Isole client → JavaScript","status.r3.p":"Blocchi @start-client compilati a JS: eventi, stato, aggiornamento del DOM.",
       "status.r4.h":"Transpiler Rust (sottoinsieme tipizzato)","status.r4.p":"Aritmetica, stringhe, controllo di flusso, funzioni con inferenza dei tipi, liste e mappe, moduli e gestione errori (→ Result).",
-      "status.r5.h":"Compilatore in Rust (Fase 1 del bootstrap)","status.r5.p":"logyxc: lexer, parser, inferenza dei tipi e backend in Rust, verificato conforme al prototipo su tutti gli esempi.",
+      "status.r5.h":"Compilatore in Rust (Fase 1 del bootstrap)","status.r5.p":"logyxc: lexer, parser, inferenza dei tipi e backend in Rust, conforme al prototipo; compila anche a WebAssembly (build-wasm) e genera un server HTTP (serve).",
       "status.r6.h":"Ecosistema Rust e WebAssembly","status.r6.p":"Qualsiasi crate di crates.io via use rust; le funzioni con numeri e stringhe si compilano a WebAssembly per il browser, con pagina interattiva (anteprima).",
       "status.r7.h":"Prossimi: web completo e self-hosting","status.r7.p":"DOM e server da un solo sorgente; poi riscrivere il compilatore in Logyx stesso.",
       "start.h":"Come iniziare","start.sub":"Il prototipo gira con il solo Python 3.8+ (nessuna dipendenza). Rust serve solo, in opzione, per compilare a nativo.",
@@ -492,7 +492,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.remove":"Removes the element at index i","bi.contains":"True if the list contains x",
       "bi.sum":"Sum of the elements (integers)","bi.sort":"Sorts the list in ascending order",
       "bi.map":"New list with function f applied to each element","bi.filter":"The elements for which function p is true","bi.reduce":"Folds from init with f(acc, element)",
-      "bi.tojson":"Serializes x (scalar or record) to JSON","bi.fromjson":"Deserializes JSON into a record (serde crate)","bi.sha256":"SHA-256 hash of s (uses the Rust crate sha2)","bi.now":"Current Unix timestamp in seconds","bi.formatdate":"Formats a timestamp as a UTC date (chrono crate)",
+      "bi.tojson":"Serializes x (scalar, record, list or map) to JSON","bi.fromjson":"Deserializes JSON into a record (serde crate)","bi.sha256":"SHA-256 hash of s (uses the Rust crate sha2)","bi.now":"Current Unix timestamp in seconds","bi.formatdate":"Formats a timestamp as a UTC date (chrono crate)",
       "bi.abs":"Absolute value","bi.minmax":"The smaller / the larger of two numbers",
       "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
       "bi.sqrt":"Square root (returns a float)",
@@ -508,7 +508,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "status.r2.h":"Server-side web","status.r2.p":"route + render with interpolation, escaping and { for } / { if } blocks.",
       "status.r3.h":"Client islands → JavaScript","status.r3.p":"@start-client blocks compiled to JS: events, state, DOM updates.",
       "status.r4.h":"Rust transpiler (typed subset)","status.r4.p":"Arithmetic, strings, control flow, functions with type inference, lists and maps, modules and error handling (→ Result).",
-      "status.r5.h":"Compiler in Rust (bootstrap, phase 1)","status.r5.p":"logyxc: lexer, parser, type inference and backend in Rust, verified conformant to the prototype on every example.",
+      "status.r5.h":"Compiler in Rust (bootstrap, phase 1)","status.r5.p":"logyxc: lexer, parser, type inference and backend in Rust, conformant to the prototype; also compiles to WebAssembly (build-wasm) and generates an HTTP server (serve).",
       "status.r6.h":"Rust ecosystem and WebAssembly","status.r6.p":"Any crate from crates.io via use rust; functions over numbers and strings compile to WebAssembly for the browser, with an interactive page (preview).",
       "status.r7.h":"Next: full web and self-hosting","status.r7.p":"DOM and server from a single source; then rewrite the compiler in Logyx itself.",
       "start.h":"Getting started","start.sub":"The prototype runs on Python 3.8+ alone (no dependencies). Rust is optional, only to compile to native.",

@@ -20,6 +20,18 @@ Dal prototipo Python (cartella `prototype/`, serve solo Python 3.8+):
 | `python3 main.py serve <file> [porta]` | Avvia un server HTTP |
 | `python3 main.py build <file>` | Transpila un sottoinsieme tipizzato in Rust (compila se c'è `rustc`) |
 
+Dal compilatore nativo `logyxc` (cartella `compiler/`, build con `cargo build --release`):
+
+| Comando | Cosa fa |
+| --- | --- |
+| `logyxc build <file>` | Transpila a Rust, compila a nativo ed esegue |
+| `logyxc gen <file>` | Stampa il codice Rust generato |
+| `logyxc tokens <file>` / `logyxc parse <file>` | Diagnostica: token / AST |
+| `logyxc build-wasm <file>` | Compila a WebAssembly le funzioni `int`/`float`/`bool`/`string` + pagina HTML interattiva |
+| `logyxc render <file> <percorso>` | Rende e stampa l'HTML di una `route` (lato server) |
+| `logyxc build-server <file>` | Compila un server HTTP (crate `tiny_http`) e stampa il path del binario |
+| `logyxc serve <file> [porta]` | Compila e avvia il server HTTP (default porta 8080) |
+
 ## 2. Sintassi di base ✅
 
 - **Non posizionale**: i blocchi usano le graffe `{ }`; l'indentazione è solo estetica.

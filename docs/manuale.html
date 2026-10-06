@@ -118,6 +118,45 @@ cresce. Descrive ciò che il prototipo esegue davvero oggi; le parti non ancora 
 </tr>
 </tbody>
 </table>
+<p>Dal compilatore nativo <code>logyxc</code> (cartella <code>compiler/</code>, build con <code>cargo build --release</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Comando</th>
+<th>Cosa fa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>logyxc build &lt;file&gt;</code></td>
+<td>Transpila a Rust, compila a nativo ed esegue</td>
+</tr>
+<tr>
+<td><code>logyxc gen &lt;file&gt;</code></td>
+<td>Stampa il codice Rust generato</td>
+</tr>
+<tr>
+<td><code>logyxc tokens &lt;file&gt;</code> / <code>logyxc parse &lt;file&gt;</code></td>
+<td>Diagnostica: token / AST</td>
+</tr>
+<tr>
+<td><code>logyxc build-wasm &lt;file&gt;</code></td>
+<td>Compila a WebAssembly le funzioni <code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code> + pagina HTML interattiva</td>
+</tr>
+<tr>
+<td><code>logyxc render &lt;file&gt; &lt;percorso&gt;</code></td>
+<td>Rende e stampa l'HTML di una <code>route</code> (lato server)</td>
+</tr>
+<tr>
+<td><code>logyxc build-server &lt;file&gt;</code></td>
+<td>Compila un server HTTP (crate <code>tiny_http</code>) e stampa il path del binario</td>
+</tr>
+<tr>
+<td><code>logyxc serve &lt;file&gt; [porta]</code></td>
+<td>Compila e avvia il server HTTP (default porta 8080)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="2-sintassi-di-base">2. Sintassi di base ✅</h2>
 <ul>
 <li><strong>Non posizionale</strong>: i blocchi usano le graffe <code>{ }</code>; l'indentazione è solo estetica.</li>
