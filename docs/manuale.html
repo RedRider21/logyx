@@ -595,6 +595,80 @@ fn main() {
 <li>Le funzioni <code>extern</code> girano <strong>solo con <code>build</code></strong> (il nativo), non nell'interprete. Vedi
   <code>examples/native_extern.logyx</code>.</li>
 </ul>
+<h4 id="quali-librerie-si-possono-usare-panoramica-per-categoria">Quali librerie si possono usare (panoramica per categoria)</h4>
+<p>Poiché Logyx <strong>transpila verso Rust</strong>, in prospettiva è utilizzabile <strong>tutto l'ecosistema di
+<a href="https://crates.io">crates.io</a></strong>. L'elenco qui sotto è <strong>orientativo</strong> e cresce man mano che i binding
+si arricchiscono: oggi <code>extern rust</code> gestisce bene firme con tipi semplici (<code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code>);
+le librerie che lavorano con oggetti complessi (GUI, connessioni a database, handle grafici) diventeranno
+comode quando il linguaggio esporrà tipi opachi/handle. Alcune categorie (file via <code>std</code>, matematica,
+hashing, HTTP semplice) sono già alla portata.</p>
+<table>
+<thead>
+<tr>
+<th>Categoria</th>
+<th>Crate tipiche</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>File e filesystem</strong></td>
+<td><code>std::fs</code> (nella libreria standard), <code>walkdir</code>, <code>glob</code></td>
+</tr>
+<tr>
+<td><strong>Matematica / numerico</strong></td>
+<td><code>num</code>, <code>nalgebra</code> (algebra lineare), <code>rand</code> (numeri casuali), <code>statrs</code></td>
+</tr>
+<tr>
+<td><strong>Data e tempo</strong></td>
+<td><code>chrono</code> (già usata da <code>format_date</code>), <code>time</code></td>
+</tr>
+<tr>
+<td><strong>Serializzazione / dati</strong></td>
+<td><code>serde</code> + <code>serde_json</code> (già usate da <code>from_json</code>), <code>toml</code>, <code>csv</code></td>
+</tr>
+<tr>
+<td><strong>Testo / regex</strong></td>
+<td><code>regex</code>, <code>unicode-segmentation</code></td>
+</tr>
+<tr>
+<td><strong>Crittografia / hash</strong></td>
+<td><code>sha2</code> (già usata da <code>sha256</code>), <code>blake3</code>, <code>argon2</code>, <code>hmac</code></td>
+</tr>
+<tr>
+<td><strong>Rete / HTTP</strong></td>
+<td><code>reqwest</code> o <code>ureq</code> (client), <code>tiny_http</code> (server, già usata da <code>serve</code>), <code>axum</code></td>
+</tr>
+<tr>
+<td><strong>Database</strong></td>
+<td><code>rusqlite</code> (SQLite), <code>postgres</code> (PostgreSQL), <code>mysql</code>, <code>redis</code>, <code>sled</code> (key-value)</td>
+</tr>
+<tr>
+<td><strong>Grafica / immagini</strong></td>
+<td><code>image</code>, <code>plotters</code> (grafici), <code>tiny-skia</code>, <code>raqote</code></td>
+</tr>
+<tr>
+<td><strong>Finestre / GUI</strong></td>
+<td><code>egui</code>/<code>eframe</code>, <code>iced</code>, <code>gtk4</code>, <code>fltk</code>, <code>winit</code> (gestione finestre), <code>minifb</code></td>
+</tr>
+<tr>
+<td><strong>Audio</strong></td>
+<td><code>rodio</code>, <code>cpal</code></td>
+</tr>
+<tr>
+<td><strong>CLI / terminale</strong></td>
+<td><code>clap</code>, <code>crossterm</code>, <code>ratatui</code></td>
+</tr>
+<tr>
+<td><strong>Compressione / archivi</strong></td>
+<td><code>flate2</code>, <code>zip</code>, <code>tar</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>Nota: l'obiettivo del <strong>compilatore finale</strong> è rendere queste librerie comode da usare da Logyx (con
+binding pronti per le più comuni). Fino ad allora si agganciano caso per caso con <code>use rust</code> /
+<code>extern rust</code> come mostrato sopra.</p>
+</blockquote>
 <h4 id="compilare-a-webassembly-web-wasm">Compilare a WebAssembly (web → WASM)</h4>
 <p>Primo passo verso la visione "un sorgente, server + client": il comando <code>build-wasm</code> compila le funzioni
 con firma fatta di <code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code> a <strong>WebAssembly</strong> e genera una pagina HTML interattiva

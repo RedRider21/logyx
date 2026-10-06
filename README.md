@@ -70,6 +70,24 @@ macchina — in cui **né Python né Rust resteranno una dipendenza**. Sono i po
 Il dettaglio aggiornato di ciò che il prototipo esegue è nel `MANUAL.md`; il punto di ripresa
 dello sviluppo è in `CONTEXT.md`.
 
+## Librerie esterne
+
+Logyx transpila verso Rust, quindi in prospettiva può usare **tutto l'ecosistema di
+[crates.io](https://crates.io)**. Oggi si agganciano le librerie così:
+
+```
+use rust "hex" = "0.4"
+extern rust fn to_hex(s: string) -> string = "hex::encode(s.as_bytes())"
+```
+
+`use rust` dichiara la dipendenza, `extern rust fn` definisce il binding (il "glue" verso la crate).
+Il comando `build` passa automaticamente a `cargo`, scarica e compila le crate.
+
+Nel `MANUAL.md` c'è una **panoramica per categoria** delle librerie utilizzabili — file, matematica, data/
+tempo, serializzazione, regex, crittografia, rete/HTTP, **database** (SQLite, PostgreSQL, MySQL, …),
+**grafica**, **gestione finestre/GUI**, audio, CLI, compressione. L'elenco cresce man mano che i binding
+maturano; l'obiettivo del compilatore finale è renderle comode con binding già pronti per le più comuni.
+
 ## Intestazione di copyright per i file di programma
 
 Ogni file sorgente del progetto deve iniziare con:

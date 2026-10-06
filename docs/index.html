@@ -327,6 +327,7 @@ use rust "hex" = "0.4"
 extern rust fn to_hex(s: string) -> string = "hex::encode(s.as_bytes())"
 
 to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
+      <p class="sub" data-i18n-html="ref.libs" style="margin-top:14px">Transpilando verso Rust, Logyx può usare l'ecosistema di crates.io: file, matematica, data/tempo, serializzazione, regex, crittografia, rete/HTTP, <b>database</b> (SQLite, PostgreSQL, MySQL…), <b>grafica</b> e <b>gestione finestre/GUI</b>, audio, CLI. Panoramica per categoria nel manuale.</p>
 
       <h3 class="ref-sub" data-i18n="ref.builtins">Funzioni builtin</h3>
       <div class="card" style="padding:4px 8px">
@@ -473,6 +474,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "code.h":"Che aspetto ha","code.sub":"Sintassi non posizionale con graffe, punto e virgola opzionale, tipi facoltativi. Server fuori, client dentro le isole.",
       "ref.h":"Riferimento","ref.sub":"Tutti i costrutti, gli operatori e le funzioni del nucleo del linguaggio, oggi.",
       "ref.constructs":"Costrutti","ref.builtins":"Funzioni builtin",
+      "ref.libs":"Transpilando verso Rust, Logyx può usare l'ecosistema di crates.io: file, matematica, data/tempo, serializzazione, regex, crittografia, rete/HTTP, <b>database</b> (SQLite, PostgreSQL, MySQL…), <b>grafica</b> e <b>gestione finestre/GUI</b>, audio, CLI. Panoramica per categoria nel manuale.",
       "bi.print":"Stampa x","bi.len":"Lunghezza di lista, mappa o stringa","bi.str":"Converte in stringa",
       "bi.range":"Sequenza di interi 0..n-1 oppure a..b-1","bi.push":"Aggiunge x in coda alla lista",
       "bi.remove":"Toglie l'elemento all'indice i","bi.contains":"Vero se la lista contiene x",
@@ -527,6 +529,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "code.h":"What it looks like","code.sub":"Non-positional brace syntax, optional semicolons, optional types. Server outside, client inside the islands.",
       "ref.h":"Reference","ref.sub":"Every construct, operator and core function of the language, today.",
       "ref.constructs":"Constructs","ref.builtins":"Builtin functions",
+      "ref.libs":"Transpiling to Rust, Logyx can tap the crates.io ecosystem: files, math, date/time, serialization, regex, crypto, networking/HTTP, <b>databases</b> (SQLite, PostgreSQL, MySQL…), <b>graphics</b> and <b>windowing/GUI</b>, audio, CLI. See the manual for a per-category overview.",
       "bi.print":"Prints x","bi.len":"Length of a list, map or string","bi.str":"Converts to a string",
       "bi.range":"Sequence of integers 0..n-1 or a..b-1","bi.push":"Appends x to the list",
       "bi.remove":"Removes the element at index i","bi.contains":"True if the list contains x",

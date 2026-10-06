@@ -380,6 +380,35 @@ fn main() {
 - Le funzioni `extern` girano **solo con `build`** (il nativo), non nell'interprete. Vedi
   `examples/native_extern.logyx`.
 
+#### Quali librerie si possono usare (panoramica per categoria)
+
+Poiché Logyx **transpila verso Rust**, in prospettiva è utilizzabile **tutto l'ecosistema di
+[crates.io](https://crates.io)**. L'elenco qui sotto è **orientativo** e cresce man mano che i binding
+si arricchiscono: oggi `extern rust` gestisce bene firme con tipi semplici (`int`/`float`/`bool`/`string`);
+le librerie che lavorano con oggetti complessi (GUI, connessioni a database, handle grafici) diventeranno
+comode quando il linguaggio esporrà tipi opachi/handle. Alcune categorie (file via `std`, matematica,
+hashing, HTTP semplice) sono già alla portata.
+
+| Categoria | Crate tipiche |
+| --- | --- |
+| **File e filesystem** | `std::fs` (nella libreria standard), `walkdir`, `glob` |
+| **Matematica / numerico** | `num`, `nalgebra` (algebra lineare), `rand` (numeri casuali), `statrs` |
+| **Data e tempo** | `chrono` (già usata da `format_date`), `time` |
+| **Serializzazione / dati** | `serde` + `serde_json` (già usate da `from_json`), `toml`, `csv` |
+| **Testo / regex** | `regex`, `unicode-segmentation` |
+| **Crittografia / hash** | `sha2` (già usata da `sha256`), `blake3`, `argon2`, `hmac` |
+| **Rete / HTTP** | `reqwest` o `ureq` (client), `tiny_http` (server, già usata da `serve`), `axum` |
+| **Database** | `rusqlite` (SQLite), `postgres` (PostgreSQL), `mysql`, `redis`, `sled` (key-value) |
+| **Grafica / immagini** | `image`, `plotters` (grafici), `tiny-skia`, `raqote` |
+| **Finestre / GUI** | `egui`/`eframe`, `iced`, `gtk4`, `fltk`, `winit` (gestione finestre), `minifb` |
+| **Audio** | `rodio`, `cpal` |
+| **CLI / terminale** | `clap`, `crossterm`, `ratatui` |
+| **Compressione / archivi** | `flate2`, `zip`, `tar` |
+
+> Nota: l'obiettivo del **compilatore finale** è rendere queste librerie comode da usare da Logyx (con
+> binding pronti per le più comuni). Fino ad allora si agganciano caso per caso con `use rust` /
+> `extern rust` come mostrato sopra.
+
 #### Compilare a WebAssembly (web → WASM)
 
 Primo passo verso la visione "un sorgente, server + client": il comando `build-wasm` compila le funzioni

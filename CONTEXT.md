@@ -187,6 +187,12 @@ su `MatchValue` (confronto `==`). Codegen: `self.enums` = varianti con tipi payl
 payload). Tre backend, `examples/native_enum.logyx` + `native_enumpayload.logyx`, suite **45/45**.
 **DA FARE enum:** varianti con payload **nominale** (campi con nome) e match annidati, se serviranno.
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; lambda inline.
+**DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,
+sito (Pages) e manuale: **come** si caricano le librerie (oggi `use rust`/`extern rust`; in futuro binding
+pronti) e un **elenco completo** delle librerie utilizzabili per categoria (file, grafica, gestione
+finestre, matematica, database di vari tipi, rete, audio, ecc.). Prima versione orientativa già nel
+manuale (§ "Quali librerie si possono usare"); da completare/rendere definitiva quando il compilatore è
+maturo.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli
 esempi si itera o si usa `sum`/`join`/`len`.
