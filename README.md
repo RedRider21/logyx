@@ -142,26 +142,31 @@ Il progetto è tutto qui dentro; sulla macchina servono solo gli strumenti stand
 
 ## Come iniziare
 
-Il prototipo gira con il solo Python 3.8+ (Rust è opzionale, solo per compilare a nativo):
+Due modi: il **prototipo Python** (per provare al volo, senza Rust) e il **compilatore nativo `logyxc`**
+(la via completa: nativo, WebAssembly, server HTTP). Fanno le stesse cose sul nucleo e sono verificati
+conformi; i comandi di `logyxc` sono nella tabella qui sotto.
 
 ```bash
 git clone https://github.com/RedRider21/logyx.git
-cd logyx/prototype
+cd logyx
 
-# esegui un programma
-python3 main.py ../examples/hello.logyx
+# --- prototipo Python (solo Python 3.8+, nessuna dipendenza) ---
+cd prototype
+python3 main.py ../examples/hello.logyx                 # esegue un programma
+python3 main.py serve ../examples/web_demo.logyx 8137   # server web di prova
+cd ..
 
-# avvia un server web
-python3 main.py serve ../examples/web_demo.logyx 8137
-
-# transpila a Rust e compila a nativo
-python3 main.py build ../examples/native_fib.logyx
+# --- compilatore nativo logyxc (richiede Rust) ---
+cd compiler && cargo build --release && cd ..           # costruisce ./compiler/target/release/logyxc
+./compiler/target/release/logyxc build examples/native_fib.logyx   # compila a nativo ed esegue
+./compiler/target/release/logyxc serve examples/web_demo.logyx 8137 # server HTTP → http://127.0.0.1:8137
 ```
 
 ## Comandi del compilatore nativo (`logyxc`)
 
 Compila il binario una volta con `cd compiler && cargo build --release`
-(→ `compiler/target/release/logyxc`), poi dalla radice del repo:
+(→ `compiler/target/release/logyxc`); negli esempi `logyxc` sta per quel percorso (mettilo nel `PATH`,
+o usa `./compiler/target/release/logyxc`). Dalla radice del repo:
 
 | Comando | Cosa fa |
 |---|---|
