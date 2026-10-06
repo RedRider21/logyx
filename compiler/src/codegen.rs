@@ -1152,10 +1152,11 @@ impl Codegen {
     /// Un'interpolazione `{expr}` → `__h.push_str(&__html_escape(...));` type-directed.
     fn render_hole(&mut self, hole: &str) -> R<String> {
         let s = hole.trim();
-        if s.starts_with("for ") || s.starts_with("for\t") || s.starts_with("if ") || s.starts_with("if\t") {
-            return Err(LogyxError::new(
-                "i costrutti {for …}/{if …} nel template non sono ancora supportati (Fase 2b)",
-            ));
+        if s.starts_with("for ") || s.starts_with("for\t") {
+            return self.render_for_hole(s);
+        }
+        if s.starts_with("if ") || s.starts_with("if\t") {
+            return self.render_if_hole(s);
         }
         let e = parse_expr_src(s)?;
         let ct = self.cur_types.clone();
@@ -1173,6 +1174,98 @@ impl Codegen {
             }
         };
         Ok(format!("__h.push_str(&{});", rendered))
+    }
+
+    /// Da `keyword <header> { <inner> } <rest>` → (header, inner, rest).
+    fn split_block<'a>(s: &'a str, keyword: &str) -> R<(String, String, String)> {
+        let chars: Vec<char> = s.chars().collect();
+        let brace = chars.iter().position(|&c| c == '{').ok_or_else(|| {
+            LogyxError::new(format!("costrutto '{}' nel template: manca '{{'", keyword))
+        })?;
+        let header: String = chars[keyword.len()..brace].iter().collect();
+        let mut depth = 1;
+        let mut i = brace + 1;
+        while i < chars.len() && depth > 0 {
+            if chars[i] == '{' {
+                depth += 1;
+            } else if chars[i] == '}' {
+                depth -= 1;
+            }
+            i += 1;
+        }
+        let inner: String = chars[brace + 1..i - 1].iter().collect();
+        let rest: String = chars[i..].iter().collect();
+        Ok((header.trim().to_string(), inner, rest.trim().to_string()))
+    }
+
+    /// `{for <var> in <expr> { <inner> }}` → loop Rust che concatena il render di `inner`.
+    fn render_for_hole(&mut self, s: &str) -> R<String> {
+        let (header, inner, _) = Self::split_block(s, "for")?;
+        let idx = header.find(" in ").ok_or_else(|| {
+            LogyxError::new("ciclo 'for' nel template: manca 'in'")
+        })?;
+        let var = header[..idx].trim().to_string();
+        let iter_src = header[idx + 4..].trim();
+        let e = parse_expr_src(iter_src)?;
+        // iterabile Rust + tipo dell'elemento (per le interpolazioni dentro inner)
+        let (iter_rust, elem) = self.for_iter(&e)?;
+        let prev = self.cur_types.get(&var).cloned();
+        self.cur_types.insert(var.clone(), elem);
+        let inner_rust = self.render_template(&inner);
+        // ripristina l'ambiente dei tipi
+        match prev {
+            Some(p) => {
+                self.cur_types.insert(var.clone(), p);
+            }
+            None => {
+                self.cur_types.remove(&var);
+            }
+        }
+        let inner_rust = inner_rust?;
+        Ok(format!("for {} in {} {{ __h.push_str(&{}); }}", var, iter_rust, inner_rust))
+    }
+
+    /// Restituisce (espressione-iterabile Rust, tipo dell'elemento) per un `for` di template.
+    fn for_iter(&mut self, e: &Expr) -> R<(String, Option<String>)> {
+        if let Expr::Call { callee, args } = e {
+            if let Expr::Ident(name) = &**callee {
+                if name == "range" && (args.len() == 1 || args.len() == 2) {
+                    let (lo, hi) = if args.len() == 1 {
+                        ("0i64".to_string(), self.expr(&args[0])?)
+                    } else {
+                        (self.expr(&args[0])?, self.expr(&args[1])?)
+                    };
+                    return Ok((format!("({})..({})", lo, hi), Some("int".to_string())));
+                }
+            }
+        }
+        let elem = match e {
+            Expr::Ident(n) => self.list_elem.get(n).cloned(),
+            Expr::List(els) => els.first().and_then(|x| self.json_type_of(x)),
+            _ => None,
+        };
+        let it = self.expr(e)?;
+        Ok((format!("({}).iter().cloned()", it), elem))
+    }
+
+    /// `{if <cond> { <inner> } [else { … }] [else if …]}` → if/else Rust che concatena i render.
+    fn render_if_hole(&mut self, s: &str) -> R<String> {
+        let (header, inner, rest) = Self::split_block(s, "if")?;
+        let cond_e = parse_expr_src(&header)?;
+        let cond = self.expr(&cond_e)?;
+        let inner_rust = self.render_template(&inner)?;
+        let mut out = format!("if {} {{ __h.push_str(&{}); }}", cond, inner_rust);
+        if let Some(after) = rest.strip_prefix("else") {
+            let after = after.trim();
+            if after.starts_with("if ") || after.starts_with("if\t") {
+                out += &format!(" else {{ {} }}", self.render_if_hole(after)?);
+            } else if after.starts_with('{') {
+                let (_, inner2, _) = Self::split_block(&format!("x {}", after), "x")?;
+                let inner2_rust = self.render_template(&inner2)?;
+                out += &format!(" else {{ __h.push_str(&{}); }}", inner2_rust);
+            }
+        }
+        Ok(out)
     }
 
     fn block(&mut self, stmts: &[Stmt], declared: &mut HashSet<String>, indent: usize) -> R<String> {

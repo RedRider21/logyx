@@ -169,9 +169,13 @@ iniettate nella pagina resa, servita dal server. Porting di `prototype/logyx/cli
 `compiler/src/parser.rs` (`compile_island` + `ClientCompiler`, riusa il `Parser` per le espressioni;
 `js_expr` Expr→JS). Scelta: il **DOM** si fa in JS (il WASM resta per il calcolo). Output JS identico al
 prototipo: `render hello_web /` nella suite (ora **40/40**), il server serve la pagina con lo `<script>`.
-**DA FARE web→WASM:** `{for …}`/`{if …}` nel template (interpolazioni di controllo); servire asset
-statici (il `.wasm` del client, se si vorrà calcolo WASM nel browser); DOM dal codice Logyx via
-`wasm-bindgen`; Fase 3 (server-driven, WebSocket + diff del DOM).
+**Template `{for}`/`{if}` FATTI**: `{for <var> in <lista|range> { … }}` e `{if <cond> { … } else { … }}`
+(anche `else if`) nel render, ricorsivi (corpo = template). Nel codegen `render_for_hole`/`render_if_hole`
++ `split_block`/`for_iter`; il tipo dell'elemento del `for` va in `cur_types` per le interpolazioni del
+corpo. Esempio `examples/web_loop.logyx`, conforme al prototipo (suite **41/41**). Con questo il render
+server-side del compilatore è a parità col prototipo.
+**DA FARE web→WASM:** servire asset statici (il `.wasm` del client, se si vorrà calcolo WASM nel
+browser); DOM dal codice Logyx via `wasm-bindgen`; Fase 3 (server-driven, WebSocket + diff del DOM).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; `enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli

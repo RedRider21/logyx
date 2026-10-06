@@ -72,6 +72,14 @@ dipendenze, perfetta per un PoC; si aggancia col meccanismo crate già pronto (b
 - Il server (2b) si verifica con uno smoke test (avvio, `curl`/richiesta, confronto del body), stile
   `tests/wasm_smoke.sh`.
 
+## Costrutti di controllo nel template (fatto)
+
+`{for <var> in <lista|range> { … }}` e `{if <cond> { … } [else if …] [else { … }] }` sono compilati
+in loop/if Rust che concatenano il render ricorsivo del corpo (codegen: `render_for_hole`/
+`render_if_hole`, `split_block`, `for_iter`). Il tipo dell'elemento del `for` è messo in `cur_types`
+così le interpolazioni del corpo restano type-directed. Esempio `examples/web_loop.logyx`, conforme al
+prototipo. Con questo il render server-side è a parità con il prototipo Python.
+
 ## Fuori scope (fasi successive)
 
 - Route con parametri/variabili di path, query string, metodi diversi da GET.

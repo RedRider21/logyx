@@ -352,13 +352,14 @@ logyxc build-server <file>        # compila soltanto, stampa il path del binario
 Il server risponde a ogni percorso con l'HTML della route corrispondente (`text/html; charset=utf-8`),
 o `404` se la route non esiste. Il binario accetta la porta come argomento.
 
+Nel template si usano anche i **costrutti di controllo** `{for <var> in <lista o range> { … }}` e
+`{if <cond> { … } else { … }}` (anche `else if`); il corpo è a sua volta un template (interpolazioni
+annidate incluse). Esempio: `examples/web_loop.logyx`.
+
 Le **isole client** `@start-client … @end-client` dentro il template sono supportate: il loro corpo si
 compila a **JavaScript** (eventi, stato, aggiornamento del DOM — `on "click" of "#btn" { … }`,
 `set text of "#out" to …`) e viene iniettato come `<script>` nella pagina resa. Esempio:
 `examples/hello_web.logyx`. L'output coincide con quello del prototipo (`python3 main.py render`).
-
-Non ancora supportati dal compilatore nativo (fasi successive): i costrutti `{for …}`/`{if …}` dentro il
-template. Vedi `design/web-wasm-fase2.md`.
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

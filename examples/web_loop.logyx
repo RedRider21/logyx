@@ -1,0 +1,17 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Costrutti di controllo nel template: {for ...} e {if ...}.
+//   logyxc render examples/web_loop.logyx /
+
+route "/" {
+    titoli = ["Alfa", "Beta", "Gamma"]
+    n = 3
+    render <html>
+      <body>
+        <h1>Lista</h1>
+        <ul>{for t in titoli {<li>{t}</li>}}</ul>
+        {if n > 2 {<p>Piu di due: {n}</p>} else {<p>Pochi</p>}}
+      </body>
+    </html>
+}
