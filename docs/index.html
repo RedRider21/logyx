@@ -149,6 +149,7 @@
       <span>Logyx</span>
     </div>
     <a class="link" href="#perche" data-i18n="nav.why">Perché</a>
+    <a class="link" href="#come" data-i18n="nav.how">Come funziona</a>
     <a class="link" href="#codice" data-i18n="nav.code">Codice</a>
     <a class="link" href="#riferimento" data-i18n="nav.ref">Riferimento</a>
     <a class="link" href="manuale.html" data-i18n="nav.manual">Manuale</a>
@@ -374,6 +375,18 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
     </div>
   </section>
 
+  <section id="come">
+    <div class="wrap">
+      <h2 data-i18n="how.h">Come funziona: compilatore, server, client</h2>
+      <p class="sub" data-i18n="how.sub">Se sei nuovo, il quadro d'insieme. Il compilatore gira da te; il programma gira dove serve.</p>
+      <div class="grid">
+        <div class="card"><div class="ic">💻</div><h3 data-i18n="how.c1.h">Sulla tua macchina</h3><p data-i18n="how.c1.p">Il compilatore <code>logyxc</code> (come <code>gcc</code>/<code>rustc</code>) non si installa sul server né nel browser: trasforma il sorgente in artefatti — un eseguibile, un server, oppure WebAssembly per il browser.</p></div>
+        <div class="card"><div class="ic">🖥️</div><h3 data-i18n="how.c2.h">Sul server</h3><p data-i18n="how.c2.p">Il codice server (<code>route</code>/<code>render</code>) diventa un binario HTTP che tieni su un server (o su localhost in sviluppo) e risponde alle richieste con le pagine.</p></div>
+        <div class="card"><div class="ic">🌍</div><h3 data-i18n="how.c3.h">Nel browser</h3><p data-i18n="how.c3.p">Le isole <code>@start-client</code> sono compilate a JavaScript e servite nella pagina; il browser non installa nulla. Stesso schema di PHP/Next.js, ma da un solo sorgente.</p></div>
+      </div>
+    </div>
+  </section>
+
   <section id="inizia">
     <div class="wrap">
       <h2 data-i18n="start.h">Come iniziare</h2>
@@ -424,7 +437,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
 
   var I18N = {
     it:{
-      "nav.why":"Perché","nav.code":"Codice","nav.ref":"Riferimento","nav.manual":"Manuale","nav.status":"Stato","nav.start":"Inizia",
+      "nav.why":"Perché","nav.how":"Come funziona","nav.code":"Codice","nav.ref":"Riferimento","nav.manual":"Manuale","nav.status":"Stato","nav.start":"Inizia",
       "hero.v0":"Versione 0 · anteprima",
       "hero.badge":"Un linguaggio · molti mondi",
       "hero.title":"Un solo sorgente per <span class=\"grad\">server e client</span>",
@@ -432,6 +445,11 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "hero.cta.repo":"Vai al repository","hero.cta.see":"Guarda il codice","hero.cta.manual":"Manuale",
       "why.h":"Perché Logyx",
       "why.sub":"Oggi per il web servono due linguaggi diversi. Logyx cancella quel confine: una sola sintassi, un solo sorgente, deploy semplice come PHP e velocità vicina al C.",
+      "how.h":"Come funziona: compilatore, server, client",
+      "how.sub":"Se sei nuovo, il quadro d'insieme. Il compilatore gira da te; il programma gira dove serve.",
+      "how.c1.h":"Sulla tua macchina","how.c1.p":"Il compilatore logyxc (come gcc/rustc) non si installa sul server né nel browser: trasforma il sorgente in artefatti — un eseguibile, un server, oppure WebAssembly per il browser.",
+      "how.c2.h":"Sul server","how.c2.p":"Il codice server (route/render) diventa un binario HTTP che tieni su un server (o su localhost in sviluppo) e risponde alle richieste con le pagine.",
+      "how.c3.h":"Nel browser","how.c3.p":"Le isole @start-client sono compilate a JavaScript e servite nella pagina; il browser non installa nulla. Stesso schema di PHP/Next.js, ma da un solo sorgente.",
       "why.c1.h":"Un sorgente, molti mondi","why.c1.p":"Lo stesso codice gira nativo sul server e come WASM nel client, senza duplicazione e senza un secondo linguaggio.",
       "why.c2.h":"Facile per default, veloce a richiesta","why.c2.p":"Dinamico e conciso come Python; i tipi si aggiungono solo dove serve prestazione (gradual typing).",
       "why.c3.h":"Transpila verso Rust","why.c3.p":"Da Rust si ereditano nativo, WebAssembly, desktop e mobile — con sicurezza di memoria e ottimizzazioni gratis.",
@@ -472,7 +490,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "a11y.top":"Torna su"
     },
     en:{
-      "nav.why":"Why","nav.code":"Code","nav.ref":"Reference","nav.manual":"Manual","nav.status":"Status","nav.start":"Start",
+      "nav.why":"Why","nav.how":"How it works","nav.code":"Code","nav.ref":"Reference","nav.manual":"Manual","nav.status":"Status","nav.start":"Start",
       "hero.v0":"Version 0 · preview",
       "hero.badge":"One language · many worlds",
       "hero.title":"One source for <span class=\"grad\">server and client</span>",
@@ -480,6 +498,11 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "hero.cta.repo":"Go to the repository","hero.cta.see":"See the code","hero.cta.manual":"Manual",
       "why.h":"Why Logyx",
       "why.sub":"Today the web needs two different languages. Logyx erases that divide: one syntax, one source, deploy as simple as PHP and speed close to C.",
+      "how.h":"How it works: compiler, server, client",
+      "how.sub":"If you're new, the big picture. The compiler runs on your machine; the program runs where it's needed.",
+      "how.c1.h":"On your machine","how.c1.p":"The logyxc compiler (like gcc/rustc) isn't installed on the server or in the browser: it turns the source into artifacts — an executable, a server, or WebAssembly for the browser.",
+      "how.c2.h":"On the server","how.c2.p":"Server code (route/render) becomes an HTTP binary you keep on a server (or on localhost while developing) that answers requests with pages.",
+      "how.c3.h":"In the browser","how.c3.p":"@start-client islands are compiled to JavaScript and served within the page; the browser installs nothing. Same model as PHP/Next.js, but from a single source.",
       "why.c1.h":"One source, many worlds","why.c1.p":"The same code runs native on the server and as WASM on the client — no duplication, no second language.",
       "why.c2.h":"Easy by default, fast on demand","why.c2.p":"Dynamic and concise like Python; types are added only where performance needs them (gradual typing).",
       "why.c3.h":"Transpiles to Rust","why.c3.p":"From Rust you inherit native, WebAssembly, desktop and mobile — with memory safety and optimizations for free.",

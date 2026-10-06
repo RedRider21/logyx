@@ -20,6 +20,26 @@ sorgente, una sola sintassi, che gira nativo sul server e come WebAssembly nel b
 semplice come PHP, velocità vicina al C, concisione di Python. Il backend **transpila verso Rust**
 e da lì `rustc` raggiunge nativo, WASM, desktop e mobile.
 
+## Come funziona (compilatore, server, client)
+
+Se sei nuovo, il quadro d'insieme in poche righe:
+
+- **Il compilatore `logyxc` gira sulla tua macchina** (come `gcc`/`rustc`): non si installa sul server né
+  nel browser. Prende il sorgente `.logyx` e **produce artefatti**, diversi secondo il comando:
+  `build` → eseguibile nativo; `build-server`/`serve` → **binario server HTTP** (da tenere su un server);
+  `build-wasm` → `.wasm` + `.html` per il **browser**; `render` → stampa l'HTML di una route (debug).
+- **Un sorgente, due nature.** Il **codice server** (`route`, `render`, funzioni) finisce nel binario
+  server e gira sul server; le **isole client** (`@start-client … @end-client`) sono compilate a
+  JavaScript e **inviate nella pagina** al browser, dove girano (clic, DOM, stato).
+- **A runtime**: l'utente apre il browser → richiesta HTTP → il server rende l'HTML (con dentro lo
+  `<script>` dell'isola) → il browser mostra la pagina ed esegue il JS. Stesso schema di PHP/Next.js, ma
+  server e client **dallo stesso file e linguaggio**.
+- **Online**: copi il binario su un server e lo avvii; è autosufficiente e il browser non installa nulla.
+  In locale provi già tutto con `logyxc serve app.logyx 8080` → `http://127.0.0.1:8080`.
+
+(`build-wasm` è un caso a parte: porta nel browser funzioni di **puro calcolo** come WebAssembly e può
+girare anche **senza server**, servendo i file statici.)
+
 ## Siamo alla versione 0
 
 Logyx è alla **versione 0**. Il prototipo in **Python** e la transpilazione verso **Rust** sono

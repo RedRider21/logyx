@@ -90,6 +90,37 @@
 cresce. Descrive ciò che il prototipo esegue davvero oggi; le parti non ancora fatte sono elencate in fondo.</p>
 <p>Legenda stato: ✅ implementato · 🟡 parziale · ⏳ previsto.</p>
 <hr />
+<h2 id="come-funziona-compilatore-server-client">Come funziona: compilatore, server, client</h2>
+<p>Il quadro d'insieme prima dei dettagli — utile soprattutto se sei nuovo al linguaggio.</p>
+<p><code>logyxc</code> (e il prototipo <code>python3 main.py</code>) è uno <strong>strumento da sviluppo</strong>: gira <strong>sulla tua macchina</strong>,
+come <code>gcc</code> o <code>rustc</code>. Non si installa né sul server né nel browser; prende il tuo sorgente <code>.logyx</code> e
+<strong>produce artefatti</strong>. <em>Dove</em> va ciascun artefatto dipende dal comando:</p>
+<ul>
+<li><code>build</code> → un <strong>eseguibile nativo</strong> (gira dove lo metti tu);</li>
+<li><code>build-server</code> / <code>serve</code> → un <strong>binario server HTTP</strong>, da tenere <strong>su un server</strong> (o su <code>localhost</code> in sviluppo);</li>
+<li><code>build-wasm</code> → un <code>.wasm</code> + un <code>.html</code> da aprire <strong>nel browser</strong> (file statici);</li>
+<li><code>render</code> → stampa l'HTML di una route (per controllare in sviluppo).</li>
+</ul>
+<p><strong>Un sorgente, due nature.</strong> In un file web il codice è di due tipi, con il confine esplicito:</p>
+<ul>
+<li>il <strong>codice server</strong> (<code>route</code>, <code>render</code>, le funzioni) finisce nel <strong>binario server</strong> e gira sul server;</li>
+<li>le <strong>isole client</strong> (<code>@start-client … @end-client</code>) sono compilate a <strong>JavaScript</strong> e <strong>inviate nella
+  pagina</strong> al browser, dove girano (clic, DOM, stato).</li>
+</ul>
+<p><strong>Cosa succede quando qualcuno usa l'app.</strong> Tu compili una volta sulla tua macchina e avvii il binario
+server (<code>serve</code>); resta in ascolto su una porta. L'utente apre il browser → richiesta HTTP → il server
+esegue la route, rende l'HTML e vi include lo <code>&lt;script&gt;</code> dell'isola → il browser mostra la pagina ed
+esegue il JavaScript. È lo stesso schema di PHP o Next.js, ma server e client <strong>nascono dallo stesso
+file e dallo stesso linguaggio</strong>.</p>
+<p><strong>Mettere online</strong> significa copiare quel binario su un server e avviarlo: è autosufficiente, e il
+browser dell'utente non installa nulla (riceve pagine web normali). In locale provi già tutto con
+<code>logyxc serve app.logyx 8080</code> e <code>http://127.0.0.1:8080</code>.</p>
+<blockquote>
+<p>Nota: <code>build-wasm</code> è un caso a parte — porta nel browser <strong>funzioni di puro calcolo</strong> come
+WebAssembly (per velocità) e può girare anche <strong>senza server</strong>, servendo i file statici. Le isole
+client, invece, servono l'interattività del DOM e per questo diventano JavaScript.</p>
+</blockquote>
+<hr />
 <h2 id="1-eseguire-un-programma">1. Eseguire un programma</h2>
 <p>Dal prototipo Python (cartella <code>prototype/</code>, serve solo Python 3.8+):</p>
 <table>

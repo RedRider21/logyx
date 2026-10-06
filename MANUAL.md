@@ -9,6 +9,41 @@ Legenda stato: ✅ implementato · 🟡 parziale · ⏳ previsto.
 
 ---
 
+## Come funziona: compilatore, server, client
+
+Il quadro d'insieme prima dei dettagli — utile soprattutto se sei nuovo al linguaggio.
+
+`logyxc` (e il prototipo `python3 main.py`) è uno **strumento da sviluppo**: gira **sulla tua macchina**,
+come `gcc` o `rustc`. Non si installa né sul server né nel browser; prende il tuo sorgente `.logyx` e
+**produce artefatti**. *Dove* va ciascun artefatto dipende dal comando:
+
+- `build` → un **eseguibile nativo** (gira dove lo metti tu);
+- `build-server` / `serve` → un **binario server HTTP**, da tenere **su un server** (o su `localhost` in sviluppo);
+- `build-wasm` → un `.wasm` + un `.html` da aprire **nel browser** (file statici);
+- `render` → stampa l'HTML di una route (per controllare in sviluppo).
+
+**Un sorgente, due nature.** In un file web il codice è di due tipi, con il confine esplicito:
+
+- il **codice server** (`route`, `render`, le funzioni) finisce nel **binario server** e gira sul server;
+- le **isole client** (`@start-client … @end-client`) sono compilate a **JavaScript** e **inviate nella
+  pagina** al browser, dove girano (clic, DOM, stato).
+
+**Cosa succede quando qualcuno usa l'app.** Tu compili una volta sulla tua macchina e avvii il binario
+server (`serve`); resta in ascolto su una porta. L'utente apre il browser → richiesta HTTP → il server
+esegue la route, rende l'HTML e vi include lo `<script>` dell'isola → il browser mostra la pagina ed
+esegue il JavaScript. È lo stesso schema di PHP o Next.js, ma server e client **nascono dallo stesso
+file e dallo stesso linguaggio**.
+
+**Mettere online** significa copiare quel binario su un server e avviarlo: è autosufficiente, e il
+browser dell'utente non installa nulla (riceve pagine web normali). In locale provi già tutto con
+`logyxc serve app.logyx 8080` e `http://127.0.0.1:8080`.
+
+> Nota: `build-wasm` è un caso a parte — porta nel browser **funzioni di puro calcolo** come
+> WebAssembly (per velocità) e può girare anche **senza server**, servendo i file statici. Le isole
+> client, invece, servono l'interattività del DOM e per questo diventano JavaScript.
+
+---
+
 ## 1. Eseguire un programma
 
 Dal prototipo Python (cartella `prototype/`, serve solo Python 3.8+):
