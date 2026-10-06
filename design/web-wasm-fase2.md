@@ -41,9 +41,14 @@ dipendenze, perfetta per un PoC; si aggancia col meccanismo crate già pronto (b
   `text/html; charset=utf-8`, 404 se la route non esiste. Il binario prende la porta come argomento.
   Smoke test: `tests/server_smoke.sh` (avvia, confronta il body HTTP con `render`, verifica Content-Type
   e 404). *Resta da servire gli asset statici — il `.wasm`/`.js` del client — insieme alle route (Fase 2c).*
-- **Fase 2c — isole client servite.** Le isole `@start-client` del template si compilano a WASM (ABI
-  Fase 1) + collante JS, iniettati nella pagina resa dal server. Qui si ricongiungono le due metà del
-  "un solo sorgente". (Può slittare alla Fase 3 se il modello integrato lo assorbe.)
+- **Fase 2c — isole client servite. FATTA.** Le isole `@start-client … @end-client` del template si
+  compilano a **JavaScript** e vengono iniettate (come blocco `<script>` IIFE) nella pagina resa, servita
+  dal server. Scelta: le isole manipolano il **DOM**, che è naturale in JS; il WASM (Fase 1) resta per il
+  **calcolo** (il DOM dal codice Logyx via `wasm-bindgen`/`web-sys` è un fronte separato, non necessario
+  qui). Il compilatore porta `prototype/logyx/client.py` in `compiler/src/parser.rs`
+  (`compile_island` + `ClientCompiler`), riusando il `Parser` per le espressioni; l'output JS **coincide**
+  con quello del prototipo. Conformità: `render hello_web /` nella suite (ora 40); il server serve la
+  pagina con lo `<script>`. Qui si ricongiungono le due metà del "un solo sorgente".
 
 ## Nodi tecnici (Fase 2a)
 

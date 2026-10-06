@@ -1119,9 +1119,24 @@ impl Codegen {
                 body.push(' ');
                 i = j;
             } else if slice_starts_with(&chars, i, "@start-client") {
-                return Err(LogyxError::new(
-                    "isole client (@start-client) non ancora supportate dal compilatore (Fase 2c)",
-                ));
+                if !lit.is_empty() {
+                    body += &format!("__h.push_str({}); ", rust_str_lit(&lit));
+                    lit.clear();
+                }
+                let start_mark = "@start-client";
+                let end_mark = "@end-client";
+                let body_start = i + start_mark.chars().count();
+                let mut k = body_start;
+                while k < n && !slice_starts_with(&chars, k, end_mark) {
+                    k += 1;
+                }
+                if k >= n {
+                    return Err(LogyxError::new("isola client non terminata (manca @end-client)"));
+                }
+                let island_src: String = chars[body_start..k].iter().collect();
+                let js = crate::parser::compile_island(&island_src, "<island>")?;
+                body += &format!("__h.push_str({}); ", rust_str_lit(&js));
+                i = k + end_mark.chars().count();
             } else {
                 lit.push(c);
                 i += 1;

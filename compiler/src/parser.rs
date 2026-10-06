@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //! Parser a discesa ricorsiva: dai token all'AST. Porting del parser del prototipo.
 
+use std::collections::HashSet;
 use std::mem::discriminant;
 
 use crate::ast::*;
@@ -738,4 +739,241 @@ impl Parser {
         }
         Ok(Expr::Str(out))
     }
+}
+
+// === Isole client (@start-client … @end-client) → JavaScript (web Fase 2c) ===
+//
+// Porting di `prototype/logyx/client.py`: compila la DSL client (on/set/if/for/
+// while/assegnazioni/espressioni) in JavaScript, riusando il Parser per le
+// espressioni. L'output coincide con quello del prototipo (conformità del render).
+
+/// Runtime JS minimo: gli stessi builtin del nucleo disponibili nel client.
+const CLIENT_PRELUDE: &str = "function range(n){return Array.from({length: n}, function(_, i){return i;});}\n\
+function len(x){return x.length;}\n\
+function str(x){return String(x);}\n\
+function print(){console.log.apply(console, arguments);}";
+
+/// Compila il corpo di un'isola client in un blocco `<script>` (IIFE).
+pub fn compile_island(src: &str, file: &str) -> Result<String, LogyxError> {
+    let toks = Lexer::new(src, file).tokenize()?;
+    let mut c = ClientCompiler { p: Parser::new(toks, file.to_string()), declared: HashSet::new() };
+    let js = c.compile()?;
+    Ok(format!(
+        "<script>\n(function() {{\n{}\n{}\n}})();\n</script>",
+        CLIENT_PRELUDE, js
+    ))
+}
+
+struct ClientCompiler {
+    p: Parser,
+    declared: HashSet<String>,
+}
+
+impl ClientCompiler {
+    fn compile(&mut self) -> Result<String, LogyxError> {
+        let mut out = Vec::new();
+        while !self.p.is(&TokenKind::Eof) {
+            out.push(self.client_stmt()?);
+        }
+        Ok(out.join("\n"))
+    }
+
+    fn client_stmt(&mut self) -> Result<String, LogyxError> {
+        match self.p.kind() {
+            TokenKind::Ident(s) if s == "on" => self.on_handler(),
+            TokenKind::Ident(s) if s == "set" => self.set_stmt(),
+            TokenKind::If => self.client_if(),
+            TokenKind::For => self.client_for(),
+            TokenKind::While => self.client_while(),
+            TokenKind::Ident(_) if matches!(self.p.kind_at(1), TokenKind::Assign) => {
+                let name = self.p.ident_name("nome di variabile")?;
+                self.p.advance(); // '='
+                let e = self.p.expression()?;
+                let js = self.js_expr(&e)?;
+                if self.declared.contains(&name) {
+                    Ok(format!("{} = {};", name, js))
+                } else {
+                    self.declared.insert(name.clone());
+                    Ok(format!("let {} = {};", name, js))
+                }
+            }
+            _ => {
+                let e = self.p.expression()?;
+                Ok(format!("{};", self.js_expr(&e)?))
+            }
+        }
+    }
+
+    fn on_handler(&mut self) -> Result<String, LogyxError> {
+        self.p.advance(); // 'on'
+        let event = self.literal_string()?;
+        self.expect_word("of")?;
+        let selector = self.literal_string()?;
+        let body = self.client_block()?;
+        Ok(format!(
+            "document.querySelector({}).addEventListener({}, function() {{\n{}\n}});",
+            js_string(&selector),
+            js_string(&event),
+            body
+        ))
+    }
+
+    fn set_stmt(&mut self) -> Result<String, LogyxError> {
+        self.p.advance(); // 'set'
+        let prop = self.p.advance();
+        let prop_name = match &prop.kind {
+            TokenKind::Ident(s) if s == "text" || s == "html" => s.clone(),
+            _ => return Err(LogyxError::new("atteso 'text' o 'html' dopo 'set' nell'isola client")),
+        };
+        self.expect_word("of")?;
+        let selector = self.literal_string()?;
+        self.expect_word("to")?;
+        let e = self.p.expression()?;
+        let js = self.js_expr(&e)?;
+        let attr = if prop_name == "text" { "textContent" } else { "innerHTML" };
+        Ok(format!("document.querySelector({}).{} = {};", js_string(&selector), attr, js))
+    }
+
+    fn client_if(&mut self) -> Result<String, LogyxError> {
+        self.p.advance(); // 'if'
+        let ce = self.p.expression()?;
+        let cond = self.js_expr(&ce)?;
+        let mut js = format!("if ({}) {{\n{}\n}}", cond, self.client_block()?);
+        if self.p.is(&TokenKind::Else) {
+            self.p.advance();
+            if self.p.is(&TokenKind::If) {
+                js += &format!(" else {}", self.client_if()?);
+            } else {
+                js += &format!(" else {{\n{}\n}}", self.client_block()?);
+            }
+        }
+        Ok(js)
+    }
+
+    fn client_for(&mut self) -> Result<String, LogyxError> {
+        self.p.advance(); // 'for'
+        let var = self.p.ident_name("variabile di ciclo")?;
+        self.p.expect(&TokenKind::In, "in")?;
+        let ie = self.p.expression()?;
+        let iterable = self.js_expr(&ie)?;
+        Ok(format!("for (const {} of {}) {{\n{}\n}}", var, iterable, self.client_block()?))
+    }
+
+    fn client_while(&mut self) -> Result<String, LogyxError> {
+        self.p.advance(); // 'while'
+        let ce = self.p.expression()?;
+        let cond = self.js_expr(&ce)?;
+        Ok(format!("while ({}) {{\n{}\n}}", cond, self.client_block()?))
+    }
+
+    fn client_block(&mut self) -> Result<String, LogyxError> {
+        self.p.expect(&TokenKind::LBrace, "{")?;
+        let mut out = Vec::new();
+        while !self.p.is(&TokenKind::RBrace) && !self.p.is(&TokenKind::Eof) {
+            out.push(format!("  {}", self.client_stmt()?));
+        }
+        self.p.expect(&TokenKind::RBrace, "}")?;
+        Ok(out.join("\n"))
+    }
+
+    fn expect_word(&mut self, word: &str) -> Result<(), LogyxError> {
+        let t = self.p.advance();
+        match &t.kind {
+            TokenKind::Ident(s) if s == word => Ok(()),
+            _ => Err(LogyxError::new(format!("atteso '{}' nell'isola client", word))),
+        }
+    }
+
+    fn literal_string(&mut self) -> Result<String, LogyxError> {
+        let t = self.p.expect(&TokenKind::Str(vec![]), "stringa")?;
+        if let TokenKind::Str(parts) = t.kind {
+            if parts.len() == 1 {
+                if let StringPart::Lit(s) = &parts[0] {
+                    return Ok(s.clone());
+                }
+            }
+        }
+        Err(LogyxError::new(
+            "qui è attesa una stringa semplice (senza interpolazione) nell'isola client",
+        ))
+    }
+
+    fn js_expr(&self, e: &Expr) -> Result<String, LogyxError> {
+        match e {
+            Expr::Int(n) => Ok(n.to_string()),
+            Expr::Float(x) => Ok(format!("{}", x)),
+            Expr::Bool(b) => Ok(if *b { "true" } else { "false" }.to_string()),
+            Expr::Nil => Ok("null".to_string()),
+            Expr::Ident(n) => Ok(n.clone()),
+            Expr::Str(parts) => {
+                let mut buf = String::from("`");
+                for part in parts {
+                    match part {
+                        StrPart::Lit(s) => buf.push_str(
+                            &s.replace('\\', "\\\\").replace('`', "\\`").replace("${", "\\${"),
+                        ),
+                        StrPart::Expr(e) => {
+                            buf.push_str("${");
+                            buf.push_str(&self.js_expr(e)?);
+                            buf.push('}');
+                        }
+                    }
+                }
+                buf.push('`');
+                Ok(buf)
+            }
+            Expr::Unary { op, operand } => {
+                Ok(format!("{}{}", if *op == UnOp::Not { "!" } else { "-" }, self.js_expr(operand)?))
+            }
+            Expr::Binary { op, left, right } => {
+                Ok(format!("({} {} {})", self.js_expr(left)?, js_binop(op), self.js_expr(right)?))
+            }
+            Expr::Logical { op, left, right } => {
+                let o = if *op == LogOp::And { "&&" } else { "||" };
+                Ok(format!("({} {} {})", self.js_expr(left)?, o, self.js_expr(right)?))
+            }
+            Expr::Call { callee, args } => {
+                let a: Result<Vec<_>, _> = args.iter().map(|x| self.js_expr(x)).collect();
+                Ok(format!("{}({})", self.js_expr(callee)?, a?.join(", ")))
+            }
+            Expr::Index { target, index } => {
+                Ok(format!("{}[{}]", self.js_expr(target)?, self.js_expr(index)?))
+            }
+            Expr::List(els) => {
+                let a: Result<Vec<_>, _> = els.iter().map(|x| self.js_expr(x)).collect();
+                Ok(format!("[{}]", a?.join(", ")))
+            }
+            Expr::Map(pairs) => {
+                let mut ps = Vec::new();
+                for (k, v) in pairs {
+                    ps.push(format!("{}: {}", self.js_expr(k)?, self.js_expr(v)?));
+                }
+                Ok(format!("{{{}}}", ps.join(", ")))
+            }
+            Expr::Field { .. } | Expr::Try(_) => {
+                Err(LogyxError::new("espressione client non supportata (campo/'?')"))
+            }
+        }
+    }
+}
+
+fn js_binop(op: &BinOp) -> &'static str {
+    match op {
+        BinOp::Eq => "===",
+        BinOp::Ne => "!==",
+        BinOp::Lt => "<",
+        BinOp::Le => "<=",
+        BinOp::Gt => ">",
+        BinOp::Ge => ">=",
+        BinOp::Add => "+",
+        BinOp::Sub => "-",
+        BinOp::Mul => "*",
+        BinOp::Div => "/",
+        BinOp::Mod => "%",
+    }
+}
+
+/// Letterale di stringa JS (per selettori/eventi): doppi apici con escape.
+fn js_string(s: &str) -> String {
+    format!("{:?}", s)
 }

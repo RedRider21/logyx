@@ -42,8 +42,10 @@ macchina — in cui **né Python né Rust resteranno una dipendenza**. Sono i po
   e **gestione errori** (`-> T | error` → `Result<T, String>`). I tipi di **ritorno e dei parametri**
   sono **dedotti** dall'uso. `rustc` compila il `.rs` prodotto a eseguibile nativo.
 - **Compilatore vero in Rust** (`compiler/`, binario `logyxc`): lexer, parser, inferenza dei tipi e
-  backend scritti in Rust — la **Fase 1 del bootstrap**. Copre lo stesso sottoinsieme nativo del
-  prototipo ed è **verificato conforme** (stesso output) su tutti gli esempi.
+  backend scritti in Rust — la **Fase 1 del bootstrap**. Oltre al nucleo nativo (verificato **conforme**
+  al prototipo su tutti gli esempi) compila a **WebAssembly** (`build-wasm`), rende l'HTML lato server
+  (`render`), serve via **HTTP** (`serve`/`build-server`, crate `tiny_http`) e compila le **isole client**
+  `@start-client` a JavaScript, servite con la pagina.
 
 Il dettaglio aggiornato di ciò che il prototipo esegue è nel `MANUAL.md`; il punto di ripresa
 dello sviluppo è in `CONTEXT.md`.

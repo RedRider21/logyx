@@ -39,7 +39,7 @@ for c in $CASES; do
 done
 
 # Route: render server-side (web Fase 2a) — confronto `render <file> <path>` fra i due backend.
-WEB_CASES="web_demo:/"
+WEB_CASES="web_demo:/ hello_web:/"
 for wc in $WEB_CASES; do
     file="${wc%%:*}"; rp="${wc##*:}"
     f="$EXAMPLES/$file.logyx"

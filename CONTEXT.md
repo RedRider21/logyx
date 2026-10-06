@@ -163,9 +163,15 @@ dispatcher sul path). Conformità: caso `render web_demo /` nella suite (ora **3
 `text/html; charset=utf-8` o 404; la porta è l'argomento del binario. Modalità scelta da
 `Codegen::set_server_mode` (render vs server). Smoke test versionato `tests/server_smoke.sh` (avvia,
 confronta il body HTTP con `render`, verifica Content-Type e 404). `*_server/` gitignored.
-**DA FARE web→WASM:** **Fase 2c (isole `@start-client` servite: WASM Fase 1 + collante JS, + asset
-statici dal server)** ← PROSSIMO; `{for …}`/`{if …}` nel template; DOM dal codice Logyx; Fase 3
-(server-driven).
+**Web Fase 2c FATTA** (`design/web-wasm-fase2.md`): le isole client `@start-client … @end-client` del
+template si compilano a **JavaScript** (blocco `<script>` IIFE con prelude range/len/str/print) e sono
+iniettate nella pagina resa, servita dal server. Porting di `prototype/logyx/client.py` in
+`compiler/src/parser.rs` (`compile_island` + `ClientCompiler`, riusa il `Parser` per le espressioni;
+`js_expr` Expr→JS). Scelta: il **DOM** si fa in JS (il WASM resta per il calcolo). Output JS identico al
+prototipo: `render hello_web /` nella suite (ora **40/40**), il server serve la pagina con lo `<script>`.
+**DA FARE web→WASM:** `{for …}`/`{if …}` nel template (interpolazioni di controllo); servire asset
+statici (il `.wasm` del client, se si vorrà calcolo WASM nel browser); DOM dal codice Logyx via
+`wasm-bindgen`; Fase 3 (server-driven, WebSocket + diff del DOM).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; `enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli

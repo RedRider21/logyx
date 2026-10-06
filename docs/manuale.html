@@ -554,8 +554,12 @@ logyxc build-server &lt;file&gt;        # compila soltanto, stampa il path del b
 </code></pre>
 <p>Il server risponde a ogni percorso con l'HTML della route corrispondente (<code>text/html; charset=utf-8</code>),
 o <code>404</code> se la route non esiste. Il binario accetta la porta come argomento.</p>
-<p>Non ancora supportati dal compilatore nativo (fasi successive): isole client <code>@start-client …
-@end-client</code> e i relativi asset, costrutti <code>{for …}</code>/<code>{if …}</code> nel template. Vedi <code>design/web-wasm-fase2.md</code>.
+<p>Le <strong>isole client</strong> <code>@start-client … @end-client</code> dentro il template sono supportate: il loro corpo si
+compila a <strong>JavaScript</strong> (eventi, stato, aggiornamento del DOM — <code>on "click" of "#btn" { … }</code>,
+<code>set text of "#out" to …</code>) e viene iniettato come <code>&lt;script&gt;</code> nella pagina resa. Esempio:
+<code>examples/hello_web.logyx</code>. L'output coincide con quello del prototipo (<code>python3 main.py render</code>).</p>
+<p>Non ancora supportati dal compilatore nativo (fasi successive): i costrutti <code>{for …}</code>/<code>{if …}</code> dentro il
+template. Vedi <code>design/web-wasm-fase2.md</code>.
 | <code>pow(base, esp)</code> | <code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>) |
 | <code>floor(x)</code> / <code>ceil(x)</code> | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | <code>sqrt(x)</code> | Radice quadrata (ritorna un float) |
