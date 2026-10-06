@@ -94,8 +94,43 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | `compiler/` | Il compilatore vero in Rust (`logyxc`): lexer, parser, inferenza, backend |
 | `tests/` | Suite di conformità (`conformance.sh`): prototipo e compilatore danno lo stesso output |
 | `examples/` | Programmi di esempio `.logyx` |
-| `docs/` | Documenti esportati (es. il documento di design in `.md`/`.pdf`) |
+| `docs/` | Sito (GitHub Pages) e documenti esportati (es. il documento di design in `.md`/`.pdf`); git li versiona col resto, così restano con te quando cloni il progetto |
 | `LICENSE` | Testo completo della licenza AGPL-3.0 |
+
+### Dentro `compiler/` (il compilatore Rust `logyxc`)
+
+Fase 1 del bootstrap: il compilatore vero, in **Rust**. Build con `cargo build --release`
+(→ `compiler/target/release/logyxc`).
+
+| File | Ruolo |
+| --- | --- |
+| `src/token.rs` | Tipi di token |
+| `src/lexer.rs` | Lexer (sorgente → token), inclusa la cattura dei template web dopo `render` |
+| `src/ast.rs` | Albero sintattico |
+| `src/parser.rs` | Parser a discesa ricorsiva (token → AST) e compilazione delle isole client `@start-client` → JavaScript |
+| `src/modules.rs` | Risoluzione degli `import` |
+| `src/codegen.rs` | Inferenza dei tipi e generazione del codice Rust (nativo, WASM, render/server) |
+| `src/error.rs` | Tipo d'errore con posizione |
+| `src/main.rs` | CLI: `build`/`gen`/`tokens`/`parse`/`build-wasm`/`render`/`build-server`/`serve` |
+
+### Dentro `prototype/` (il frontend in Python)
+
+Prima implementazione eseguibile (lexer → parser → interprete tree-walking), più il transpiler verso
+Rust. Solo Python 3.8+, nessuna dipendenza. Convenzione: se il file definisce `fn main()`, viene chiamata
+automaticamente.
+
+| File | Ruolo |
+| --- | --- |
+| `logyx/lexer.py` | Sorgente → token (commenti, interpolazione, template) |
+| `logyx/tokens.py` | Tipi di token e parole chiave |
+| `logyx/parser.py` | Token → AST (discesa ricorsiva) |
+| `logyx/nodes.py` | Nodi dell'AST |
+| `logyx/interpreter.py` | Esecuzione dell'AST (ambiti, funzioni, builtin, render delle route) |
+| `logyx/client.py` | Compila le isole `@start-client` in JavaScript |
+| `logyx/rustgen.py` | Transpiler: AST → Rust (comando `build`) |
+| `logyx/modules.py` | Risoluzione degli `import` |
+| `logyx/errors.py` | Tipo d'errore |
+| `main.py` | CLI del prototipo: esegui · `render` · `serve` · `build` |
 
 ## Prerequisiti
 
