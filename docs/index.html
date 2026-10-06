@@ -349,6 +349,7 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
           <tr><td>replace(s, da, a)</td><td data-i18n="bi.replace">Sostituisce tutte le occorrenze di da con a</td></tr>
           <tr><td>starts_with(s, p), ends_with(s, p)</td><td data-i18n="bi.startsends">Vero se s inizia / finisce con p</td></tr>
           <tr><td>has(mappa, chiave)</td><td data-i18n="bi.has">Vero se la mappa contiene la chiave</td></tr>
+          <tr><td>keys(mappa), values(mappa)</td><td data-i18n="bi.keysvalues">Chiavi (ordinate) / valori della mappa, come lista</td></tr>
         </table>
       </div>
     </div>
@@ -473,6 +474,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.split":"Divide la stringa sul separatore → lista","bi.join":"Unisce una lista di stringhe con sep",
       "bi.replace":"Sostituisce tutte le occorrenze di da con a","bi.startsends":"Vero se s inizia / finisce con p",
       "bi.has":"Vero se la mappa contiene la chiave",
+      "bi.keysvalues":"Chiavi (ordinate) / valori della mappa, come lista",
       "status.h":"A che punto è","status.sub":"Logyx è un prototipo funzionante in Python (lexer, parser, interprete, render web, transpiler Rust). Ecco la mappa.",
       "status.v0.h":"Siamo alla versione 0.",
       "status.v0.p":"Il prototipo in Python e la transpilazione verso Rust sono impalcature temporanee per far nascere il linguaggio. L'obiettivo è un Logyx <em>self-hosted</em> — un compilatore scritto in Logyx che genera direttamente codice macchina — in cui né Python né Rust resteranno una dipendenza.",
@@ -526,6 +528,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.split":"Splits the string on the separator → list","bi.join":"Joins a list of strings with sep",
       "bi.replace":"Replaces every occurrence of 'da' with 'a'","bi.startsends":"True if s starts / ends with p",
       "bi.has":"True if the map contains the key",
+      "bi.keysvalues":"Map keys (sorted) / values, as a list",
       "status.h":"Where it stands","status.sub":"Logyx is a working prototype in Python (lexer, parser, interpreter, web render, Rust transpiler). Here's the map.",
       "status.v0.h":"We are at version 0.",
       "status.v0.p":"The Python prototype and the transpilation to Rust are temporary scaffolding to bootstrap the language. The goal is a self-hosted Logyx — a compiler written in Logyx that emits machine code directly — where neither Python nor Rust will remain a dependency.",

@@ -77,7 +77,8 @@ builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ce
 **Prossimi giri a basso rischio (C):**
 - numerici: `sqrt` (scegliere esempio con risultati puliti), eventuale `round` (⚠️ Python usa arrotondamento
   bancario, Rust half-away-from-zero: allineare la semantica nei due backend o evitarlo);
-- mappe: `has(mappa, chiave)`, `keys(mappa)`, `values(mappa)`, iterazione `for k in mappa`;
+- mappe: `has`, `keys`, `values` **FATTI** (`keys`/`values` con chiavi **ordinate** → deterministico,
+  `examples/native_mapkeys.logyx`, suite 42); resta l'iterazione diretta `for k in mappa`;
 - stringhe: `index_of`, `substring`.
 
 **Fronti grossi del nucleo (Piano 1 di `ROADMAP.md`), da affrontare con un minimo di design:**

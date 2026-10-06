@@ -269,6 +269,8 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
 | `trim(s)` | La stringa `s` senza gli spazi iniziali e finali |
 | `has(mappa, chiave)` | `true` se la mappa contiene la chiave |
+| `keys(mappa)` | Lista delle chiavi, **ordinate** (output deterministico) |
+| `values(mappa)` | Lista dei valori, nell'ordine delle chiavi ordinate |
 | `index_of(s, sub)` | Posizione (ASCII) della prima occorrenza di `sub` in `s`, oppure -1 |
 | `substring(s, a, b)` | Sottostringa (ASCII) da `a` incluso a `b` escluso |
 | `split(s, sep)` | Divide `s` sul separatore `sep` → lista di stringhe |

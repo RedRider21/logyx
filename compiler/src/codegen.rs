@@ -1804,6 +1804,29 @@ impl Codegen {
                             self.expr(&args[1])?
                         ));
                     }
+                    if name == "keys" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("keys accetta un solo argomento: keys(mappa)"));
+                        }
+                        // chiavi ordinate: HashMap non è deterministico (come in to_json).
+                        return Ok(format!(
+                            "{{ let mut __k: Vec<_> = ({}).keys().cloned().collect(); __k.sort(); __k }}",
+                            self.expr(&args[0])?
+                        ));
+                    }
+                    if name == "values" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(
+                                "values accetta un solo argomento: values(mappa)",
+                            ));
+                        }
+                        // valori nell'ordine delle chiavi ordinate (deterministico).
+                        return Ok(format!(
+                            "{{ let __m = &({}); let mut __k: Vec<_> = __m.keys().cloned().collect(); \
+                             __k.sort(); __k.iter().map(|__x| __m.get(__x).unwrap().clone()).collect::<Vec<_>>() }}",
+                            self.expr(&args[0])?
+                        ));
+                    }
                     if name == "trim" {
                         if args.len() != 1 {
                             return Err(LogyxError::new("trim accetta un solo argomento"));

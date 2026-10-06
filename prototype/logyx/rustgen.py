@@ -966,6 +966,17 @@ class RustTranspiler:
                     if len(e.args) != 2:
                         raise LogyxError("has accetta due argomenti: has(mappa, chiave)")
                     return f"({self.expr(e.args[0])}).contains_key(&({self.expr(e.args[1])}))"
+                if nm == "keys":
+                    if len(e.args) != 1:
+                        raise LogyxError("keys accetta un solo argomento: keys(mappa)")
+                    return ("{ let mut __k: Vec<_> = (" + self.expr(e.args[0])
+                            + ").keys().cloned().collect(); __k.sort(); __k }")
+                if nm == "values":
+                    if len(e.args) != 1:
+                        raise LogyxError("values accetta un solo argomento: values(mappa)")
+                    return ("{ let __m = &(" + self.expr(e.args[0]) + "); "
+                            "let mut __k: Vec<_> = __m.keys().cloned().collect(); __k.sort(); "
+                            "__k.iter().map(|__x| __m.get(__x).unwrap().clone()).collect::<Vec<_>>() }")
                 if nm == "trim":
                     if len(e.args) != 1:
                         raise LogyxError("trim accetta un solo argomento")

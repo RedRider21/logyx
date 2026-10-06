@@ -219,6 +219,9 @@ class Interpreter:
         g.define("floor", lambda x: math.floor(x))
         g.define("ceil", lambda x: math.ceil(x))
         g.define("has", lambda m, k: k in m)
+        # chiavi ordinate (deterministico, come in to_json): HashMap Rust non ha ordine
+        g.define("keys", lambda m: sorted(m.keys()))
+        g.define("values", lambda m: [m[k] for k in sorted(m.keys())])
         g.define("sqrt", lambda x: math.sqrt(x))
         g.define("index_of", lambda s, sub: s.find(sub))
         g.define("substring", lambda s, a, b: s[a:b])

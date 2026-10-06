@@ -1,0 +1,12 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// keys/values sulle mappe: chiavi ordinate (output deterministico).
+
+fn main() {
+    prezzi = {"pane": 2, "latte": 1, "uova": 3}
+    print(join(keys(prezzi), ", "))
+    print(sum(values(prezzi)))
+    print(len(keys(prezzi)))
+    print(has(prezzi, "pane"))
+}
