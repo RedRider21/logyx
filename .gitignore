@@ -9,6 +9,7 @@ examples/*.rs
 *_bin
 *_cargo/
 *_wasm/
+*_server/
 examples/*.wasm
 examples/*.html
 

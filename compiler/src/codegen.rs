@@ -77,6 +77,37 @@ fn __json_obj(mut entries: Vec<(String, String)>) -> String {
     out
 }"#;
 
+/// `main` per il comando `render`: rende la route del percorso passato come argomento.
+const RENDER_MAIN: &str = r#"fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let path = args.get(1).map(|s| s.as_str()).unwrap_or("/");
+    match __render_path(path) {
+        Some(html) => println!("{}", html),
+        None => { eprintln!("nessuna route per '{}'", path); std::process::exit(1); }
+    }
+}"#;
+
+/// `main` per il server HTTP (Fase 2b, crate `tiny_http`): la porta è l'argomento (default 8080).
+const SERVER_MAIN: &str = r#"fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let port = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(8080);
+    let addr = format!("127.0.0.1:{}", port);
+    let server = tiny_http::Server::http(addr.as_str()).unwrap();
+    eprintln!("Logyx in ascolto su http://{}", addr);
+    for req in server.incoming_requests() {
+        let path = req.url().split('?').next().unwrap_or("/").to_string();
+        match __render_path(&path) {
+            Some(html) => {
+                let h = tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"text/html; charset=utf-8"[..]).unwrap();
+                let _ = req.respond(tiny_http::Response::from_string(html).with_header(h));
+            }
+            None => {
+                let _ = req.respond(tiny_http::Response::from_string("not found").with_status_code(404));
+            }
+        }
+    }
+}"#;
+
 /// Helper per il render HTML server-side (Fase 2): escaping e display identici al prototipo.
 const HTML_HELPER: &str = r#"fn __html_escape(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
@@ -188,6 +219,8 @@ pub struct Codegen {
     uses_json: bool,
     uses_serde: bool,
     uses_html: bool,
+    /// true = genera un server HTTP (`tiny_http`); false = un binario `render` (default).
+    emit_server: bool,
     pub deps: HashMap<String, String>,
 }
 
@@ -208,8 +241,15 @@ impl Codegen {
             uses_json: false,
             uses_serde: false,
             uses_html: false,
+            emit_server: false,
             deps: HashMap::new(),
         }
+    }
+
+    /// Abilita la generazione di un server HTTP (`tiny_http`) per le route, invece
+    /// del binario `render`. Va impostato prima di `generate`.
+    pub fn set_server_mode(&mut self, on: bool) {
+        self.emit_server = on;
     }
 
     /// Funzioni fra `names` con firma interamente numerica (int/float/bool),
@@ -332,22 +372,25 @@ impl Codegen {
         for f in &funcs {
             func_defs.push(self.func(f)?);
         }
-        // route: una fn per ciascuna (ritorna l'HTML) + un main dispatcher sul path.
+        // route: una fn per ciascuna (ritorna l'HTML) + __render_path + un main
+        // (render da riga di comando, oppure server HTTP `tiny_http`).
         let mut route_defs = Vec::new();
-        let mut arms = Vec::new();
-        for (idx, (path, body)) in routes.iter().enumerate() {
-            route_defs.push(self.route_fn(idx, body)?);
-            arms.push(format!("        {:?} => __route_{}(),", path, idx));
-        }
         if !routes.is_empty() {
+            let mut arms = Vec::new();
+            for (idx, (path, body)) in routes.iter().enumerate() {
+                route_defs.push(self.route_fn(idx, body)?);
+                arms.push(format!("        {:?} => Some(__route_{}()),", path, idx));
+            }
             route_defs.push(format!(
-                "fn main() {{\n    \
-                 let args: Vec<String> = std::env::args().collect();\n    \
-                 let path = args.get(1).map(|s| s.as_str()).unwrap_or(\"/\");\n    \
-                 let html = match path {{\n{}\n        _ => {{ eprintln!(\"nessuna route per '{{}}'\", path); std::process::exit(1); }}\n    }};\n    \
-                 println!(\"{{}}\", html);\n}}",
+                "fn __render_path(path: &str) -> Option<String> {{\n    match path {{\n{}\n        _ => None,\n    }}\n}}",
                 arms.join("\n")
             ));
+            if self.emit_server {
+                self.deps.insert("tiny_http".to_string(), "\"0.12\"".to_string());
+                route_defs.push(SERVER_MAIN.to_string());
+            } else {
+                route_defs.push(RENDER_MAIN.to_string());
+            }
         }
         // funzioni extern (corpo Rust fornito dall'utente)
         let mut extern_defs = Vec::new();

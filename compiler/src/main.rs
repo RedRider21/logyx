@@ -31,8 +31,16 @@ fn main() {
             let rp = args.get(3).map(|s| s.as_str()).unwrap_or("/");
             run_render(p, rp)
         }
+        ("build-server", Some(p)) => run_build_server(p),
+        ("serve", Some(p)) => {
+            let port = args.get(3).map(|s| s.as_str()).unwrap_or("8080");
+            run_serve(p, port)
+        }
         _ => {
-            eprintln!("uso: logyxc <tokens|parse|gen|build|build-wasm|render> <file.logyx> [percorso-route]");
+            eprintln!(
+                "uso: logyxc <tokens|parse|gen|build|build-wasm|render|build-server|serve> \
+                 <file.logyx> [percorso-route | porta]"
+            );
             exit(2);
         }
     };
@@ -411,6 +419,66 @@ fn build_rustc(path: &str, rust: &str) -> Result<(), error::LogyxError> {
         .output()
         .map_err(|e| error::LogyxError::new(format!("{bin}: {e}")))?;
     print!("{}", String::from_utf8_lossy(&run.stdout));
+    Ok(())
+}
+
+/// Web Fase 2b: genera un progetto cargo con il server HTTP (`tiny_http`) e lo
+/// compila; ritorna il percorso del binario (senza avviarlo).
+fn compile_server(path: &str) -> Result<String, error::LogyxError> {
+    let items = modules::load_program(path)?;
+    let mut cg = codegen::Codegen::new();
+    cg.set_server_mode(true);
+    let rust = cg.generate(&items)?;
+    if !which("cargo") {
+        return Err(error::LogyxError::new("cargo non installato"));
+    }
+    let dir = format!("{}_server", strip_ext(path));
+    std::fs::create_dir_all(format!("{dir}/src"))
+        .map_err(|e| error::LogyxError::new(format!("{dir}: {e}")))?;
+    let mut keys: Vec<&String> = cg.deps.keys().collect();
+    keys.sort();
+    let mut toml = String::from(
+        "[package]\nname = \"logyxserver\"\nversion = \"0.0.1\"\nedition = \"2021\"\n\n[dependencies]\n",
+    );
+    for k in &keys {
+        toml += &format!("{} = {}\n", k, cg.deps[*k]);
+    }
+    toml += "\n[[bin]]\nname = \"logyxserver\"\npath = \"src/main.rs\"\n\n[profile.release]\nopt-level = 3\n";
+    std::fs::write(format!("{dir}/Cargo.toml"), toml)
+        .map_err(|e| error::LogyxError::new(format!("{dir}/Cargo.toml: {e}")))?;
+    std::fs::write(format!("{dir}/src/main.rs"), &rust)
+        .map_err(|e| error::LogyxError::new(format!("{dir}/src/main.rs: {e}")))?;
+    let comp = std::process::Command::new("cargo")
+        .args(["build", "--release"])
+        .current_dir(&dir)
+        .output()
+        .map_err(|e| error::LogyxError::new(format!("cargo: {e}")))?;
+    if !comp.status.success() {
+        return Err(error::LogyxError::new(format!(
+            "cargo ha segnalato errori:\n{}",
+            String::from_utf8_lossy(&comp.stderr)
+        )));
+    }
+    Ok(format!("{dir}/target/release/logyxserver"))
+}
+
+fn run_build_server(path: &str) -> Result<(), error::LogyxError> {
+    let bin = compile_server(path)?;
+    println!("// server compilato: {bin}");
+    println!("Avvialo con:  {bin} [porta]   (default 8080)");
+    Ok(())
+}
+
+fn run_serve(path: &str, port: &str) -> Result<(), error::LogyxError> {
+    let bin = compile_server(path)?;
+    // esecuzione in foreground (eredita stdout/stderr): bloccante fino a Ctrl-C.
+    let status = std::process::Command::new(&bin)
+        .arg(port)
+        .status()
+        .map_err(|e| error::LogyxError::new(format!("{bin}: {e}")))?;
+    if !status.success() {
+        return Err(error::LogyxError::new("il server è terminato con errore"));
+    }
     Ok(())
 }
 

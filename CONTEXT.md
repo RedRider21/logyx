@@ -156,9 +156,16 @@ bilanciando i tag), AST (`Item::Route`, `Stmt::Render`), parser (`route_def`/`re
 `parse_expression` pubblico per le interpolazioni), codegen (`route_fn` → `__route_N()`, `main`
 dispatcher sul path). Conformità: caso `render web_demo /` nella suite (ora **39/39**). Isole
 `@start-client` e `{for …}`/`{if …}` nel template → errore chiaro (fasi dopo).
-**DA FARE web→WASM:** **Fase 2b (server HTTP `tiny_http`: `build-server`/`serve`)** ← PROSSIMO; Fase 2c
-(isole `@start-client` servite: WASM Fase 1 + collante); `{for …}`/`{if …}` nel template; DOM dal codice
-Logyx; Fase 3 (server-driven).
+**Web Fase 2b FATTA** (`design/web-wasm-fase2.md`): server HTTP nativo con crate **`tiny_http`**.
+`logyxc build-server <file>` compila il server (stampa il path del binario, non avvia); `logyxc serve
+<file> [porta]` compila e avvia in foreground (default 8080). Codegen: le route diventano
+`__render_path(path) -> Option<String>` + un `main` server (`SERVER_MAIN`) che dispatcha, risponde
+`text/html; charset=utf-8` o 404; la porta è l'argomento del binario. Modalità scelta da
+`Codegen::set_server_mode` (render vs server). Smoke test versionato `tests/server_smoke.sh` (avvia,
+confronta il body HTTP con `render`, verifica Content-Type e 404). `*_server/` gitignored.
+**DA FARE web→WASM:** **Fase 2c (isole `@start-client` servite: WASM Fase 1 + collante JS, + asset
+statici dal server)** ← PROSSIMO; `{for …}`/`{if …}` nel template; DOM dal codice Logyx; Fase 3
+(server-driven).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; `enum`; lambda inline.
 **Altri fronti:** date/tempo; web→WASM; `enum`; Fase 2 funzioni (lambda inline); contenitori di record.
 Nota: stampare una lista intera con `print` non è supportato nel nativo (`Vec` non ha `Display`): negli

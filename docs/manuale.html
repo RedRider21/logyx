@@ -509,9 +509,14 @@ route &quot;/&quot; {
 <p>Il comando <code>logyxc render &lt;file&gt; &lt;percorso&gt;</code> compila il file a un binario server nativo e stampa l'HTML
 reso per quel percorso (stesso output del prototipo <code>python main.py render</code>). Un file con <code>route</code> non
 deve definire <code>fn main</code> (il main è il server). Esempio: <code>examples/web_demo.logyx</code>.</p>
-<p>Non ancora supportati dal compilatore nativo (fasi successive): server HTTP in ascolto (<code>serve</code>), isole
-client <code>@start-client … @end-client</code>, costrutti <code>{for …}</code>/<code>{if …}</code> nel template. Vedi
-<code>design/web-wasm-fase2.md</code>.
+<p>Per servire le route via HTTP (Fase 2b, crate <code>tiny_http</code>):</p>
+<pre><code>logyxc serve &lt;file&gt; [porta]       # compila e avvia il server (default porta 8080)
+logyxc build-server &lt;file&gt;        # compila soltanto, stampa il path del binario
+</code></pre>
+<p>Il server risponde a ogni percorso con l'HTML della route corrispondente (<code>text/html; charset=utf-8</code>),
+o <code>404</code> se la route non esiste. Il binario accetta la porta come argomento.</p>
+<p>Non ancora supportati dal compilatore nativo (fasi successive): isole client <code>@start-client …
+@end-client</code> e i relativi asset, costrutti <code>{for …}</code>/<code>{if …}</code> nel template. Vedi <code>design/web-wasm-fase2.md</code>.
 | <code>pow(base, esp)</code> | <code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>) |
 | <code>floor(x)</code> / <code>ceil(x)</code> | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | <code>sqrt(x)</code> | Radice quadrata (ritorna un float) |

@@ -330,9 +330,18 @@ Il comando `logyxc render <file> <percorso>` compila il file a un binario server
 reso per quel percorso (stesso output del prototipo `python main.py render`). Un file con `route` non
 deve definire `fn main` (il main è il server). Esempio: `examples/web_demo.logyx`.
 
-Non ancora supportati dal compilatore nativo (fasi successive): server HTTP in ascolto (`serve`), isole
-client `@start-client … @end-client`, costrutti `{for …}`/`{if …}` nel template. Vedi
-`design/web-wasm-fase2.md`.
+Per servire le route via HTTP (Fase 2b, crate `tiny_http`):
+
+```
+logyxc serve <file> [porta]       # compila e avvia il server (default porta 8080)
+logyxc build-server <file>        # compila soltanto, stampa il path del binario
+```
+
+Il server risponde a ogni percorso con l'HTML della route corrispondente (`text/html; charset=utf-8`),
+o `404` se la route non esiste. Il binario accetta la porta come argomento.
+
+Non ancora supportati dal compilatore nativo (fasi successive): isole client `@start-client …
+@end-client` e i relativi asset, costrutti `{for …}`/`{if …}` nel template. Vedi `design/web-wasm-fase2.md`.
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |

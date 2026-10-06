@@ -35,9 +35,12 @@ dipendenze, perfetta per un PoC; si aggancia col meccanismo crate già pronto (b
   (`tests/conformance.sh`, ora 39). Implementazione: lexer (cattura template), AST
   (`Item::Route`/`Stmt::Render`), parser, codegen (`__route_N()` + `main` dispatcher sul path,
   helper `__html_escape`/`__disp_float`).
-- **Fase 2b — server HTTP.** `logyxc build-server <file>` (e/o `logyxc serve`) avvolge il render in un
-  server `tiny_http`: match sul path → render della route → risposta `text/html`. Serve anche gli asset
-  statici (il `.wasm`/`.js` del client quando ci saranno).
+- **Fase 2b — server HTTP. FATTA.** `logyxc build-server <file>` compila un server `tiny_http` (senza
+  avviarlo, stampa il path del binario); `logyxc serve <file> [porta]` lo compila e lo avvia in foreground
+  (default 8080). Il server fa match sul path (`__render_path`) → render della route → risposta
+  `text/html; charset=utf-8`, 404 se la route non esiste. Il binario prende la porta come argomento.
+  Smoke test: `tests/server_smoke.sh` (avvia, confronta il body HTTP con `render`, verifica Content-Type
+  e 404). *Resta da servire gli asset statici — il `.wasm`/`.js` del client — insieme alle route (Fase 2c).*
 - **Fase 2c — isole client servite.** Le isole `@start-client` del template si compilano a WASM (ABI
   Fase 1) + collante JS, iniettati nella pagina resa dal server. Qui si ricongiungono le due metà del
   "un solo sorgente". (Può slittare alla Fase 3 se il modello integrato lo assorbe.)
