@@ -100,3 +100,25 @@ python3 main.py serve ../examples/web_demo.logyx 8137
 # transpila a Rust e compila a nativo
 python3 main.py build ../examples/native_fib.logyx
 ```
+
+## Comandi del compilatore nativo (`logyxc`)
+
+Compila il binario una volta con `cd compiler && cargo build --release`
+(→ `compiler/target/release/logyxc`), poi dalla radice del repo:
+
+| Comando | Cosa fa |
+|---|---|
+| `logyxc build <file>` | Transpila a Rust, compila a nativo ed esegue |
+| `logyxc gen <file>` | Stampa il codice Rust generato |
+| `logyxc tokens <file>` / `logyxc parse <file>` | Diagnostica: token / AST |
+| `logyxc build-wasm <file>` | Compila a WebAssembly le funzioni `int`/`float`/`bool`/`string` + pagina HTML interattiva |
+| `logyxc render <file> <percorso>` | Rende l'HTML di una `route` (lato server) e lo stampa |
+| `logyxc build-server <file>` | Compila un server HTTP (crate `tiny_http`) e stampa il path del binario |
+| `logyxc serve <file> [porta]` | Compila e avvia il server HTTP (default porta 8080) |
+
+```bash
+logyxc build       examples/native_fib.logyx
+logyxc build-wasm  examples/native_webstr.logyx   # → .wasm + .html (apri servendo la cartella)
+logyxc render      examples/web_demo.logyx /       # stampa l'HTML della route "/"
+logyxc serve       examples/web_demo.logyx 8137    # http://127.0.0.1:8137
+```
