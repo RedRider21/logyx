@@ -388,6 +388,16 @@ python3 main.py serve ../examples/web_demo.logyx 8137
 
 <span class="c"># transpila a Rust e compila a nativo</span>
 python3 main.py build ../examples/native_fib.logyx</pre></div>
+      <p class="sub" data-i18n-html="start.native" style="margin-top:28px">Il compilatore nativo <code>logyxc</code> (in <code>compiler/</code>, build con <code>cargo build --release</code>) aggiunge WebAssembly e il server HTTP:</p>
+      <div class="code-wrap"><pre><span class="c"># compila ed esegue a nativo</span>
+logyxc build examples/native_fib.logyx
+
+<span class="c"># compila a WebAssembly + pagina HTML interattiva</span>
+logyxc build-wasm examples/native_webstr.logyx
+
+<span class="c"># rende l'HTML di una route, oppure avvia il server HTTP</span>
+logyxc render examples/web_demo.logyx /
+logyxc serve examples/web_demo.logyx 8137</pre></div>
     </div>
   </section>
 </main>
@@ -455,6 +465,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "status.r6.h":"Ecosistema Rust e WebAssembly","status.r6.p":"Qualsiasi crate di crates.io via use rust; le funzioni con numeri e stringhe si compilano a WebAssembly per il browser, con pagina interattiva (anteprima).",
       "status.r7.h":"Prossimi: web completo e self-hosting","status.r7.p":"DOM e server da un solo sorgente; poi riscrivere il compilatore in Logyx stesso.",
       "start.h":"Come iniziare","start.sub":"Il prototipo gira con il solo Python 3.8+ (nessuna dipendenza). Rust serve solo, in opzione, per compilare a nativo.",
+      "start.native":"Il compilatore nativo <code>logyxc</code> (in <code>compiler/</code>, build con <code>cargo build --release</code>) aggiunge WebAssembly e il server HTTP:",
       "footer.author":"di Daniele Deplano (RedRider21)","footer.license":"Licenza AGPL-3.0. Software libero.",
       "a11y.top":"Torna su"
     },
@@ -501,6 +512,7 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       "status.r6.h":"Rust ecosystem and WebAssembly","status.r6.p":"Any crate from crates.io via use rust; functions over numbers and strings compile to WebAssembly for the browser, with an interactive page (preview).",
       "status.r7.h":"Next: full web and self-hosting","status.r7.p":"DOM and server from a single source; then rewrite the compiler in Logyx itself.",
       "start.h":"Getting started","start.sub":"The prototype runs on Python 3.8+ alone (no dependencies). Rust is optional, only to compile to native.",
+      "start.native":"The native compiler <code>logyxc</code> (in <code>compiler/</code>, built with <code>cargo build --release</code>) adds WebAssembly and the HTTP server:",
       "footer.author":"by Daniele Deplano (RedRider21)","footer.license":"AGPL-3.0 licensed. Free software.",
       "a11y.top":"Back to top"
     }
