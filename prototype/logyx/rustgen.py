@@ -599,11 +599,12 @@ class RustTranspiler:
                         return tt
                 return None
             if name in ("upper", "lower", "trim", "substring", "join", "replace",
-                        "to_json", "sha256", "format_date"):
+                        "to_json", "sha256", "format_date", "read_file"):
                 return "string"
             if name == "now":
                 return "int"
-            if name in ("contains", "has", "starts_with", "ends_with"):
+            if name in ("contains", "has", "starts_with", "ends_with",
+                        "write_file", "file_exists"):
                 return "bool"
             if name == "index_of":
                 return "int"
@@ -1077,6 +1078,18 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("trim accetta un solo argomento")
                     return f"({self.expr(e.args[0])}).trim().to_string()"
+                if nm == "read_file":
+                    if len(e.args) != 1:
+                        raise LogyxError("read_file accetta un solo argomento: read_file(percorso)")
+                    return f"std::fs::read_to_string(&({self.expr(e.args[0])})).unwrap_or_default()"
+                if nm == "write_file":
+                    if len(e.args) != 2:
+                        raise LogyxError("write_file accetta due argomenti: write_file(percorso, testo)")
+                    return f"std::fs::write(&({self.expr(e.args[0])}), &({self.expr(e.args[1])})).is_ok()"
+                if nm == "file_exists":
+                    if len(e.args) != 1:
+                        raise LogyxError("file_exists accetta un solo argomento: file_exists(percorso)")
+                    return f"std::path::Path::new(&({self.expr(e.args[0])})).exists()"
                 if nm == "pow":
                     if len(e.args) != 2:
                         raise LogyxError("pow accetta due argomenti: pow(base, esponente)")

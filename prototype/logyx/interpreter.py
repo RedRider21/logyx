@@ -5,6 +5,7 @@ import datetime
 import hashlib
 import json
 import math
+import os
 import time
 
 from . import nodes as N
@@ -245,6 +246,25 @@ class Interpreter:
         # chiavi ordinate (deterministico, come in to_json): HashMap Rust non ha ordine
         g.define("keys", lambda m: sorted(m.keys()))
         g.define("values", lambda m: [m[k] for k in sorted(m.keys())])
+
+        def _read_file(p):
+            try:
+                with open(p, encoding="utf-8") as fh:
+                    return fh.read()
+            except OSError:
+                return ""
+
+        def _write_file(p, t):
+            try:
+                with open(p, "w", encoding="utf-8") as fh:
+                    fh.write(t)
+                return True
+            except OSError:
+                return False
+
+        g.define("read_file", _read_file)
+        g.define("write_file", _write_file)
+        g.define("file_exists", lambda p: os.path.exists(p))
         g.define("sqrt", lambda x: math.sqrt(x))
         g.define("index_of", lambda s, sub: s.find(sub))
         g.define("substring", lambda s, a, b: s[a:b])

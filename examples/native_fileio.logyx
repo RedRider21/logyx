@@ -1,0 +1,14 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// I/O su file: write_file / read_file / file_exists (usano std::fs).
+
+fn main() {
+    path = "/tmp/logyx_fileio_test.txt"
+    scritto = write_file(path, "riga uno\nriga due")
+    print(scritto)
+    print(file_exists(path))
+    testo = read_file(path)
+    print(testo)
+    print(len(testo))
+}

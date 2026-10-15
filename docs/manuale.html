@@ -555,6 +555,18 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <td><code>format_date(ts)</code></td>
 <td>Formatta il timestamp Unix <code>ts</code> come data UTC <code>YYYY-MM-DD HH:MM:SS</code> (crate <code>chrono</code>)</td>
 </tr>
+<tr>
+<td><code>read_file(percorso)</code></td>
+<td>Legge il file e ne restituisce il contenuto come stringa (vuota se non leggibile)</td>
+</tr>
+<tr>
+<td><code>write_file(percorso, testo)</code></td>
+<td>Scrive <code>testo</code> nel file; restituisce <code>true</code> se riuscito</td>
+</tr>
+<tr>
+<td><code>file_exists(percorso)</code></td>
+<td><code>true</code> se il file esiste</td>
+</tr>
 </tbody>
 </table>
 <p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione può essere il <strong>nome di una funzione</strong> definita con <code>fn</code> <strong>oppure

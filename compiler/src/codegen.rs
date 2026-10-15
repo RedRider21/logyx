@@ -679,7 +679,7 @@ impl Codegen {
                     }
                     if name == "upper" || name == "lower" || name == "trim" || name == "substring"
                         || name == "join" || name == "replace" || name == "to_json"
-                        || name == "sha256" || name == "format_date"
+                        || name == "sha256" || name == "format_date" || name == "read_file"
                     {
                         return Some("string".into());
                     }
@@ -688,6 +688,7 @@ impl Codegen {
                     }
                     if name == "contains" || name == "has"
                         || name == "starts_with" || name == "ends_with"
+                        || name == "write_file" || name == "file_exists"
                     {
                         return Some("bool".into());
                     }
@@ -1990,6 +1991,40 @@ impl Codegen {
                             return Err(LogyxError::new("trim accetta un solo argomento"));
                         }
                         return Ok(format!("({}).trim().to_string()", self.expr(&args[0])?));
+                    }
+                    if name == "read_file" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("read_file accetta un solo argomento: read_file(percorso)"));
+                        }
+                        // contenuto del file, o stringa vuota se non leggibile
+                        return Ok(format!(
+                            "std::fs::read_to_string(&({})).unwrap_or_default()",
+                            self.expr(&args[0])?
+                        ));
+                    }
+                    if name == "write_file" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "write_file accetta due argomenti: write_file(percorso, testo)",
+                            ));
+                        }
+                        // scrive il testo nel file; true se riuscito
+                        return Ok(format!(
+                            "std::fs::write(&({}), &({})).is_ok()",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "file_exists" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(
+                                "file_exists accetta un solo argomento: file_exists(percorso)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "std::path::Path::new(&({})).exists()",
+                            self.expr(&args[0])?
+                        ));
                     }
                     if name == "pow" {
                         if args.len() != 2 {

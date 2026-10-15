@@ -349,6 +349,7 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
           <tr><td>sha256(s)</td><td data-i18n="bi.sha256">Hash SHA-256 di s (usa la crate Rust sha2)</td></tr>
           <tr><td>now()</td><td data-i18n="bi.now">Timestamp Unix corrente in secondi</td></tr>
           <tr><td>format_date(ts)</td><td data-i18n="bi.formatdate">Formatta un timestamp come data UTC (crate chrono)</td></tr>
+          <tr><td>read_file(p), write_file(p, t), file_exists(p)</td><td data-i18n="bi.fileio">Leggi/scrivi un file di testo; verifica se esiste</td></tr>
           <tr><td>abs(x)</td><td data-i18n="bi.abs">Valore assoluto</td></tr>
           <tr><td>min(a,b), max(a,b)</td><td data-i18n="bi.minmax">Il minore / il maggiore fra due numeri</td></tr>
           <tr><td>pow(base, esp)</td><td data-i18n="bi.pow">Potenza fra interi (esp ≥ 0)</td></tr>
@@ -482,7 +483,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.sum":"Somma degli elementi (interi)","bi.sort":"Ordina la lista in ordine crescente",
       "bi.map":"Nuova lista con la funzione f su ogni elemento","bi.filter":"Gli elementi per cui la funzione p è vera","bi.reduce":"Accumula da init con f(acc, elemento)",
       "bi.lambdanote":"<code>map</code>/<code>filter</code>/<code>reduce</code> accettano una funzione nominata o una <b>lambda</b> inline: <code>map(nums, |x| x * 2)</code>, <code>reduce(nums, 0, |acc, x| acc + x)</code>.",
-      "bi.tojson":"Serializza x (scalare, record, lista o mappa) in JSON","bi.fromjson":"Deserializza il JSON in un record (crate serde)","bi.sha256":"Hash SHA-256 di s (usa la crate Rust sha2)","bi.now":"Timestamp Unix corrente in secondi","bi.formatdate":"Formatta un timestamp come data UTC (crate chrono)",
+      "bi.tojson":"Serializza x (scalare, record, lista o mappa) in JSON","bi.fromjson":"Deserializza il JSON in un record (crate serde)","bi.sha256":"Hash SHA-256 di s (usa la crate Rust sha2)","bi.now":"Timestamp Unix corrente in secondi","bi.formatdate":"Formatta un timestamp come data UTC (crate chrono)","bi.fileio":"Leggi/scrivi un file di testo; verifica se esiste",
       "bi.abs":"Valore assoluto","bi.minmax":"Il minore / il maggiore fra due numeri",
       "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
       "bi.sqrt":"Radice quadrata (ritorna un float)",
@@ -538,7 +539,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.sum":"Sum of the elements (integers)","bi.sort":"Sorts the list in ascending order",
       "bi.map":"New list with function f applied to each element","bi.filter":"The elements for which function p is true","bi.reduce":"Folds from init with f(acc, element)",
       "bi.lambdanote":"<code>map</code>/<code>filter</code>/<code>reduce</code> accept a named function or an inline <b>lambda</b>: <code>map(nums, |x| x * 2)</code>, <code>reduce(nums, 0, |acc, x| acc + x)</code>.",
-      "bi.tojson":"Serializes x (scalar, record, list or map) to JSON","bi.fromjson":"Deserializes JSON into a record (serde crate)","bi.sha256":"SHA-256 hash of s (uses the Rust crate sha2)","bi.now":"Current Unix timestamp in seconds","bi.formatdate":"Formats a timestamp as a UTC date (chrono crate)",
+      "bi.tojson":"Serializes x (scalar, record, list or map) to JSON","bi.fromjson":"Deserializes JSON into a record (serde crate)","bi.sha256":"SHA-256 hash of s (uses the Rust crate sha2)","bi.now":"Current Unix timestamp in seconds","bi.formatdate":"Formats a timestamp as a UTC date (chrono crate)","bi.fileio":"Read/write a text file; check whether it exists",
       "bi.abs":"Absolute value","bi.minmax":"The smaller / the larger of two numbers",
       "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
       "bi.sqrt":"Square root (returns a float)",

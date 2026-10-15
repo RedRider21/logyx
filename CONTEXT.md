@@ -191,8 +191,12 @@ payload). Tre backend, `examples/native_enum.logyx` + `native_enumpayload.logyx`
 closure Rust uniforme `|__p0,__p1| { let a=__p0.clone(); … body }` (il clone gestisce anche il `&T` di
 `filter`). Fuori da map/filter/reduce → errore (niente tipo-funzione di prima classe in v0). Tre backend,
 `examples/native_lambda.logyx`, suite **46/46**.
+**I/O su file: FATTO (v0)** — builtin `read_file(path)` → string (vuota se non leggibile),
+`write_file(path, testo)` → bool, `file_exists(path)` → bool; in Rust via `std::fs`/`std::path`,
+nell'interprete via `open`/`os.path`. Tre backend, `examples/native_fileio.logyx` (scrive in `/tmp`,
+rilegge), suite **47/47**. Apre la strada all'uso reale delle librerie di file.
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; valori-funzione/closure
-generali (lambda memorizzabili in variabili); **I/O su file** (prossimo).
+generali (lambda memorizzabili in variabili); lettura input da stdin / variabili d'ambiente.
 **DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,
 sito (Pages) e manuale: **come** si caricano le librerie (oggi `use rust`/`extern rust`; in futuro binding
 pronti) e un **elenco completo** delle librerie utilizzabili per categoria (file, grafica, gestione

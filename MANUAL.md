@@ -333,6 +333,9 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `sha256(s)` | Hash SHA-256 di `s` in esadecimale (usa la crate Rust `sha2`) |
 | `now()` | Timestamp Unix corrente in secondi (`int`) |
 | `format_date(ts)` | Formatta il timestamp Unix `ts` come data UTC `YYYY-MM-DD HH:MM:SS` (crate `chrono`) |
+| `read_file(percorso)` | Legge il file e ne restituisce il contenuto come stringa (vuota se non leggibile) |
+| `write_file(percorso, testo)` | Scrive `testo` nel file; restituisce `true` se riuscito |
+| `file_exists(percorso)` | `true` se il file esiste |
 
 In `map`/`filter`/`reduce` la funzione può essere il **nome di una funzione** definita con `fn` **oppure
 una lambda inline** `|parametri| espressione`:
