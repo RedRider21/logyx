@@ -599,7 +599,8 @@ class RustTranspiler:
                         return tt
                 return None
             if name in ("upper", "lower", "trim", "substring", "join", "replace",
-                        "to_json", "sha256", "format_date", "read_file"):
+                        "to_json", "sha256", "format_date", "read_file",
+                        "read_line", "read_all", "env"):
                 return "string"
             if name == "now":
                 return "int"
@@ -1090,6 +1091,20 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("file_exists accetta un solo argomento: file_exists(percorso)")
                     return f"std::path::Path::new(&({self.expr(e.args[0])})).exists()"
+                if nm == "read_line":
+                    if e.args:
+                        raise LogyxError("read_line non accetta argomenti")
+                    return ("{ let mut __s = String::new(); let _ = std::io::stdin().read_line(&mut __s); "
+                            "__s.trim_end_matches(|c| c == '\\n' || c == '\\r').to_string() }")
+                if nm == "read_all":
+                    if e.args:
+                        raise LogyxError("read_all non accetta argomenti")
+                    return ("{ use std::io::Read; let mut __s = String::new(); "
+                            "let _ = std::io::stdin().read_to_string(&mut __s); __s }")
+                if nm == "env":
+                    if len(e.args) != 1:
+                        raise LogyxError("env accetta un solo argomento: env(nome)")
+                    return f"std::env::var(&({self.expr(e.args[0])})).unwrap_or_default()"
                 if nm == "pow":
                     if len(e.args) != 2:
                         raise LogyxError("pow accetta due argomenti: pow(base, esponente)")

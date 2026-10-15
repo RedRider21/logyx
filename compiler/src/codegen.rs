@@ -680,6 +680,7 @@ impl Codegen {
                     if name == "upper" || name == "lower" || name == "trim" || name == "substring"
                         || name == "join" || name == "replace" || name == "to_json"
                         || name == "sha256" || name == "format_date" || name == "read_file"
+                        || name == "read_line" || name == "read_all" || name == "env"
                     {
                         return Some("string".into());
                     }
@@ -2023,6 +2024,30 @@ impl Codegen {
                         }
                         return Ok(format!(
                             "std::path::Path::new(&({})).exists()",
+                            self.expr(&args[0])?
+                        ));
+                    }
+                    if name == "read_line" {
+                        if !args.is_empty() {
+                            return Err(LogyxError::new("read_line non accetta argomenti"));
+                        }
+                        // una riga da stdin, senza il newline finale ("" su EOF)
+                        return Ok("{ let mut __s = String::new(); let _ = std::io::stdin().read_line(&mut __s); __s.trim_end_matches(|c| c == '\\n' || c == '\\r').to_string() }".to_string());
+                    }
+                    if name == "read_all" {
+                        if !args.is_empty() {
+                            return Err(LogyxError::new("read_all non accetta argomenti"));
+                        }
+                        // tutto lo stdin come stringa
+                        return Ok("{ use std::io::Read; let mut __s = String::new(); let _ = std::io::stdin().read_to_string(&mut __s); __s }".to_string());
+                    }
+                    if name == "env" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("env accetta un solo argomento: env(nome)"));
+                        }
+                        // valore della variabile d'ambiente, "" se assente
+                        return Ok(format!(
+                            "std::env::var(&({})).unwrap_or_default()",
                             self.expr(&args[0])?
                         ));
                     }

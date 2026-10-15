@@ -567,6 +567,18 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <td><code>file_exists(percorso)</code></td>
 <td><code>true</code> se il file esiste</td>
 </tr>
+<tr>
+<td><code>read_line()</code></td>
+<td>Legge una riga da stdin (senza il newline finale; <code>""</code> a fine input)</td>
+</tr>
+<tr>
+<td><code>read_all()</code></td>
+<td>Legge tutto lo stdin come stringa</td>
+</tr>
+<tr>
+<td><code>env(nome)</code></td>
+<td>Valore della variabile d'ambiente <code>nome</code> (<code>""</code> se assente)</td>
+</tr>
 </tbody>
 </table>
 <p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione può essere il <strong>nome di una funzione</strong> definita con <code>fn</code> <strong>oppure

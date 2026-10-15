@@ -195,8 +195,13 @@ closure Rust uniforme `|__p0,__p1| { let a=__p0.clone(); … body }` (il clone g
 `write_file(path, testo)` → bool, `file_exists(path)` → bool; in Rust via `std::fs`/`std::path`,
 nell'interprete via `open`/`os.path`. Tre backend, `examples/native_fileio.logyx` (scrive in `/tmp`,
 rilegge), suite **47/47**. Apre la strada all'uso reale delle librerie di file.
+**stdin / ambiente: FATTO (v0)** — `read_line()` (una riga, senza newline finale; "" su EOF),
+`read_all()` (tutto lo stdin), `env(nome)` (variabile d'ambiente, "" se assente). In Rust `std::io::stdin`
+/ `std::env::var`, nell'interprete `sys.stdin` / `os.environ`. Non deterministici → **fuori dalla suite**
+(come `now()`): `examples/native_stdinenv.logyx`, verificato a mano (interprete == nativo con stdin/env
+reali; Rust generato identico fra transpiler e compiler).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; valori-funzione/closure
-generali (lambda memorizzabili in variabili); lettura input da stdin / variabili d'ambiente.
+generali (lambda memorizzabili in variabili); argomenti da riga di comando (`args`).
 **DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,
 sito (Pages) e manuale: **come** si caricano le librerie (oggi `use rust`/`extern rust`; in futuro binding
 pronti) e un **elenco completo** delle librerie utilizzabili per categoria (file, grafica, gestione

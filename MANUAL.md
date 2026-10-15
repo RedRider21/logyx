@@ -336,6 +336,9 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `read_file(percorso)` | Legge il file e ne restituisce il contenuto come stringa (vuota se non leggibile) |
 | `write_file(percorso, testo)` | Scrive `testo` nel file; restituisce `true` se riuscito |
 | `file_exists(percorso)` | `true` se il file esiste |
+| `read_line()` | Legge una riga da stdin (senza il newline finale; `""` a fine input) |
+| `read_all()` | Legge tutto lo stdin come stringa |
+| `env(nome)` | Valore della variabile d'ambiente `nome` (`""` se assente) |
 
 In `map`/`filter`/`reduce` la funzione può essere il **nome di una funzione** definita con `fn` **oppure
 una lambda inline** `|parametri| espressione`:

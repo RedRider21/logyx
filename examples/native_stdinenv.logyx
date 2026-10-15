@@ -1,0 +1,11 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Input da stdin e variabili d'ambiente: read_line / env (non deterministici,
+// fuori dalla suite di conformità).
+
+fn main() {
+    nome = read_line()
+    print("Ciao, " + nome + "!")
+    print(env("LOGYX_SALUTO"))
+}

@@ -6,6 +6,7 @@ import hashlib
 import json
 import math
 import os
+import sys
 import time
 
 from . import nodes as N
@@ -265,6 +266,10 @@ class Interpreter:
         g.define("read_file", _read_file)
         g.define("write_file", _write_file)
         g.define("file_exists", lambda p: os.path.exists(p))
+        # stdin / ambiente (una riga senza newline finale; "" su EOF)
+        g.define("read_line", lambda: sys.stdin.readline().rstrip("\n\r"))
+        g.define("read_all", lambda: sys.stdin.read())
+        g.define("env", lambda name: os.environ.get(name, ""))
         g.define("sqrt", lambda x: math.sqrt(x))
         g.define("index_of", lambda s, sub: s.find(sub))
         g.define("substring", lambda s, a, b: s[a:b])
