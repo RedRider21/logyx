@@ -427,9 +427,9 @@ for k in m { ... }     // itera le chiavi della mappa, ordinate
 </code></pre>
 <p>Mutazioni: <code>push(lista, x)</code> aggiunge <code>x</code> in coda, <code>remove(lista, i)</code> toglie l'elemento all'indice <code>i</code>,
 <code>sort(lista)</code> ordina in place. Altre operazioni: <code>sum(lista)</code>, <code>contains(lista, x)</code>, <code>has(mappa, chiave)</code>,
-<code>map</code>/<code>filter</code>/<code>reduce</code> (con funzioni nominate). Le chiavi di mappa si iterano <strong>ordinate</strong> (<code>for k in m</code>,
-<code>keys(m)</code>): l'ordine è deterministico, quindi prototipo e compilatore nativo danno lo stesso risultato.
-Non ancora: slicing, lambda inline. ⏳</p>
+<code>map</code>/<code>filter</code>/<code>reduce</code> (con una funzione nominata <strong>o</strong> una lambda inline). Le chiavi di mappa si
+iterano <strong>ordinate</strong> (<code>for k in m</code>, <code>keys(m)</code>): l'ordine è deterministico, quindi prototipo e compilatore
+nativo danno lo stesso risultato. Non ancora: slicing. ⏳</p>
 <h2 id="8-stringhe-e-interpolazione">8. Stringhe e interpolazione ✅</h2>
 <pre><code>nome = &quot;Logyx&quot;
 print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
@@ -557,8 +557,15 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 </tr>
 </tbody>
 </table>
-<p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione è il <strong>nome di una funzione definita con <code>fn</code></strong> (non una lambda
-inline, per ora). Esempi: <code>examples/native_mapfilter.logyx</code>, <code>examples/native_reduce.logyx</code>.</p>
+<p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione può essere il <strong>nome di una funzione</strong> definita con <code>fn</code> <strong>oppure
+una lambda inline</strong> <code>|parametri| espressione</code>:</p>
+<pre><code>map(nums, |x| x * 2)            // lambda a un parametro
+filter(nums, |n| n &gt; 2)
+reduce(nums, 0, |acc, x| acc + x)   // due parametri
+map(parole, grida)             // o il nome di una funzione
+</code></pre>
+<p>Le lambda (v0) hanno un <strong>corpo-espressione</strong> e si usano come argomento di <code>map</code>/<code>filter</code>/<code>reduce</code>.
+Esempi: <code>examples/native_mapfilter.logyx</code>, <code>examples/native_reduce.logyx</code>, <code>examples/native_lambda.logyx</code>.</p>
 <p><code>to_json</code> serializza <strong>int</strong>, <strong>float</strong>, <strong>bool</strong>, <strong>string</strong>, <strong>record</strong> (anche annidati) e <strong>liste</strong>,
 in formato compatto; le stringhe sono "escaped". I float finiti e interi escono con il decimale (<code>3.0</code>);
 le liste possono contenere qualunque tipo supportato, record e liste annidate inclusi — il tipo

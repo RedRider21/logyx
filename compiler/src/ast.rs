@@ -57,6 +57,8 @@ pub enum Expr {
     List(Vec<Expr>),
     Map(Vec<(Expr, Expr)>),
     Try(Box<Expr>),
+    /// Lambda inline `|p1, p2| espressione` (v0: argomento di map/filter/reduce).
+    Lambda { params: Vec<String>, body: Box<Expr> },
 }
 
 #[derive(Debug, Clone, PartialEq)]

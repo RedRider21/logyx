@@ -901,14 +901,22 @@ class RustTranspiler:
             return self.expr(a) + ".clone()"
         return self.expr(a)
 
-    def _fn_name(self, args, n, idx, usage):
+    def _lambda_closure(self, arg, arity, usage):
+        """Closure Rust da una lambda |a,b| expr o dal nome di una funzione.
+        I parametri sono legati a valori clonati (gestisce anche il &T di filter)."""
         base = usage.split("(")[0]
-        if len(args) != n:
-            raise LogyxError(f"{base} accetta {n} argomenti: {usage}")
-        f = args[idx]
-        if not isinstance(f, N.Identifier):
-            raise LogyxError(f"{base}: l'argomento funzione deve essere il nome di una funzione definita con 'fn'")
-        return f.name
+        if isinstance(arg, N.Lambda):
+            if len(arg.params) != arity:
+                raise LogyxError(f"{base}: la lambda deve avere {arity} parametro/i")
+            names, body = list(arg.params), self.expr(arg.body)
+        elif isinstance(arg, N.Identifier):
+            names = [f"__n{i}" for i in range(arity)]
+            body = f"{arg.name}({', '.join(names)})"
+        else:
+            raise LogyxError(f"{base}: l'argomento funzione dev'essere una lambda |…| … o un nome di funzione")
+        ps = [f"__p{i}" for i in range(arity)]
+        lets = "".join(f"let {n} = __p{i}.clone(); " for i, n in enumerate(names))
+        return f"|{', '.join(ps)}| {{ {lets}{body} }}"
 
     def print_call(self, args):
         if len(args) != 1:
@@ -1151,17 +1159,23 @@ class RustTranspiler:
                             "__h.update((" + self.expr(e.args[0])
                             + ").as_bytes()); format!(\"{:x}\", __h.finalize()) }")
                 if nm == "map":
-                    fn = self._fn_name(e.args, 2, 1, "map(lista, funzione)")
-                    return (f"({self.expr(e.args[0])}).iter().cloned().map(|x| {fn}(x))"
+                    if len(e.args) != 2:
+                        raise LogyxError("map accetta due argomenti: map(lista, funzione)")
+                    cl = self._lambda_closure(e.args[1], 1, "map(lista, funzione)")
+                    return (f"({self.expr(e.args[0])}).iter().cloned().map({cl})"
                             ".collect::<Vec<_>>()")
                 if nm == "filter":
-                    fn = self._fn_name(e.args, 2, 1, "filter(lista, funzione)")
-                    return (f"({self.expr(e.args[0])}).iter().cloned().filter(|x| {fn}(x.clone()))"
+                    if len(e.args) != 2:
+                        raise LogyxError("filter accetta due argomenti: filter(lista, funzione)")
+                    cl = self._lambda_closure(e.args[1], 1, "filter(lista, funzione)")
+                    return (f"({self.expr(e.args[0])}).iter().cloned().filter({cl})"
                             ".collect::<Vec<_>>()")
                 if nm == "reduce":
-                    fn = self._fn_name(e.args, 3, 2, "reduce(lista, iniziale, funzione)")
+                    if len(e.args) != 3:
+                        raise LogyxError("reduce accetta tre argomenti: reduce(lista, iniziale, funzione)")
+                    cl = self._lambda_closure(e.args[2], 2, "reduce(lista, iniziale, funzione)")
                     return (f"({self.expr(e.args[0])}).iter().cloned()"
-                            f".fold({self.expr(e.args[1])}, |acc, x| {fn}(acc, x))")
+                            f".fold({self.expr(e.args[1])}, {cl})")
                 if nm == "sort":
                     raise LogyxError("usa sort come istruzione, non dentro un'espressione")
             args = ", ".join(self._arg(a) for a in e.args)

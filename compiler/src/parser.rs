@@ -716,8 +716,25 @@ impl Parser {
         Ok(e)
     }
 
+    /// Lambda inline: `|p1, p2| espressione`.
+    fn lambda(&mut self) -> Result<Expr, LogyxError> {
+        self.expect(&TokenKind::Pipe, "|")?;
+        let mut params = Vec::new();
+        if !self.is(&TokenKind::Pipe) {
+            params.push(self.ident_name("parametro della lambda")?);
+            while self.is(&TokenKind::Comma) {
+                self.advance();
+                params.push(self.ident_name("parametro della lambda")?);
+            }
+        }
+        self.expect(&TokenKind::Pipe, "| di chiusura dei parametri")?;
+        let body = self.expression()?;
+        Ok(Expr::Lambda { params, body: Box::new(body) })
+    }
+
     fn primary(&mut self) -> Result<Expr, LogyxError> {
         match self.kind().clone() {
+            TokenKind::Pipe => self.lambda(),
             TokenKind::Int(v) => {
                 self.advance();
                 Ok(Expr::Int(v))
@@ -1027,8 +1044,8 @@ impl ClientCompiler {
                 }
                 Ok(format!("{{{}}}", ps.join(", ")))
             }
-            Expr::Field { .. } | Expr::Try(_) => {
-                Err(LogyxError::new("espressione client non supportata (campo/'?')"))
+            Expr::Field { .. } | Expr::Try(_) | Expr::Lambda { .. } => {
+                Err(LogyxError::new("espressione client non supportata (campo/'?'/lambda)"))
             }
         }
     }

@@ -480,8 +480,22 @@ class Parser:
                 break
         return e
 
+    def lambda_expr(self):
+        self.expect(T.PIPE)
+        params = []
+        if not self.at(T.PIPE):
+            params.append(self.expect(T.IDENT, "parametro della lambda").value)
+            while self.at(T.COMMA):
+                self.advance()
+                params.append(self.expect(T.IDENT, "parametro della lambda").value)
+        self.expect(T.PIPE)
+        body = self.expression()
+        return N.Lambda(params, body)
+
     def primary(self):
         t = self.peek()
+        if t.type == T.PIPE:
+            return self.lambda_expr()
         if t.type in (T.INT, T.FLOAT, T.TRUE, T.FALSE):
             self.advance()
             return N.Literal(t.value)

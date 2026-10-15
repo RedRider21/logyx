@@ -168,6 +168,12 @@ class Field:
 
 
 @dataclass
+class Lambda:
+    params: List[str]
+    body: Any  # espressione (corpo della lambda)
+
+
+@dataclass
 class Try:
     operand: Any  # espressione: propaga l'errore se presente, altrimenti il valore
 

@@ -290,9 +290,9 @@ for k in m { ... }     // itera le chiavi della mappa, ordinate
 
 Mutazioni: `push(lista, x)` aggiunge `x` in coda, `remove(lista, i)` toglie l'elemento all'indice `i`,
 `sort(lista)` ordina in place. Altre operazioni: `sum(lista)`, `contains(lista, x)`, `has(mappa, chiave)`,
-`map`/`filter`/`reduce` (con funzioni nominate). Le chiavi di mappa si iterano **ordinate** (`for k in m`,
-`keys(m)`): l'ordine è deterministico, quindi prototipo e compilatore nativo danno lo stesso risultato.
-Non ancora: slicing, lambda inline. ⏳
+`map`/`filter`/`reduce` (con una funzione nominata **o** una lambda inline). Le chiavi di mappa si
+iterano **ordinate** (`for k in m`, `keys(m)`): l'ordine è deterministico, quindi prototipo e compilatore
+nativo danno lo stesso risultato. Non ancora: slicing. ⏳
 
 ## 8. Stringhe e interpolazione ✅
 
@@ -334,8 +334,18 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `now()` | Timestamp Unix corrente in secondi (`int`) |
 | `format_date(ts)` | Formatta il timestamp Unix `ts` come data UTC `YYYY-MM-DD HH:MM:SS` (crate `chrono`) |
 
-In `map`/`filter`/`reduce` la funzione è il **nome di una funzione definita con `fn`** (non una lambda
-inline, per ora). Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`.
+In `map`/`filter`/`reduce` la funzione può essere il **nome di una funzione** definita con `fn` **oppure
+una lambda inline** `|parametri| espressione`:
+
+```
+map(nums, |x| x * 2)            // lambda a un parametro
+filter(nums, |n| n > 2)
+reduce(nums, 0, |acc, x| acc + x)   // due parametri
+map(parole, grida)             // o il nome di una funzione
+```
+
+Le lambda (v0) hanno un **corpo-espressione** e si usano come argomento di `map`/`filter`/`reduce`.
+Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`, `examples/native_lambda.logyx`.
 
 `to_json` serializza **int**, **float**, **bool**, **string**, **record** (anche annidati) e **liste**,
 in formato compatto; le stringhe sono "escaped". I float finiti e interi escono con il decimale (`3.0`);

@@ -30,7 +30,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | Moduli (`import`) | ✅ | — |
 | **`break` / `continue`** nei cicli | ✅ | — |
 | **Operatori composti** (`+=`, `-=`, `*=`, …) | ✅ | — |
-| **Funzioni come valori / closure / lambda** | ⏳ | **1** |
+| **Funzioni come valori / closure / lambda** | 🟢 lambda inline `|a,b| expr` in map/filter/reduce; closure generali/valori-funzione ⏳ | **1** |
 | Parametri con default; numero variabile di argomenti | ⏳ | 3 |
 | **Record/struct** (tipi con campi, anche in liste/mappe) | ✅ | — |
 | `match` generale (sui valori, con `else`) | ✅ | — |

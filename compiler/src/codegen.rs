@@ -117,19 +117,6 @@ fn __disp_float(x: f64) -> String {
     if x.is_finite() && x.fract() == 0.0 { format!("{}", x as i64) } else { format!("{}", x) }
 }"#;
 
-fn fn_name(args: &[Expr], n: usize, idx: usize, usage: &str) -> R<String> {
-    let base = usage.split('(').next().unwrap_or(usage);
-    if args.len() != n {
-        return Err(LogyxError::new(format!("{base} accetta {n} argomenti: {usage}")));
-    }
-    match &args[idx] {
-        Expr::Ident(name) => Ok(name.clone()),
-        _ => Err(LogyxError::new(format!(
-            "{base}: l'argomento funzione deve essere il nome di una funzione definita con 'fn'"
-        ))),
-    }
-}
-
 fn binop_sym(op: &BinOp) -> &'static str {
     match op {
         BinOp::Add => "+",
@@ -1728,6 +1715,39 @@ impl Codegen {
         }
     }
 
+    /// Genera una closure Rust da un argomento funzione: una lambda `|a,b| expr`
+    /// oppure il nome di una funzione. I parametri sono legati a valori clonati,
+    /// così il corpo lavora sempre su valori (gestisce anche il `&T` di `filter`).
+    fn lambda_closure(&mut self, arg: &Expr, arity: usize, usage: &str) -> R<String> {
+        let base = usage.split('(').next().unwrap_or(usage);
+        let (names, body) = match arg {
+            Expr::Lambda { params, body } => {
+                if params.len() != arity {
+                    return Err(LogyxError::new(format!(
+                        "{base}: la lambda deve avere {arity} parametro/i, non {}",
+                        params.len()
+                    )));
+                }
+                (params.clone(), self.expr(body)?)
+            }
+            Expr::Ident(fname) => {
+                let ns: Vec<String> = (0..arity).map(|i| format!("__n{}", i)).collect();
+                (ns.clone(), format!("{}({})", fname, ns.join(", ")))
+            }
+            _ => {
+                return Err(LogyxError::new(format!(
+                    "{base}: l'argomento funzione dev'essere una lambda |…| … o il nome di una funzione"
+                )))
+            }
+        };
+        let ps: Vec<String> = (0..arity).map(|i| format!("__p{}", i)).collect();
+        let mut lets = String::new();
+        for (i, n) in names.iter().enumerate() {
+            lets += &format!("let {} = __p{}.clone(); ", n, i);
+        }
+        Ok(format!("|{}| {{ {}{} }}", ps.join(", "), lets, body))
+    }
+
     fn arg(&mut self, a: &Expr) -> R<String> {
         // Una variabile passata a una funzione la muove; cloniamo per riusabilità
         // (gratuito per i tipi Copy dopo l'ottimizzazione).
@@ -1821,6 +1841,9 @@ impl Codegen {
                 ))
             }
             Expr::Try(inner) => Ok(format!("({})?", self.expr(inner)?)),
+            Expr::Lambda { .. } => Err(LogyxError::new(
+                "le lambda |…| … sono ammesse solo come argomento di map/filter/reduce",
+            )),
             Expr::Index { target, index } => {
                 if let Expr::Ident(n) = &**target {
                     if self.kinds.get(n).map(|s| s.as_str()) == Some("map") {
@@ -2139,28 +2162,39 @@ impl Codegen {
                         return self.json_value(&ex, &ta);
                     }
                     if name == "map" {
-                        let f = fn_name(args, 2, 1, "map(lista, funzione)")?;
+                        if args.len() != 2 {
+                            return Err(LogyxError::new("map accetta due argomenti: map(lista, funzione)"));
+                        }
+                        let cl = self.lambda_closure(&args[1], 1, "map(lista, funzione)")?;
                         return Ok(format!(
-                            "({}).iter().cloned().map(|x| {}(x)).collect::<Vec<_>>()",
+                            "({}).iter().cloned().map({}).collect::<Vec<_>>()",
                             self.expr(&args[0])?,
-                            f
+                            cl
                         ));
                     }
                     if name == "filter" {
-                        let f = fn_name(args, 2, 1, "filter(lista, funzione)")?;
+                        if args.len() != 2 {
+                            return Err(LogyxError::new("filter accetta due argomenti: filter(lista, funzione)"));
+                        }
+                        let cl = self.lambda_closure(&args[1], 1, "filter(lista, funzione)")?;
                         return Ok(format!(
-                            "({}).iter().cloned().filter(|x| {}(x.clone())).collect::<Vec<_>>()",
+                            "({}).iter().cloned().filter({}).collect::<Vec<_>>()",
                             self.expr(&args[0])?,
-                            f
+                            cl
                         ));
                     }
                     if name == "reduce" {
-                        let f = fn_name(args, 3, 2, "reduce(lista, iniziale, funzione)")?;
+                        if args.len() != 3 {
+                            return Err(LogyxError::new(
+                                "reduce accetta tre argomenti: reduce(lista, iniziale, funzione)",
+                            ));
+                        }
+                        let cl = self.lambda_closure(&args[2], 2, "reduce(lista, iniziale, funzione)")?;
                         return Ok(format!(
-                            "({}).iter().cloned().fold({}, |acc, x| {}(acc, x))",
+                            "({}).iter().cloned().fold({}, {})",
                             self.expr(&args[0])?,
                             self.expr(&args[1])?,
-                            f
+                            cl
                         ));
                     }
                     if name == "sort" {

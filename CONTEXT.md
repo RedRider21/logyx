@@ -186,7 +186,13 @@ su `MatchValue` (confronto `==`). Codegen: `self.enums` = varianti con tipi payl
 `E::V(args)`; `MatchEnum` → `match … { E::V(b1,b2) => … _ => … }` con i bind in `cur_types` (tipi dal
 payload). Tre backend, `examples/native_enum.logyx` + `native_enumpayload.logyx`, suite **45/45**.
 **DA FARE enum:** varianti con payload **nominale** (campi con nome) e match annidati, se serviranno.
-**Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; lambda inline.
+**Lambda inline: FATTE** — `|p1, p2| espressione` (corpo-espressione) come argomento di
+`map`/`filter`/`reduce`, in alternativa al nome di funzione. `Expr::Lambda`/`N.Lambda`; nel codegen una
+closure Rust uniforme `|__p0,__p1| { let a=__p0.clone(); … body }` (il clone gestisce anche il `&T` di
+`filter`). Fuori da map/filter/reduce → errore (niente tipo-funzione di prima classe in v0). Tre backend,
+`examples/native_lambda.logyx`, suite **46/46**.
+**Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; valori-funzione/closure
+generali (lambda memorizzabili in variabili); **I/O su file** (prossimo).
 **DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,
 sito (Pages) e manuale: **come** si caricano le librerie (oggi `use rust`/`extern rust`; in futuro binding
 pronti) e un **elenco completo** delle librerie utilizzabili per categoria (file, grafica, gestione

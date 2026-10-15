@@ -157,8 +157,9 @@ while        := "while" espressione blocco
 for          := "for" IDENT "in" espressione blocco
 
 render       := "render" template
-espressione  := ... (letterali, chiamate, operatori aritmetici/confronto/logici, postfisso "?")
+espressione  := ... (letterali, chiamate, operatori aritmetici/confronto/logici, postfisso "?", lambda)
                 // e? propaga l'errore: se e è un errore, esce dalla funzione; altrimenti dà il valore
+lambda       := "|" (IDENT ("," IDENT)*)? "|" espressione    // v0: argomento di map/filter/reduce
 tipo         := tipoBase ("|" "error")?          // "T | error" = fallibile (Result in Rust)
 tipoBase     := "int" | "float" | "bool" | "string" | "nil"
               | "[" tipoBase "]" | "{" tipoBase ":" tipoBase "}"

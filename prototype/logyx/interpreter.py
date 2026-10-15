@@ -715,6 +715,15 @@ class Interpreter:
             )
         return RecordValue(name, {fname: val for (fname, _), val in zip(fields, args)})
 
+    def ex_Lambda(self, n, env):
+        # una lambda è un valore chiamabile che valuta il corpo nell'ambiente catturato
+        def _fn(*args):
+            child = Environment(env)
+            for name, value in zip(n.params, args):
+                child.define(name, value)
+            return self.eval(n.body, child)
+        return _fn
+
     def ex_Field(self, n, env):
         # variante di enum: Nome.Variante (Nome è un enum, non una variabile)
         if isinstance(n.target, N.Identifier) and n.target.name in self.enums:

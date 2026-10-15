@@ -1,0 +1,11 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Lambda inline |params| espressione come argomento di map/filter/reduce.
+
+fn main() {
+    nums = [1, 2, 3, 4]
+    print(sum(map(nums, |x| x * 2)))      // 20
+    print(sum(filter(nums, |n| n > 2)))   // 7
+    print(reduce(nums, 0, |acc, x| acc + x))  // 10
+}
