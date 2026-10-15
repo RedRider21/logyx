@@ -163,6 +163,7 @@ lambda       := "|" (IDENT ("," IDENT)*)? "|" espressione    // v0: argomento di
 tipo         := tipoBase ("|" "error")?          // "T | error" = fallibile (Result in Rust)
 tipoBase     := "int" | "float" | "bool" | "string" | "nil"
               | "[" tipoBase "]" | "{" tipoBase ":" tipoBase "}"
+              | "fn" "(" (tipoBase ("," tipoBase)*)? ")" "->" tipoBase   // tipo funzione (valore funzione)
 ```
 
 Le parti marcate `...` (precedenze degli operatori, template dettagliato) saranno formalizzate quando

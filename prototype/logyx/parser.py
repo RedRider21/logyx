@@ -236,6 +236,20 @@ class Parser:
         if self.at(T.NIL):
             self.advance()
             return "nil"
+        if self.at(T.FN):
+            # tipo funzione: fn(T1, T2) -> R
+            self.advance()
+            self.expect(T.LPAREN)
+            ps = []
+            if not self.at(T.RPAREN):
+                ps.append(self._type_base())
+                while self.at(T.COMMA):
+                    self.advance()
+                    ps.append(self._type_base())
+            self.expect(T.RPAREN)
+            self.expect(T.ARROW)
+            ret = self._type_base()
+            return "fn(" + ",".join(ps) + ")->" + ret
         return self.expect(T.IDENT, "tipo").value
 
     def block(self):

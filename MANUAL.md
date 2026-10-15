@@ -351,8 +351,26 @@ reduce(nums, 0, |acc, x| acc + x)   // due parametri
 map(parole, grida)             // o il nome di una funzione
 ```
 
-Le lambda (v0) hanno un **corpo-espressione** e si usano come argomento di `map`/`filter`/`reduce`.
-Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`, `examples/native_lambda.logyx`.
+Le lambda (v0) hanno un **corpo-espressione**.
+
+**Valori funzione.** Una funzione o una lambda si può **passare a un parametro di tipo funzione**,
+annotato come `fn(T1, ...) -> R`, e chiamare nel corpo:
+
+```
+fn raddoppia(n: int) -> int { return n * 2 }
+
+fn applica(g: fn(int) -> int, x: int) -> int {
+    return g(x)
+}
+
+applica(raddoppia, 5)      // 10  (nome di funzione)
+applica(|y| y + 1, 5)      // 6   (lambda)
+```
+
+In Rust il valore funzione è un `Rc<dyn Fn(...) -> ...>`. v0: i valori funzione si passano come **argomenti**
+a parametri `fn(...)->...` (e si chiamano); non sono ancora memorizzabili in variabili libere né restituiti.
+Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`, `examples/native_lambda.logyx`,
+`examples/native_funval.logyx`.
 
 `to_json` serializza **int**, **float**, **bool**, **string**, **record** (anche annidati) e **liste**,
 in formato compatto; le stringhe sono "escaped". I float finiti e interi escono con il decimale (`3.0`);

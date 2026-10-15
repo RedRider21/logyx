@@ -1,0 +1,17 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Valori funzione: una funzione o una lambda passata a un parametro fn(...)->...
+
+fn raddoppia(n: int) -> int {
+    return n * 2
+}
+
+fn applica(g: fn(int) -> int, x: int) -> int {
+    return g(x)
+}
+
+fn main() {
+    print(applica(raddoppia, 5))
+    print(applica(|y| y + 1, 5))
+}

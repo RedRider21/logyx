@@ -117,6 +117,20 @@ fn __disp_float(x: f64) -> String {
     if x.is_finite() && x.fract() == 0.0 { format!("{}", x as i64) } else { format!("{}", x) }
 }"#;
 
+/// Da un tipo funzione "fn(T1,T2)->R" estrae (["T1","T2"], "R"). None se non è un tipo funzione.
+fn parse_fn_type(t: &str) -> Option<(Vec<String>, String)> {
+    let rest = t.strip_prefix("fn(")?;
+    let close = rest.find(")->")?;
+    let params_str = &rest[..close];
+    let ret = rest[close + 3..].to_string();
+    let params = if params_str.is_empty() {
+        Vec::new()
+    } else {
+        params_str.split(',').map(|s| s.trim().to_string()).collect()
+    };
+    Some((params, ret))
+}
+
 fn binop_sym(op: &BinOp) -> &'static str {
     match op {
         BinOp::Add => "+",
@@ -283,6 +297,18 @@ impl Codegen {
     fn rust_type(&self, t: &str) -> R<String> {
         if self.records.contains_key(t) || self.enums.contains_key(t) {
             return Ok(t.to_string());
+        }
+        if let Some((params, ret)) = parse_fn_type(t) {
+            // valore funzione: Rc<dyn Fn(...)> (clonabile → compatibile col clone uniforme)
+            let mut rp = Vec::new();
+            for p in &params {
+                rp.push(self.rust_type(p)?);
+            }
+            return Ok(format!(
+                "std::rc::Rc<dyn Fn({}) -> {}>",
+                rp.join(", "),
+                self.rust_type(&ret)?
+            ));
         }
         Ok(ty(t)?.to_string())
     }
@@ -1750,6 +1776,47 @@ impl Codegen {
         Ok(format!("|{}| {{ {}{} }}", ps.join(", "), lets, body))
     }
 
+    /// Genera un valore funzione (`Rc<dyn Fn...>`) per un argomento destinato a un
+    /// parametro di tipo `fn(...)->...`: una lambda, un nome di funzione, o una
+    /// variabile già di tipo funzione.
+    fn fn_value_arg(&mut self, arg: &Expr, fn_type: &str) -> R<String> {
+        let (ptypes, _ret) = parse_fn_type(fn_type).ok_or_else(|| {
+            LogyxError::new("tipo funzione non valido")
+        })?;
+        let rust_ty = self.rust_type(fn_type)?;
+        match arg {
+            Expr::Lambda { params, body } => {
+                if params.len() != ptypes.len() {
+                    return Err(LogyxError::new(format!(
+                        "la lambda ha {} parametri, ma il tipo funzione ne richiede {}",
+                        params.len(),
+                        ptypes.len()
+                    )));
+                }
+                let saved = self.cur_types.clone();
+                let mut rp = Vec::new();
+                for (p, pt) in params.iter().zip(ptypes.iter()) {
+                    self.cur_types.insert(p.clone(), Some(pt.clone()));
+                    rp.push(format!("{}: {}", p, self.rust_type(pt)?));
+                }
+                let b = self.expr(body)?;
+                self.cur_types = saved;
+                Ok(format!("(std::rc::Rc::new(move |{}| {}) as {})", rp.join(", "), b, rust_ty))
+            }
+            Expr::Ident(n) => {
+                // variabile già di tipo funzione: passala clonata (incrementa il refcount)
+                if matches!(self.cur_types.get(n), Some(Some(t)) if parse_fn_type(t).is_some()) {
+                    return Ok(format!("{}.clone()", n));
+                }
+                // altrimenti il nome di una funzione definita
+                Ok(format!("(std::rc::Rc::new({}) as {})", n, rust_ty))
+            }
+            _ => Err(LogyxError::new(
+                "per un parametro di tipo funzione serve una lambda |…| … o il nome di una funzione",
+            )),
+        }
+    }
+
     fn arg(&mut self, a: &Expr) -> R<String> {
         // Una variabile passata a una funzione la muove; cloniamo per riusabilità
         // (gratuito per i tipi Copy dopo l'ottimizzazione).
@@ -2284,6 +2351,35 @@ impl Codegen {
                             parts.push(format!("{}: {}", fname, self.arg(arg)?));
                         }
                         return Ok(format!("{} {{ {} }}", name, parts.join(", ")));
+                    }
+                }
+                // chiamata di un valore funzione (variabile di tipo funzione): (*g)(args)
+                if let Expr::Ident(g) = &**callee {
+                    if matches!(self.cur_types.get(g), Some(Some(t)) if parse_fn_type(t).is_some()) {
+                        let mut a = Vec::new();
+                        for arg in args {
+                            a.push(self.arg(arg)?);
+                        }
+                        return Ok(format!("(*{})({})", g, a.join(", ")));
+                    }
+                }
+                // chiamata a funzione definita: gli argomenti destinati a un parametro di
+                // tipo funzione diventano valori funzione (Rc<dyn Fn>)
+                if let Expr::Ident(name) = &**callee {
+                    if let Some(order) = self.param_order.get(name).cloned() {
+                        let ptypes = self.ptype.get(name).cloned().unwrap_or_default();
+                        let mut a = Vec::new();
+                        for (i, arg) in args.iter().enumerate() {
+                            let expected =
+                                order.get(i).and_then(|pn| ptypes.get(pn)).cloned().flatten();
+                            match &expected {
+                                Some(et) if parse_fn_type(et).is_some() => {
+                                    a.push(self.fn_value_arg(arg, et)?)
+                                }
+                                _ => a.push(self.arg(arg)?),
+                            }
+                        }
+                        return Ok(format!("{}({})", name, a.join(", ")));
                     }
                 }
                 let mut a = Vec::new();

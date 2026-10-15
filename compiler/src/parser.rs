@@ -345,6 +345,23 @@ impl Parser {
             self.advance();
             return Ok("nil".to_string());
         }
+        if self.is(&TokenKind::Fn) {
+            // tipo funzione: fn(T1, T2) -> R
+            self.advance();
+            self.expect(&TokenKind::LParen, "(")?;
+            let mut ps = Vec::new();
+            if !self.is(&TokenKind::RParen) {
+                ps.push(self.type_base()?);
+                while self.is(&TokenKind::Comma) {
+                    self.advance();
+                    ps.push(self.type_base()?);
+                }
+            }
+            self.expect(&TokenKind::RParen, ")")?;
+            self.expect(&TokenKind::Arrow, "'->' con il tipo di ritorno")?;
+            let ret = self.type_base()?;
+            return Ok(format!("fn({})->{}", ps.join(","), ret));
+        }
         self.ident_name("tipo")
     }
 

@@ -13,6 +13,20 @@ from .errors import LogyxError
 
 _TYPES = {"int": "i64", "float": "f64", "bool": "bool", "string": "String"}
 
+
+def _parse_fn_type(t):
+    """Da 'fn(T1,T2)->R' ritorna (['T1','T2'], 'R'); None se non è un tipo funzione."""
+    if not isinstance(t, str) or not t.startswith("fn("):
+        return None
+    rest = t[3:]
+    close = rest.find(")->")
+    if close < 0:
+        return None
+    params_str = rest[:close]
+    ret = rest[close + 3:]
+    params = [s.strip() for s in params_str.split(",")] if params_str else []
+    return params, ret
+
 _JSON_HELPER = r'''fn __json_str(s: &str) -> String {
     let mut out = String::from("\"");
     for c in s.chars() {
@@ -631,6 +645,11 @@ class RustTranspiler:
             return _TYPES[t]
         if t in getattr(self, "records", {}) or t in getattr(self, "enums", {}):
             return t
+        parsed = _parse_fn_type(t)
+        if parsed is not None:
+            ps, ret = parsed
+            params_rust = ", ".join(self.ty(p) for p in ps)
+            return f"std::rc::Rc<dyn Fn({params_rust}) -> {self.ty(ret)}>"
         raise LogyxError(f"tipo non supportato dal transpiler v0: '{t}'")
 
     # --- istruzioni ---
@@ -1210,6 +1229,48 @@ class RustTranspiler:
                             f".fold({self.expr(e.args[1])}, {cl})")
                 if nm == "sort":
                     raise LogyxError("usa sort come istruzione, non dentro un'espressione")
+            # chiamata di un valore funzione (variabile di tipo funzione): (*g)(args)
+            if isinstance(e.callee, N.Identifier):
+                gt = getattr(self, "cur_types", {}).get(e.callee.name)
+                if gt and _parse_fn_type(gt) is not None:
+                    a = ", ".join(self._arg(x) for x in e.args)
+                    return f"(*{e.callee.name})({a})"
+            # chiamata a funzione definita: args a parametro funzione -> valori funzione
+            if isinstance(e.callee, N.Identifier):
+                ptypes = getattr(self, "param_types", {}).get(e.callee.name)
+                if ptypes is not None:
+                    order = list(ptypes.keys())
+                    parts = []
+                    for i, arg in enumerate(e.args):
+                        expected = ptypes.get(order[i]) if i < len(order) else None
+                        if expected and _parse_fn_type(expected) is not None:
+                            parts.append(self._fn_value_arg(arg, expected))
+                        else:
+                            parts.append(self._arg(arg))
+                    return f"{e.callee.name}({', '.join(parts)})"
             args = ", ".join(self._arg(a) for a in e.args)
             return f"{self.expr(e.callee)}({args})"
         raise LogyxError(f"espressione non supportata dal transpiler v0: {t}")
+
+    def _fn_value_arg(self, arg, fn_type):
+        ptypes, _ret = _parse_fn_type(fn_type)
+        rust_ty = self.ty(fn_type)
+        if type(arg).__name__ == "Lambda":
+            if len(arg.params) != len(ptypes):
+                raise LogyxError(
+                    f"la lambda ha {len(arg.params)} parametri, ma il tipo funzione ne richiede {len(ptypes)}"
+                )
+            saved = dict(self.cur_types)
+            rp = []
+            for p, pt in zip(arg.params, ptypes):
+                self.cur_types[p] = pt
+                rp.append(f"{p}: {self.ty(pt)}")
+            b = self.expr(arg.body)
+            self.cur_types = saved
+            return f"(std::rc::Rc::new(move |{', '.join(rp)}| {b}) as {rust_ty})"
+        if isinstance(arg, N.Identifier):
+            vt = getattr(self, "cur_types", {}).get(arg.name)
+            if vt and _parse_fn_type(vt) is not None:
+                return f"{arg.name}.clone()"
+            return f"(std::rc::Rc::new({arg.name}) as {rust_ty})"
+        raise LogyxError("per un parametro di tipo funzione serve una lambda o il nome di una funzione")

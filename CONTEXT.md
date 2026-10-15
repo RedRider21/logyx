@@ -204,8 +204,14 @@ reali; Rust generato identico fra transpiler e compiler).
 il nome del programma). In Rust `std::env::args().skip(1).collect::<Vec<String>>()`; nell'interprete
 `interp.program_args` popolato da `main.py` con gli argv dopo il file. Non deterministico → fuori suite,
 `examples/native_args.logyx` (verificato: interprete == nativo con `alfa beta` → `2/alfa/beta`).
-**Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; valori-funzione/closure
-generali (lambda memorizzabili in variabili); processi esterni.
+**Valori funzione: FATTO (v0 parziale)** — tipo funzione `fn(T,…) -> R` (parser `type_base`), in Rust
+`std::rc::Rc<dyn Fn(…) -> …>` (clonabile → clone uniforme ok). Si **passa** una funzione nominata o una
+lambda a un parametro `fn(…)->…` e si **chiama** (`g(x)` → `(*g)(args)`). Nel codegen: `parse_fn_type`,
+`fn_value_arg` (lambda → `Rc::new(move |p: T| body) as Rc<dyn Fn>`, nome → `Rc::new(nome) as …`, var
+funzione → `.clone()`). L'interprete li gestisce nativamente (valori callable). Tre backend,
+`examples/native_funval.logyx`, suite **48/48**. **DA FARE valori funzione:** memorizzazione in variabili
+libere (serve inferenza del tipo funzione) e **ritorno** di funzioni.
+**Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record (PROSSIMO); processi esterni.
 **DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,
 sito (Pages) e manuale: **come** si caricano le librerie (oggi `use rust`/`extern rust`; in futuro binding
 pronti) e un **elenco completo** delle librerie utilizzabili per categoria (file, grafica, gestione
