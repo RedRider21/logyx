@@ -2051,6 +2051,13 @@ impl Codegen {
                             self.expr(&args[0])?
                         ));
                     }
+                    if name == "args" {
+                        if !args.is_empty() {
+                            return Err(LogyxError::new("args non accetta argomenti"));
+                        }
+                        // argomenti da riga di comando, escluso il nome del programma
+                        return Ok("std::env::args().skip(1).collect::<Vec<String>>()".to_string());
+                    }
                     if name == "pow" {
                         if args.len() != 2 {
                             return Err(LogyxError::new(

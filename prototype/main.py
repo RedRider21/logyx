@@ -26,8 +26,9 @@ def _load(path):
     return interp, items
 
 
-def cmd_run(path):
+def cmd_run(path, prog_args=None):
     interp, items = _load(path)
+    interp.program_args = list(prog_args or [])  # argomenti visti da args()
     interp.run(items)
     if interp.routes and "main" not in interp.globals.vars:
         print(
@@ -162,7 +163,7 @@ def main(argv):
                 print("uso: python main.py build <file>", file=sys.stderr)
                 return 2
             return cmd_build(argv[2])
-        return cmd_run(argv[1])
+        return cmd_run(argv[1], argv[2:])
     except LogyxError as e:
         print(f"Errore: {e}", file=sys.stderr)
         return 1

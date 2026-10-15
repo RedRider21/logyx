@@ -188,6 +188,7 @@ class Interpreter:
         self.routes = {}
         self.records = {}  # nome -> lista di (nome_campo, tipo)
         self.enums = {}    # nome -> lista di varianti
+        self.program_args = []  # argomenti da riga di comando visti da args()
         self._install_builtins()
 
     def _install_builtins(self):
@@ -270,6 +271,7 @@ class Interpreter:
         g.define("read_line", lambda: sys.stdin.readline().rstrip("\n\r"))
         g.define("read_all", lambda: sys.stdin.read())
         g.define("env", lambda name: os.environ.get(name, ""))
+        g.define("args", lambda: list(self.program_args))
         g.define("sqrt", lambda x: math.sqrt(x))
         g.define("index_of", lambda s, sub: s.find(sub))
         g.define("substring", lambda s, a, b: s[a:b])

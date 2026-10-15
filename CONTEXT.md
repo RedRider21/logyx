@@ -200,8 +200,12 @@ rilegge), suite **47/47**. Apre la strada all'uso reale delle librerie di file.
 / `std::env::var`, nell'interprete `sys.stdin` / `os.environ`. Non deterministici → **fuori dalla suite**
 (come `now()`): `examples/native_stdinenv.logyx`, verificato a mano (interprete == nativo con stdin/env
 reali; Rust generato identico fra transpiler e compiler).
+**args() (argomenti CLI): FATTO (v0)** — `args()` → lista di stringhe (argomenti dell'eseguibile, escluso
+il nome del programma). In Rust `std::env::args().skip(1).collect::<Vec<String>>()`; nell'interprete
+`interp.program_args` popolato da `main.py` con gli argv dopo il file. Non deterministico → fuori suite,
+`examples/native_args.logyx` (verificato: interprete == nativo con `alfa beta` → `2/alfa/beta`).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record; valori-funzione/closure
-generali (lambda memorizzabili in variabili); argomenti da riga di comando (`args`).
+generali (lambda memorizzabili in variabili); processi esterni.
 **DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,
 sito (Pages) e manuale: **come** si caricano le librerie (oggi `use rust`/`extern rust`; in futuro binding
 pronti) e un **elenco completo** delle librerie utilizzabili per categoria (file, grafica, gestione

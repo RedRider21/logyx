@@ -1105,6 +1105,10 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("env accetta un solo argomento: env(nome)")
                     return f"std::env::var(&({self.expr(e.args[0])})).unwrap_or_default()"
+                if nm == "args":
+                    if e.args:
+                        raise LogyxError("args non accetta argomenti")
+                    return "std::env::args().skip(1).collect::<Vec<String>>()"
                 if nm == "pow":
                     if len(e.args) != 2:
                         raise LogyxError("pow accetta due argomenti: pow(base, esponente)")

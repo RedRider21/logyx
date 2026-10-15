@@ -339,6 +339,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `read_line()` | Legge una riga da stdin (senza il newline finale; `""` a fine input) |
 | `read_all()` | Legge tutto lo stdin come stringa |
 | `env(nome)` | Valore della variabile d'ambiente `nome` (`""` se assente) |
+| `args()` | Lista degli argomenti da riga di comando (esclude il nome del programma) |
 
 In `map`/`filter`/`reduce` la funzione può essere il **nome di una funzione** definita con `fn` **oppure
 una lambda inline** `|parametri| espressione`:

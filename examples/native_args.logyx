@@ -1,0 +1,13 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Argomenti da riga di comando: args() -> lista di stringhe (non deterministico,
+// fuori dalla suite di conformità).
+
+fn main() {
+    a = args()
+    print(len(a))
+    for x in a {
+        print(x)
+    }
+}
