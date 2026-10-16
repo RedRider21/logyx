@@ -189,6 +189,7 @@ o usa `./compiler/target/release/logyxc`). Dalla radice del repo:
 | Comando | Cosa fa |
 |---|---|
 | `logyxc build <file>` | Transpila a Rust, compila a nativo ed esegue |
+| `logyxc build --harden <file>` | Come `build`, con **hardening** del binario (panic=abort, overflow-checks, strip, LTO) |
 | `logyxc gen <file>` | Stampa il codice Rust generato |
 | `logyxc tokens <file>` / `logyxc parse <file>` | Diagnostica: token / AST |
 | `logyxc build-wasm <file>` | Compila a WebAssembly le funzioni `int`/`float`/`bool`/`string` + pagina HTML interattiva |

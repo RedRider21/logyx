@@ -21,25 +21,25 @@ use std::process::exit;
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let cmd = args.get(1).map(|s| s.as_str()).unwrap_or("");
-    let result = match (cmd, args.get(2)) {
+    // flag (--...) separati dagli argomenti posizionali
+    let rest: Vec<&str> = args.iter().skip(2).map(|s| s.as_str()).collect();
+    let harden = rest.contains(&"--harden");
+    let positional: Vec<&str> = rest.iter().copied().filter(|a| !a.starts_with("--")).collect();
+    let file = positional.first().copied();
+    let arg2 = positional.get(1).copied();
+    let result = match (cmd, file) {
         ("tokens", Some(p)) => run_tokens(p),
         ("parse", Some(p)) => run_parse(p),
         ("gen", Some(p)) => run_gen(p),
-        ("build", Some(p)) => run_build(p),
+        ("build", Some(p)) => run_build(p, harden),
         ("build-wasm", Some(p)) => run_build_wasm(p),
-        ("render", Some(p)) => {
-            let rp = args.get(3).map(|s| s.as_str()).unwrap_or("/");
-            run_render(p, rp)
-        }
+        ("render", Some(p)) => run_render(p, arg2.unwrap_or("/")),
         ("build-server", Some(p)) => run_build_server(p),
-        ("serve", Some(p)) => {
-            let port = args.get(3).map(|s| s.as_str()).unwrap_or("8080");
-            run_serve(p, port)
-        }
+        ("serve", Some(p)) => run_serve(p, arg2.unwrap_or("8080")),
         _ => {
             eprintln!(
                 "uso: logyxc <tokens|parse|gen|build|build-wasm|render|build-server|serve> \
-                 <file.logyx> [percorso-route | porta]"
+                 <file.logyx> [--harden] [percorso-route | porta]"
             );
             exit(2);
         }
@@ -60,15 +60,15 @@ fn run_gen(path: &str) -> Result<(), error::LogyxError> {
     Ok(())
 }
 
-fn run_build(path: &str) -> Result<(), error::LogyxError> {
+fn run_build(path: &str, harden: bool) -> Result<(), error::LogyxError> {
     let items = modules::load_program(path)?;
     let mut cg = codegen::Codegen::new();
     let rust = cg.generate(&items)?;
     let deps = cg.deps.clone();
     if deps.is_empty() {
-        build_rustc(path, &rust)
+        build_rustc(path, &rust, harden)
     } else {
-        build_cargo(path, &rust, &deps)
+        build_cargo(path, &rust, &deps, harden)
     }
 }
 
@@ -394,7 +394,7 @@ fn run_render(path: &str, route_path: &str) -> Result<(), error::LogyxError> {
     Ok(())
 }
 
-fn build_rustc(path: &str, rust: &str) -> Result<(), error::LogyxError> {
+fn build_rustc(path: &str, rust: &str, harden: bool) -> Result<(), error::LogyxError> {
     let out_rs = change_ext(path, "rs");
     std::fs::write(&out_rs, rust).map_err(|e| error::LogyxError::new(format!("{out_rs}: {e}")))?;
     println!("// Rust generato in {out_rs}");
@@ -404,8 +404,14 @@ fn build_rustc(path: &str, rust: &str) -> Result<(), error::LogyxError> {
         return Ok(());
     }
     let bin = strip_ext(path) + "_bin";
+    let mut rustc_args: Vec<&str> = vec!["-O", &out_rs, "-o", &bin];
+    if harden {
+        // hardening: niente unwinding sfruttabile, controlli overflow, simboli rimossi
+        rustc_args.extend(["-C", "panic=abort", "-C", "overflow-checks=on", "-C", "strip=symbols"]);
+        println!("// build hardened (panic=abort, overflow-checks, strip)");
+    }
     let comp = std::process::Command::new("rustc")
-        .args(["-O", &out_rs, "-o", &bin])
+        .args(&rustc_args)
         .output()
         .map_err(|e| error::LogyxError::new(format!("rustc: {e}")))?;
     if !comp.status.success() {
@@ -486,6 +492,7 @@ fn build_cargo(
     path: &str,
     rust: &str,
     deps: &std::collections::HashMap<String, String>,
+    harden: bool,
 ) -> Result<(), error::LogyxError> {
     let dir = format!("{}_cargo", strip_ext(path));
     std::fs::create_dir_all(format!("{dir}/src"))
@@ -498,7 +505,15 @@ fn build_cargo(
     for k in &keys {
         toml += &format!("{} = {}\n", k, deps[*k]);
     }
-    toml += "\n[[bin]]\nname = \"logyxprog\"\npath = \"src/main.rs\"\n\n[profile.release]\nopt-level = 3\n";
+    if harden {
+        // hardening: profilo release blindato
+        toml += "\n[[bin]]\nname = \"logyxprog\"\npath = \"src/main.rs\"\n\n\
+                 [profile.release]\nopt-level = 3\nlto = true\ncodegen-units = 1\n\
+                 panic = \"abort\"\noverflow-checks = true\nstrip = true\n";
+        println!("// build hardened (panic=abort, overflow-checks, strip, lto)");
+    } else {
+        toml += "\n[[bin]]\nname = \"logyxprog\"\npath = \"src/main.rs\"\n\n[profile.release]\nopt-level = 3\n";
+    }
     std::fs::write(format!("{dir}/Cargo.toml"), toml)
         .map_err(|e| error::LogyxError::new(format!("{dir}/Cargo.toml: {e}")))?;
     std::fs::write(format!("{dir}/src/main.rs"), rust)

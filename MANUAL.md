@@ -60,6 +60,7 @@ Dal compilatore nativo `logyxc` (cartella `compiler/`, build con `cargo build --
 | Comando | Cosa fa |
 | --- | --- |
 | `logyxc build <file>` | Transpila a Rust, compila a nativo ed esegue |
+| `logyxc build --harden <file>` | Come `build`, ma **blinda** il binario: `panic=abort`, overflow-checks, strip dei simboli, LTO |
 | `logyxc gen <file>` | Stampa il codice Rust generato |
 | `logyxc tokens <file>` / `logyxc parse <file>` | Diagnostica: token / AST |
 | `logyxc build-wasm <file>` | Compila a WebAssembly le funzioni `int`/`float`/`bool`/`string` + pagina HTML interattiva |

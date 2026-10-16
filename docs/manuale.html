@@ -163,6 +163,10 @@ client, invece, servono l'interattività del DOM e per questo diventano JavaScri
 <td>Transpila a Rust, compila a nativo ed esegue</td>
 </tr>
 <tr>
+<td><code>logyxc build --harden &lt;file&gt;</code></td>
+<td>Come <code>build</code>, ma <strong>blinda</strong> il binario: <code>panic=abort</code>, overflow-checks, strip dei simboli, LTO</td>
+</tr>
+<tr>
 <td><code>logyxc gen &lt;file&gt;</code></td>
 <td>Stampa il codice Rust generato</td>
 </tr>

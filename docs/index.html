@@ -425,6 +425,9 @@ python3 main.py build ../examples/native_fib.logyx</pre></div>
       <div class="code-wrap"><pre><span class="c"># compila ed esegue a nativo</span>
 logyxc build examples/native_fib.logyx
 
+<span class="c"># binario blindato (panic=abort, overflow-checks, strip, LTO)</span>
+logyxc build --harden examples/native_fib.logyx
+
 <span class="c"># compila a WebAssembly + pagina HTML interattiva</span>
 logyxc build-wasm examples/native_webstr.logyx
 
