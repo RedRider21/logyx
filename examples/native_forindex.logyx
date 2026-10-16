@@ -1,0 +1,27 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// for con indice: "for i, x in ..." lega i all'indice 0-based e x all'elemento.
+// Funziona su liste, range e chiavi (ordinate) di mappa.
+
+fn main() {
+    // su una lista
+    frutta = ["mela", "pera", "uva"]
+    for i, f in frutta {
+        print("{i}: {f}")
+    }
+
+    // su un range
+    for i, n in range(10, 13) {
+        print("pos {i} -> {n}")
+    }
+
+    // su una mappa (chiavi ordinate, deterministico)
+    prezzi = {"pane": 2, "latte": 1}
+    for i, k in prezzi {
+        print("{i} {k}={prezzi[k]}")
+    }
+
+    // senza indice funziona ancora come prima
+    for f in frutta { print(f) }
+}

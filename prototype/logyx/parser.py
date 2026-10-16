@@ -328,10 +328,16 @@ class Parser:
 
     def for_stmt(self):
         self.expect(T.FOR)
-        var = self.expect(T.IDENT, "variabile di ciclo").value
+        first = self.expect(T.IDENT, "variabile di ciclo").value
+        index = None
+        var = first
+        if self.at(T.COMMA):                     # for indice, elemento in ...
+            self.expect(T.COMMA)
+            index = first
+            var = self.expect(T.IDENT, "variabile di ciclo").value
         self.expect(T.IN)
         iterable = self.expression()
-        return N.For(var, iterable, self.block())
+        return N.For(var, iterable, self.block(), index)
 
     def return_stmt(self):
         self.expect(T.RETURN)

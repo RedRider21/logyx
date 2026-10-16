@@ -475,11 +475,19 @@ impl Parser {
 
     fn for_stmt(&mut self) -> Result<Stmt, LogyxError> {
         self.expect(&TokenKind::For, "for")?;
-        let var = self.ident_name("variabile di ciclo")?;
+        let first = self.ident_name("variabile di ciclo")?;
+        let mut index = None;
+        let mut var = first.clone();
+        if self.is(&TokenKind::Comma) {
+            // for indice, elemento in ...
+            self.advance();
+            index = Some(first);
+            var = self.ident_name("variabile di ciclo")?;
+        }
         self.expect(&TokenKind::In, "in")?;
         let iterable = self.expression()?;
         let body = self.block()?;
-        Ok(Stmt::For { var, iterable, body })
+        Ok(Stmt::For { var, iterable, body, index })
     }
 
     fn return_stmt(&mut self) -> Result<Stmt, LogyxError> {

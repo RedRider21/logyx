@@ -107,6 +107,7 @@ class For:
     var: str
     iterable: Any
     body: List[Any]
+    index: Any = None   # nome della variabile indice (0-based), oppure None
 
 
 @dataclass

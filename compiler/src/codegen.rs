@@ -1483,7 +1483,9 @@ impl Codegen {
                 self.expr(cond)?,
                 self.block(body, declared, indent + 1)?
             )),
-            Stmt::For { var, iterable, body } => self.for_stmt(var, iterable, body, declared, indent),
+            Stmt::For { var, iterable, body, index } => {
+                self.for_stmt(var, iterable, body, index, declared, indent)
+            }
             Stmt::Decl { name, value, is_const } => {
                 declared.insert(name.clone());
                 if let Some(k) = value_kind(value) {
@@ -1562,11 +1564,25 @@ impl Codegen {
         var: &str,
         iterable: &Expr,
         body: &[Stmt],
+        index: &Option<String>,
         declared: &mut HashSet<String>,
         indent: usize,
     ) -> R<String> {
         let pad = "    ".repeat(indent);
         declared.insert(var.to_string());
+        // pattern della variabile di ciclo: con indice usiamo .enumerate()
+        let (pat, pre) = if let Some(idx) = index {
+            declared.insert(idx.clone());
+            self.cur_types.insert(idx.clone(), Some("int".to_string())); // indice intero 0-based
+            // enumerate() dà usize → lo riportiamo a i64 in testa al corpo
+            (
+                format!("({idx}, {var})"),
+                format!("{}let {idx} = {idx} as i64;\n", "    ".repeat(indent + 1)),
+            )
+        } else {
+            (var.to_string(), String::new())
+        };
+        let en = if index.is_some() { ".enumerate()" } else { "" };
         // range(n) oppure range(a, b)?
         if let Expr::Call { callee, args } = iterable {
             if let Expr::Ident(name) = &**callee {
@@ -1577,7 +1593,7 @@ impl Codegen {
                         (self.expr(&args[0])?, self.expr(&args[1])?)
                     };
                     let b = self.block(body, declared, indent + 1)?;
-                    return Ok(format!("{pad}for {var} in ({lo})..({hi}) {{\n{b}\n{pad}}}"));
+                    return Ok(format!("{pad}for {pat} in (({lo})..({hi})){en} {{\n{pre}{b}\n{pad}}}"));
                 }
             }
         }
@@ -1585,15 +1601,16 @@ impl Codegen {
         if let Expr::Ident(n) = iterable {
             if self.kinds.get(n).map(|s| s.as_str()) == Some("map") {
                 let b = self.block(body, declared, indent + 1)?;
-                return Ok(format!(
-                    "{pad}for {var} in {{ let mut __k: Vec<_> = ({n}).keys().cloned().collect(); __k.sort(); __k }} {{\n{b}\n{pad}}}"
-                ));
+                let src = format!(
+                    "{{ let mut __k: Vec<_> = ({n}).keys().cloned().collect(); __k.sort(); __k }}.into_iter(){en}"
+                );
+                return Ok(format!("{pad}for {pat} in {src} {{\n{pre}{b}\n{pad}}}"));
             }
         }
         // iterazione su lista (per valore; cloned() vale per scalari e per String)
         let it = self.expr(iterable)?;
         let b = self.block(body, declared, indent + 1)?;
-        Ok(format!("{pad}for {var} in ({it}).iter().cloned() {{\n{b}\n{pad}}}"))
+        Ok(format!("{pad}for {pat} in ({it}).iter().cloned(){en} {{\n{pre}{b}\n{pad}}}"))
     }
 
     fn push_call(&mut self, args: &[Expr]) -> R<String> {

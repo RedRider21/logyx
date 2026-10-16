@@ -68,7 +68,7 @@ pub enum Stmt {
     Expr(Expr),
     If { cond: Expr, then_block: Vec<Stmt>, else_block: Option<Vec<Stmt>> },
     While { cond: Expr, body: Vec<Stmt> },
-    For { var: String, iterable: Expr, body: Vec<Stmt> },
+    For { var: String, iterable: Expr, body: Vec<Stmt>, index: Option<String> },
     Return(Option<Expr>),
     Break,
     Continue,

@@ -811,22 +811,36 @@ class RustTranspiler:
         is_range = (isinstance(it, N.Call) and isinstance(it.callee, N.Identifier)
                     and it.callee.name == "range" and len(it.args) in (1, 2))
         declared.add(s.var)
+        idx = s.index
+        if idx is not None:
+            declared.add(idx)
+            self.cur_types[idx] = "int"   # l'indice è sempre un intero 0-based
+        # pattern della variabile di ciclo: con indice usiamo .enumerate()
+        pat = f"({idx}, {s.var})" if idx is not None else s.var
+        # con l'indice il contatore è usize → lo riportiamo a i64 in testa al corpo
+        pre = (("    " * (indent + 1)) + f"let {idx} = {idx} as i64;\n") if idx is not None else ""
+
         if is_range:
             if len(it.args) == 1:
                 lo, hi = "0i64", self.expr(it.args[0])
             else:
                 lo, hi = self.expr(it.args[0]), self.expr(it.args[1])
+            src = f"(({lo})..({hi})).enumerate()" if idx is not None else f"({lo})..({hi})"
             body = self.block(s.body, declared, indent + 1)
-            return pad + f"for {s.var} in ({lo})..({hi}) {{\n" + body + "\n" + pad + "}"
+            return pad + f"for {pat} in {src} {{\n" + pre + body + "\n" + pad + "}"
         # iterazione su mappa: sulle chiavi ordinate (HashMap non ha ordine → deterministico)
         if isinstance(it, N.Identifier) and getattr(self, "kinds", {}).get(it.name) == "map":
-            body = self.block(s.body, declared, indent + 1)
             keys_expr = ("{ let mut __k: Vec<_> = (" + it.name
                          + ").keys().cloned().collect(); __k.sort(); __k }")
-            return pad + f"for {s.var} in " + keys_expr + " {\n" + body + "\n" + pad + "}"
+            src = keys_expr + (".into_iter().enumerate()" if idx is not None else ".into_iter()")
+            body = self.block(s.body, declared, indent + 1)
+            return pad + f"for {pat} in " + src + " {\n" + pre + body + "\n" + pad + "}"
         # iterazione su lista: per valore; cloned() vale sia per gli scalari sia per String
+        src = f"({self.expr(it)}).iter().cloned()"
+        if idx is not None:
+            src += ".enumerate()"
         body = self.block(s.body, declared, indent + 1)
-        return pad + f"for {s.var} in ({self.expr(it)}).iter().cloned() {{\n" + body + "\n" + pad + "}"
+        return pad + f"for {pat} in {src} {{\n" + pre + body + "\n" + pad + "}"
 
     def push_call(self, args):
         if len(args) != 2:

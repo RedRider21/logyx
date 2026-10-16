@@ -154,7 +154,7 @@ variantePat  := IDENT ( "(" IDENT ("," IDENT)* ")" )?       // Variante oppure V
 
 if           := "if" espressione blocco ("else" "if" espressione blocco)* ("else" blocco)?
 while        := "while" espressione blocco
-for          := "for" IDENT "in" espressione blocco
+for          := "for" IDENT ("," IDENT)? "in" espressione blocco   // "for indice, elemento in ..."
 
 render       := "render" template
 espressione  := ... (letterali, chiamate, operatori aritmetici/confronto/logici, postfisso "?", lambda)

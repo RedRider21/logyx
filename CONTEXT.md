@@ -64,7 +64,13 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **53/53**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **54/54**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**`for` con indice FATTO (2026-10-17):** sintassi `for i, x in …` (indice intero 0-based + elemento),
+su liste/`range`/chiavi di mappa; nei tre backend via `.enumerate()` (nel nativo/transpiler il
+contatore `usize` è riportato a `i64` in testa al corpo). Nodo `For` esteso con campo opzionale `index`.
+Esempio `examples/native_forindex.logyx`. Restano comodità sintattiche: tuple, parametri con default +
+varargs, lambda "nuda" in variabile libera.
 
 **Allineamento doc a ogni aggiunta:** aggiornare `MANUAL.md`, poi rigenerare il manuale online con
 `python3 tools/build_manual.py` (→ `docs/manuale.html`), aggiungere la voce nella tabella/sezione

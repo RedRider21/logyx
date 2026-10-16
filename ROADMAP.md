@@ -35,7 +35,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | **Record/struct** (tipi con campi, anche in liste/mappe) | ✅ | — |
 | `match` generale (sui valori, con `else`) | ✅ | — |
 | `enum` (tipi somma) | ✅ varianti con/senza **payload**, costruzione `Nome.Var(args)`, `==` e `match` con binding | 3 |
-| Tuple; `for` con indice | ⏳ | 4 |
+| Tuple; `for` con indice | 🟡 `for i, x in …` ✅ (indice 0-based su liste/range/mappe); tuple ⏳ | 4 |
 | Costanti globali a primo livello; conversioni esplicite (`int()`, `float()`) | 🟡 | 3 |
 
 ## Piano 2 — Libreria standard (funzioni, a strati)

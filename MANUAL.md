@@ -118,6 +118,13 @@ for n in numeri { print(n) }
 Dentro `while` e `for` si possono usare `break` (esce dal ciclo) e `continue` (passa all'iterazione
 successiva).
 
+Il `for` ha anche la forma **con indice**: `for i, x in …` lega `i` all'indice (intero, 0-based) e
+`x` all'elemento. Vale su liste, `range` e chiavi (ordinate) di mappa.
+
+```
+for i, f in ["mela", "pera"] { print("{i}: {f}") }   // 0: mela / 1: pera
+```
+
 Il costrutto `match` sceglie un ramo **per valore** (confronto di uguaglianza); `else` è il ramo di
 default, opzionale:
 

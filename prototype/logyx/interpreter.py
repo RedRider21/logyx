@@ -586,8 +586,10 @@ class Interpreter:
         iterable = self.eval(s.iterable, env)
         if isinstance(iterable, dict):
             iterable = sorted(iterable.keys())  # chiavi ordinate (deterministico, come nel nativo)
-        for value in iterable:
+        for i, value in enumerate(iterable):
             child = Environment(env)
+            if s.index is not None:
+                child.define(s.index, i)
             child.define(s.var, value)
             try:
                 self._exec_all(s.body, child)
