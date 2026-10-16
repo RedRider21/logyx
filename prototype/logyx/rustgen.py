@@ -441,7 +441,7 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("int")
             return
-        if name in ("abs", "min", "max", "pow", "floor", "ceil", "sqrt"):
+        if name in ("abs", "min", "max", "pow", "floor", "ceil", "sqrt", "round"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
@@ -624,15 +624,15 @@ class RustTranspiler:
             if name == "now":
                 return "int"
             if name in ("contains", "has", "starts_with", "ends_with",
-                        "write_file", "file_exists"):
+                        "write_file", "file_exists", "matches"):
                 return "bool"
             if name == "index_of":
                 return "int"
             if name == "sum":
                 return "int"
-            if name in ("floor", "ceil"):
+            if name in ("floor", "ceil", "round"):
                 return "int"
-            if name == "sqrt":
+            if name in ("sqrt", "random"):
                 return "float"
             if name == "reduce" and len(e.args) >= 2:
                 return self._type_of(e.args[1], ptypes)
@@ -1212,11 +1212,31 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("sqrt accetta un solo argomento")
                     return f"(({self.expr(e.args[0])}) as f64).sqrt()"
+                if nm == "round":
+                    if len(e.args) != 1:
+                        raise LogyxError("round accetta un solo argomento")
+                    return f"(({self.expr(e.args[0])}) as f64).round() as i64"
+                if nm == "slice":
+                    if len(e.args) != 3:
+                        raise LogyxError("slice accetta tre argomenti: slice(lista, inizio, fine)")
+                    return (f"({self.expr(e.args[0])})[({self.expr(e.args[1])}) as usize.."
+                            f"({self.expr(e.args[2])}) as usize].to_vec()")
+                if nm == "random":
+                    if len(e.args) != 0:
+                        raise LogyxError("random non accetta argomenti")
+                    self.deps["rand"] = '"0.8"'
+                    return "rand::random::<f64>()"
                 if nm == "index_of":
                     if len(e.args) != 2:
                         raise LogyxError("index_of accetta due argomenti: index_of(stringa, sottostringa)")
                     return (f"({self.expr(e.args[0])}).find(({self.expr(e.args[1])}).as_str())"
                             ".map(|i| i as i64).unwrap_or(-1i64)")
+                if nm == "matches":
+                    if len(e.args) != 2:
+                        raise LogyxError("matches accetta due argomenti: matches(stringa, pattern)")
+                    self.deps["regex"] = '"1"'
+                    return (f"regex::Regex::new(({self.expr(e.args[1])}).as_str()).unwrap()"
+                            f".is_match(({self.expr(e.args[0])}).as_str())")
                 if nm == "substring":
                     if len(e.args) != 3:
                         raise LogyxError("substring accetta tre argomenti: substring(stringa, inizio, fine)")

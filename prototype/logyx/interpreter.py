@@ -6,6 +6,8 @@ import hashlib
 import json
 import math
 import os
+import random as _random
+import re as _re
 import sys
 import time
 
@@ -265,6 +267,15 @@ class Interpreter:
         g.define("sort", _sort)
         g.define("floor", lambda x: math.floor(x))
         g.define("ceil", lambda x: math.ceil(x))
+        # round: metà lontano dallo zero (come f64::round di Rust, non il banker's di Python)
+        g.define(
+            "round",
+            lambda x: int(math.floor(x + 0.5)) if x >= 0 else int(math.ceil(x - 0.5)),
+        )
+        # slice(lista, inizio, fine) → nuova lista (copia), come (&v[a..b]).to_vec()
+        g.define("slice", lambda lst, a, b: list(lst[a:b]))
+        # random → float in [0,1); non deterministico (fuori dalla suite di conformità)
+        g.define("random", lambda: _random.random())
         g.define("has", lambda m, k: k in m)
         # chiavi ordinate (deterministico, come in to_json): HashMap Rust non ha ordine
         g.define("keys", lambda m: sorted(m.keys()))
@@ -294,6 +305,8 @@ class Interpreter:
         g.define("env", lambda name: os.environ.get(name, ""))
         g.define("args", lambda: list(self.program_args))
         g.define("sqrt", lambda x: math.sqrt(x))
+        # matches(stringa, pattern): vero se la regex trova una corrispondenza (ovunque)
+        g.define("matches", lambda s, p: _re.search(p, s) is not None)
         g.define("index_of", lambda s, sub: s.find(sub))
         g.define("substring", lambda s, a, b: s[a:b])
         g.define("split", lambda s, sep: s.split(sep))

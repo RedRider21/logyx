@@ -358,6 +358,8 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
           <tr><td>pow(base, esp)</td><td data-i18n="bi.pow">Potenza fra interi (esp ≥ 0)</td></tr>
           <tr><td>floor(x), ceil(x)</td><td data-i18n="bi.floorceil">Arrotonda verso il basso / verso l'alto</td></tr>
           <tr><td>sqrt(x)</td><td data-i18n="bi.sqrt">Radice quadrata (ritorna un float)</td></tr>
+          <tr><td>round(x)</td><td data-i18n="bi.round">Arrotonda all'intero più vicino (metà lontano dallo zero)</td></tr>
+          <tr><td>random()</td><td data-i18n="bi.random">Float casuale in [0, 1) (non deterministico)</td></tr>
           <tr><td>upper(s), lower(s)</td><td data-i18n="bi.upperlower">Stringa in maiuscolo / minuscolo</td></tr>
           <tr><td>trim(s)</td><td data-i18n="bi.trim">Toglie gli spazi ai bordi</td></tr>
           <tr><td>index_of(s, sub)</td><td data-i18n="bi.indexof">Posizione della prima occorrenza di sub, o -1</td></tr>
@@ -366,6 +368,8 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
           <tr><td>join(lista, sep)</td><td data-i18n="bi.join">Unisce una lista di stringhe con sep</td></tr>
           <tr><td>replace(s, da, a)</td><td data-i18n="bi.replace">Sostituisce tutte le occorrenze di da con a</td></tr>
           <tr><td>starts_with(s, p), ends_with(s, p)</td><td data-i18n="bi.startsends">Vero se s inizia / finisce con p</td></tr>
+          <tr><td>matches(s, pattern)</td><td data-i18n="bi.matches">Vero se la regex pattern trova una corrispondenza in s</td></tr>
+          <tr><td>slice(lista, a, b)</td><td data-i18n="bi.slice">Nuova lista da a incluso a b escluso (non muta l'originale)</td></tr>
           <tr><td>has(mappa, chiave)</td><td data-i18n="bi.has">Vero se la mappa contiene la chiave</td></tr>
           <tr><td>keys(mappa), values(mappa)</td><td data-i18n="bi.keysvalues">Chiavi (ordinate) / valori della mappa, come lista</td></tr>
         </table>
@@ -493,10 +497,12 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.abs":"Valore assoluto","bi.minmax":"Il minore / il maggiore fra due numeri",
       "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
       "bi.sqrt":"Radice quadrata (ritorna un float)",
+      "bi.round":"Arrotonda all'intero più vicino (metà lontano dallo zero)","bi.random":"Float casuale in [0, 1) (non deterministico)",
       "bi.upperlower":"Stringa in maiuscolo / minuscolo","bi.trim":"Toglie gli spazi ai bordi",
       "bi.indexof":"Posizione della prima occorrenza di sub, o -1","bi.substring":"Sottostringa da a incluso a b escluso",
       "bi.split":"Divide la stringa sul separatore → lista","bi.join":"Unisce una lista di stringhe con sep",
       "bi.replace":"Sostituisce tutte le occorrenze di da con a","bi.startsends":"Vero se s inizia / finisce con p",
+      "bi.matches":"Vero se la regex pattern trova una corrispondenza in s","bi.slice":"Nuova lista da a incluso a b escluso (non muta l'originale)",
       "bi.has":"Vero se la mappa contiene la chiave",
       "bi.keysvalues":"Chiavi (ordinate) / valori della mappa, come lista",
       "status.h":"A che punto è","status.sub":"Logyx è un prototipo funzionante in Python (lexer, parser, interprete, render web, transpiler Rust). Ecco la mappa.",
@@ -549,10 +555,12 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.abs":"Absolute value","bi.minmax":"The smaller / the larger of two numbers",
       "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
       "bi.sqrt":"Square root (returns a float)",
+      "bi.round":"Rounds to the nearest integer (half away from zero)","bi.random":"Random float in [0, 1) (non-deterministic)",
       "bi.upperlower":"String in upper / lower case","bi.trim":"Removes surrounding whitespace",
       "bi.indexof":"Position of the first occurrence of sub, or -1","bi.substring":"Substring from a (inclusive) to b (exclusive)",
       "bi.split":"Splits the string on the separator → list","bi.join":"Joins a list of strings with sep",
       "bi.replace":"Replaces every occurrence of 'da' with 'a'","bi.startsends":"True if s starts / ends with p",
+      "bi.matches":"True if the regex pattern matches anywhere in s","bi.slice":"New list from a (inclusive) to b (exclusive) (does not mutate)",
       "bi.has":"True if the map contains the key",
       "bi.keysvalues":"Map keys (sorted) / values, as a list",
       "status.h":"Where it stands","status.sub":"Logyx is a working prototype in Python (lexer, parser, interpreter, web render, Rust transpiler). Here's the map.",

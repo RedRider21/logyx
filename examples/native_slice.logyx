@@ -1,0 +1,17 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// slice(lista, inizio, fine): nuova lista con gli elementi da inizio (incluso)
+// a fine (escluso). L'originale non viene modificato.
+
+fn main() {
+    xs = [10, 20, 30, 40, 50]
+    mid = slice(xs, 1, 4)     // [20, 30, 40]
+    print(len(mid))           // 3
+    print(mid[0])             // 20
+    print(mid[2])             // 40
+    print(sum(mid))           // 90
+    // la lista originale resta intatta
+    print(len(xs))            // 5
+    print(sum(xs))            // 150
+}

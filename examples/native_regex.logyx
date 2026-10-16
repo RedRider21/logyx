@@ -1,0 +1,13 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// matches(stringa, pattern): vero se l'espressione regolare trova
+// una corrispondenza in un punto qualsiasi della stringa.
+
+fn main() {
+    print(matches("logyx-2026", "[0-9]+"))        // true
+    print(matches("solo lettere", "[0-9]+"))      // false
+    print(matches("ciao@mail.it", "@"))           // true
+    print(matches("abc123", "^[a-z]+[0-9]+$"))    // true
+    print(matches("ABC", "^[a-z]+$"))             // false
+}

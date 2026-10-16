@@ -320,6 +320,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `min(a, b)` / `max(a, b)` | Il minore / il maggiore fra due numeri dello stesso tipo |
 | `upper(s)` / `lower(s)` | La stringa `s` in maiuscolo / minuscolo |
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
+| `slice(lista, a, b)` | Nuova lista con gli elementi da `a` incluso a `b` escluso (non muta l'originale) |
 | `trim(s)` | La stringa `s` senza gli spazi iniziali e finali |
 | `has(mappa, chiave)` | `true` se la mappa contiene la chiave |
 | `keys(mappa)` | Lista delle chiavi, **ordinate** (output deterministico) |
@@ -330,6 +331,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `join(lista, sep)` | Unisce una lista di stringhe con `sep` → stringa |
 | `replace(s, da, a)` | Sostituisce tutte le occorrenze di `da` con `a` in `s` |
 | `starts_with(s, p)` / `ends_with(s, p)` | `true` se `s` inizia / finisce con `p` |
+| `matches(s, pattern)` | `true` se la regex `pattern` trova una corrispondenza in `s` (crate `regex`) |
 | `map(lista, f)` | Nuova lista con la funzione `f` applicata a ogni elemento |
 | `filter(lista, p)` | Gli elementi della lista per cui la funzione `p` è vera |
 | `reduce(lista, init, f)` | Accumula da `init` applicando `f(acc, elemento)` |
@@ -530,7 +532,9 @@ compila a **JavaScript** (eventi, stato, aggiornamento del DOM — `on "click" o
 `examples/hello_web.logyx`. L'output coincide con quello del prototipo (`python3 main.py render`).
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
+| `round(x)` | Arrotonda all'intero più vicino, metà lontano dallo zero (`2.5`→`3`, `-2.5`→`-3`) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |
+| `random()` | Float casuale in `[0, 1)` (crate `rand`); non deterministico, come `now()` |
 | `sum(lista)` | Somma degli elementi (lista di interi) |
 | `sort(lista)` | Ordina la lista in ordine crescente (la muta); usala come istruzione |
 

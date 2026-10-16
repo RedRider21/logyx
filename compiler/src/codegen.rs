@@ -718,6 +718,7 @@ impl Codegen {
                     if name == "contains" || name == "has"
                         || name == "starts_with" || name == "ends_with"
                         || name == "write_file" || name == "file_exists"
+                        || name == "matches"
                     {
                         return Some("bool".into());
                     }
@@ -730,10 +731,10 @@ impl Codegen {
                     if name == "sum" {
                         return Some("int".into());
                     }
-                    if name == "floor" || name == "ceil" {
+                    if name == "floor" || name == "ceil" || name == "round" {
                         return Some("int".into());
                     }
-                    if name == "sqrt" {
+                    if name == "sqrt" || name == "random" {
                         return Some("float".into());
                     }
                     if name == "reduce" {
@@ -1014,7 +1015,7 @@ impl Codegen {
                 return;
             }
             if name == "abs" || name == "min" || name == "max" || name == "pow"
-                || name == "floor" || name == "ceil" || name == "sqrt"
+                || name == "floor" || name == "ceil" || name == "sqrt" || name == "round"
             {
                 for a in args {
                     if let Expr::Ident(n) = a {
@@ -2261,6 +2262,32 @@ impl Codegen {
                         }
                         return Ok(format!("(({}) as f64).sqrt()", self.expr(&args[0])?));
                     }
+                    if name == "round" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("round accetta un solo argomento"));
+                        }
+                        return Ok(format!("(({}) as f64).round() as i64", self.expr(&args[0])?));
+                    }
+                    if name == "slice" {
+                        if args.len() != 3 {
+                            return Err(LogyxError::new(
+                                "slice accetta tre argomenti: slice(lista, inizio, fine)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "({})[({}) as usize..({}) as usize].to_vec()",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?,
+                            self.expr(&args[2])?
+                        ));
+                    }
+                    if name == "random" {
+                        if !args.is_empty() {
+                            return Err(LogyxError::new("random non accetta argomenti"));
+                        }
+                        self.deps.insert("rand".to_string(), "\"0.8\"".to_string());
+                        return Ok("rand::random::<f64>()".to_string());
+                    }
                     if name == "index_of" {
                         if args.len() != 2 {
                             return Err(LogyxError::new(
@@ -2271,6 +2298,19 @@ impl Codegen {
                             "({}).find(({}).as_str()).map(|i| i as i64).unwrap_or(-1i64)",
                             self.expr(&args[0])?,
                             self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "matches" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new(
+                                "matches accetta due argomenti: matches(stringa, pattern)",
+                            ));
+                        }
+                        self.deps.insert("regex".to_string(), "\"1\"".to_string());
+                        return Ok(format!(
+                            "regex::Regex::new(({}).as_str()).unwrap().is_match(({}).as_str())",
+                            self.expr(&args[1])?,
+                            self.expr(&args[0])?
                         ));
                     }
                     if name == "substring" {

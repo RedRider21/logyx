@@ -64,7 +64,7 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **19/19**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **53/53**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
 
 **Allineamento doc a ogni aggiunta:** aggiornare `MANUAL.md`, poi rigenerare il manuale online con
 `python3 tools/build_manual.py` (→ `docs/manuale.html`), e aggiungere la voce nella tabella/sezione
@@ -72,15 +72,18 @@ Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incremental
 
 **Già fatto in questa fase:** costrutti `break`/`continue`, operatori composti `+= -= *= /= %=`;
 builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ceil`, `abs/min/max`,
-`upper/lower`. Vedi `ROADMAP.md` per il quadro completo e le priorità.
+`upper/lower`, `sqrt`, `round`, `slice`, `random`, `matches` (regex). Vedi `ROADMAP.md` per il quadro
+completo e le priorità.
 
-**Prossimi giri a basso rischio (C):**
-- numerici: `sqrt` (scegliere esempio con risultati puliti), eventuale `round` (⚠️ Python usa arrotondamento
-  bancario, Rust half-away-from-zero: allineare la semantica nei due backend o evitarlo);
-- mappe: `has`, `keys`, `values`, **iterazione `for k in mappa`** FATTI (chiavi **ordinate** →
-  deterministico; `examples/native_mapkeys.logyx`, `examples/native_formap.logyx`, suite 43). Capitolo
-  mappe completo.
-- stringhe: `index_of`, `substring`.
+**Builtin di libreria standard: COMPLETATI (Piano 2 di `ROADMAP.md`).**
+- numerici: `sqrt`, `round` (⚠️ allineato *half-away-from-zero*: in Python `floor(x+0.5)`/`ceil(x-0.5)`,
+  in Rust `f64::round`, non il banker's di Python — `examples/native_round.logyx`), `random`
+  (crate `rand`, non deterministico → fuori suite, `examples/native_random.logyx`);
+- liste: `slice(lista, a, b)` → nuova lista copia (`examples/native_slice.logyx`);
+- stringhe: `index_of`, `substring`, `matches(s, pattern)` regex (crate `regex`, Python `re.search`,
+  `examples/native_regex.logyx`);
+- mappe: `has`, `keys`, `values`, **iterazione `for k in mappa`** (chiavi **ordinate** → deterministico;
+  `examples/native_mapkeys.logyx`, `examples/native_formap.logyx`). Capitolo mappe completo.
 
 **Fronti grossi del nucleo (Piano 1 di `ROADMAP.md`), da affrontare con un minimo di design:**
 - **closure / funzioni come valori** (implicazioni ownership/lifetime nel backend Rust);
@@ -88,7 +91,7 @@ builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ce
 - `enum` e `match` generale (oggi `match` è solo `ok`/`err`).
 
 **Collezioni di stringhe: FATTE** (`design/collezioni-stringhe.md`); stringhe complete (`split`/`join`/
-`replace`, manca solo regex).
+`replace`/`matches` regex).
 **`map`/`filter`/`reduce`: FATTI** (Fase 1 con funzioni *nominate* — `design/funzioni-ordine-superiore.md`).
 **Fase 2 (futura):** valori funzione e lambda inline (serve un tipo funzione nel linguaggio).
 **Record/struct: FATTI** (`design/record.md`): `record Nome { campo: tipo }`, costruzione posizionale
