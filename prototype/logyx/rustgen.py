@@ -907,6 +907,13 @@ class RustTranspiler:
             kt, vt = self._json_type_of(k), self._json_type_of(v)
             if kt and vt:
                 self.map_val[name] = (kt, vt)
+        elif (type(value).__name__ == "Call" and isinstance(value.callee, N.Identifier)
+              and value.callee.name == "from_json" and len(value.args) == 2
+              and type(value.args[1]).__name__ == "ListLit" and value.args[1].elements
+              and isinstance(value.args[1].elements[0], N.Identifier)
+              and value.args[1].elements[0].name in self.records):
+            # from_json(testo, [Record]) -> lista di Record
+            self.list_elem[name] = value.args[1].elements[0].name
 
     def _make_record_expr(self, name, args):
         fields = self.records[name]
@@ -1193,15 +1200,22 @@ class RustTranspiler:
                     return ("chrono::DateTime::from_timestamp((" + self.expr(e.args[0])
                             + "), 0).unwrap().format(\"%Y-%m-%d %H:%M:%S\").to_string()")
                 if nm == "from_json":
-                    if len(e.args) != 2 or not isinstance(e.args[1], N.Identifier):
-                        raise LogyxError("from_json richiede: from_json(testo, NomeRecord)")
-                    rec = e.args[1].name
-                    if rec not in self.records:
-                        raise LogyxError(f"from_json: '{rec}' non è un record")
+                    if len(e.args) != 2:
+                        raise LogyxError(
+                            "from_json richiede: from_json(testo, NomeRecord) oppure from_json(testo, [NomeRecord])")
+                    spec = e.args[1]
+                    if isinstance(spec, N.Identifier) and spec.name in self.records:
+                        target = spec.name
+                    elif (type(spec).__name__ == "ListLit" and len(spec.elements) == 1
+                          and isinstance(spec.elements[0], N.Identifier)
+                          and spec.elements[0].name in self.records):
+                        target = f"Vec<{spec.elements[0].name}>"
+                    else:
+                        raise LogyxError("from_json: il secondo argomento deve essere un record o [Record]")
                     self.uses_serde = True
                     self.deps["serde"] = '{ version = "1", features = ["derive"] }'
                     self.deps["serde_json"] = '"1"'
-                    return f"serde_json::from_str::<{rec}>(&({self.expr(e.args[0])})).unwrap()"
+                    return f"serde_json::from_str::<{target}>(&({self.expr(e.args[0])})).unwrap()"
                 if nm == "sha256":
                     if len(e.args) != 1:
                         raise LogyxError("sha256 accetta un solo argomento")

@@ -10,6 +10,11 @@ record Punto {
     y: int
 }
 
+record Persona {
+    nome: string,
+    eta: int
+}
+
 fn main() {
     // nelle stringhe '{' '}' vanno escapati (avviano l'interpolazione): \{ \}
     testo = "\{\"x\":3,\"y\":7\}"
@@ -17,4 +22,10 @@ fn main() {
 
     print("x = {p.x}, y = {p.y}")
     print(to_json(p))
+
+    // lista di record: from_json(testo, [Record])
+    elenco = "[\{\"nome\":\"Ada\",\"eta\":36\},\{\"nome\":\"Guido\",\"eta\":45\}]"
+    gente = from_json(elenco, [Persona])
+    print(len(gente))
+    print(to_json(gente))
 }

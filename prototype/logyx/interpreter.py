@@ -717,16 +717,34 @@ class Interpreter:
         return self.call(callee, args)
 
     def _from_json(self, n, env):
-        if len(n.args) != 2 or not isinstance(n.args[1], N.Identifier):
-            raise LogyxError("from_json richiede: from_json(testo, NomeRecord)")
-        rec = n.args[1].name
-        if rec not in self.records:
-            raise LogyxError(f"from_json: '{rec}' non è un record")
+        if len(n.args) != 2:
+            raise LogyxError(
+                "from_json richiede: from_json(testo, NomeRecord) oppure from_json(testo, [NomeRecord])"
+            )
+        spec = n.args[1]
         testo = self.eval(n.args[0], env)
         try:
             data = json.loads(testo)
         except Exception:
             raise LogyxError("from_json: JSON non valido")
+        # lista di record: from_json(testo, [Record])
+        if (type(spec).__name__ == "ListLit" and len(spec.elements) == 1
+                and isinstance(spec.elements[0], N.Identifier)):
+            rec = spec.elements[0].name
+            if rec not in self.records:
+                raise LogyxError(f"from_json: '{rec}' non è un record")
+            if not isinstance(data, list):
+                raise LogyxError("from_json: atteso un array JSON")
+            return [self._record_from_data(rec, d) for d in data]
+        # record singolo
+        if isinstance(spec, N.Identifier):
+            rec = spec.name
+            if rec not in self.records:
+                raise LogyxError(f"from_json: '{rec}' non è un record")
+            return self._record_from_data(rec, data)
+        raise LogyxError("from_json: il secondo argomento deve essere un record o [Record]")
+
+    def _record_from_data(self, rec, data):
         fields = {}
         for fname, _ in self.records[rec]:
             if fname not in data:

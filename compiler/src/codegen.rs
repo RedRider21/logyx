@@ -738,10 +738,18 @@ impl Codegen {
                         return Some(name.clone());
                     }
                     if name == "from_json" {
-                        if let Some(Expr::Ident(r)) = args.get(1) {
-                            if self.records.contains_key(r) {
-                                return Some(r.clone());
+                        match args.get(1) {
+                            Some(Expr::Ident(r)) if self.records.contains_key(r) => {
+                                return Some(r.clone())
                             }
+                            Some(Expr::List(els)) if els.len() == 1 => {
+                                if let Expr::Ident(r) = &els[0] {
+                                    if self.records.contains_key(r) {
+                                        return Some(format!("list<{}>", r));
+                                    }
+                                }
+                            }
+                            _ => {}
                         }
                         return None;
                     }
@@ -1739,6 +1747,20 @@ impl Codegen {
                     }
                 }
             }
+            // from_json(testo, [Record]) -> lista di Record: ricorda il tipo elemento
+            Expr::Call { callee, args } => {
+                if let Expr::Ident(f) = &**callee {
+                    if f == "from_json" {
+                        if let Some(Expr::List(els)) = args.get(1) {
+                            if let Some(Expr::Ident(r)) = els.first() {
+                                if self.records.contains_key(r) {
+                                    self.list_elem.insert(name.to_string(), r.clone());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -2251,14 +2273,25 @@ impl Codegen {
                     if name == "from_json" {
                         if args.len() != 2 {
                             return Err(LogyxError::new(
-                                "from_json richiede: from_json(testo, NomeRecord)",
+                                "from_json richiede: from_json(testo, NomeRecord) oppure from_json(testo, [NomeRecord])",
                             ));
                         }
-                        let rec = match &args[1] {
+                        // tipo target: Record  oppure  Vec<Record> (per [Record])
+                        let target = match &args[1] {
                             Expr::Ident(n) if self.records.contains_key(n) => n.clone(),
+                            Expr::List(els)
+                                if els.len() == 1
+                                    && matches!(&els[0], Expr::Ident(r) if self.records.contains_key(r)) =>
+                            {
+                                if let Expr::Ident(r) = &els[0] {
+                                    format!("Vec<{}>", r)
+                                } else {
+                                    unreachable!()
+                                }
+                            }
                             _ => {
                                 return Err(LogyxError::new(
-                                    "from_json: il secondo argomento deve essere il nome di un record",
+                                    "from_json: il secondo argomento deve essere un record o [Record]",
                                 ))
                             }
                         };
@@ -2270,7 +2303,7 @@ impl Codegen {
                         self.deps.insert("serde_json".to_string(), "\"1\"".to_string());
                         return Ok(format!(
                             "serde_json::from_str::<{}>(&({})).unwrap()",
-                            rec,
+                            target,
                             self.expr(&args[0])?
                         ));
                     }

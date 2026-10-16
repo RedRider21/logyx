@@ -104,8 +104,11 @@ Liste: tipo elemento dedotto da lista letterale o variabile-lista-letterale (map
 `list<ELEM>` in `json_value` (ricorsivo). Mappe: tipo valore dedotto da letterale o variabile
 (mappa `map_val`), ramo `map<K,V>`, chiavi ordinate via helper `__json_obj` (HashMap Rust non
 deterministico; UTF-8 byte-order == code-point order Python → conformi). Tre backend allineati
-(interprete + transpiler + compiler), suite 38/38 (`examples/native_json.logyx`). **DA FARE:**
-`from_json` oltre i record; chiavi di mappa non-string.
+(interprete + transpiler + compiler), suite 38/38 (`examples/native_json.logyx`).
+**`from_json`: FATTO per record e liste di record** — `from_json(testo, Record)` → record,
+`from_json(testo, [Record])` → `Vec<Record>` (serde); il Decl registra `list_elem` per la lista-record
+così è usabile (`len`, `to_json`). `examples/native_fromjson.logyx` (round-trip verificato). **DA FARE
+JSON:** `from_json` di scalari/liste di scalari/mappe; chiavi di mappa non-string.
 **`match` generale: FATTO**: `match x { <valore> { } ... else { } }` (confronto per uguaglianza →
 if/else-if), distinto dal `match ok/err` degli errori; interprete+nativo, suite 30/30
 (`examples/native_matchval.logyx`).
@@ -211,7 +214,8 @@ lambda a un parametro `fn(…)->…` e si **chiama** (`g(x)` → `(*g)(args)`). 
 funzione → `.clone()`). L'interprete li gestisce nativamente (valori callable). Tre backend,
 `examples/native_funval.logyx`, suite **48/48**. **DA FARE valori funzione:** memorizzazione in variabili
 libere (serve inferenza del tipo funzione) e **ritorno** di funzioni.
-**Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` oltre i record (PROSSIMO); processi esterni.
+**Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` di scalari/liste-di-scalari/mappe;
+valori funzione memorizzabili in variabili libere / ritorno; processi esterni.
 **DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,
 sito (Pages) e manuale: **come** si caricano le librerie (oggi `use rust`/`extern rust`; in futuro binding
 pronti) e un **elenco completo** delle librerie utilizzabili per categoria (file, grafica, gestione
