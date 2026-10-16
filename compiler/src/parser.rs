@@ -410,10 +410,10 @@ impl Parser {
         {
             let name = self.ident_name("nome")?;
             self.advance(); // ':'
-            let _ty = self.type_ref()?;
+            let ty = self.type_ref()?;
             self.expect(&TokenKind::Assign, "=")?;
             let value = self.expression()?;
-            return Ok(Stmt::Decl { name, value, is_const: false });
+            return Ok(Stmt::Decl { name, value, is_const: false, ty: Some(ty) });
         }
         let expr = self.expression()?;
         if self.is(&TokenKind::Assign) {
@@ -597,13 +597,14 @@ impl Parser {
     fn const_decl(&mut self) -> Result<Stmt, LogyxError> {
         self.expect(&TokenKind::Const, "const")?;
         let name = self.ident_name("nome costante")?;
+        let mut ty = None;
         if self.is(&TokenKind::Colon) {
             self.advance();
-            self.type_ref()?;
+            ty = Some(self.type_ref()?);
         }
         self.expect(&TokenKind::Assign, "=")?;
         let value = self.expression()?;
-        Ok(Stmt::Decl { name, value, is_const: true })
+        Ok(Stmt::Decl { name, value, is_const: true, ty })
     }
 
     // --- espressioni (per precedenza crescente) ---

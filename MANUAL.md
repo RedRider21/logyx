@@ -395,10 +395,19 @@ add5 = sommatore(5)
 add5(10)                        // 15
 ```
 
-In Rust il valore funzione è un `Rc<dyn Fn(...) -> ...>`. v0: i valori funzione si **passano** come argomenti
-a parametri `fn(...)->...`, si **chiamano**, e si **restituiscono** (il risultato è memorizzabile e
-ri-chiamabile). Non ancora: assegnare una lambda "nuda" a una variabile senza passare da una funzione.
-Esempi: `examples/native_lambda.logyx`, `examples/native_funval.logyx`, `examples/native_closure.logyx`.
+In Rust il valore funzione è un `Rc<dyn Fn(...) -> ...>`. I valori funzione si **passano** come argomenti
+a parametri `fn(...)->...`, si **chiamano**, si **restituiscono** (il risultato è memorizzabile e
+ri-chiamabile) e si possono **assegnare a una variabile** annotandone il tipo funzione:
+
+```
+inc: fn(int) -> int = |x| x + 1
+print(inc(5))            // 6
+```
+
+Nel compilatore nativo (e nel transpiler) la lambda in variabile richiede l'**annotazione di tipo**
+`fn(...)->...` (serve al backend tipizzato); nell'interprete funziona anche senza. Esempi:
+`examples/native_lambda.logyx`, `examples/native_funval.logyx`, `examples/native_closure.logyx`,
+`examples/native_lambdavar.logyx`.
 
 `to_json` serializza **int**, **float**, **bool**, **string**, **record** (anche annidati) e **liste**,
 in formato compatto; le stringhe sono "escaped". I float finiti e interi escono con il decimale (`3.0`);

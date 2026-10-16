@@ -64,7 +64,12 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **55/55**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **56/56**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**Lambda in variabile FATTA (2026-10-17):** `f: fn(int)->int = |x| x+1` poi `f(5)`. Nel compilatore/
+transpiler serve l'**annotazione di tipo** `fn(...)->...` (l'interprete funziona anche senza). Nodo `Decl`
+esteso con `ty`/`decl_type`; la RHS lambda è generata con `fn_value_arg` (Rc<dyn Fn>), la chiamata con
+`(*f)(...)`. Esempio `native_lambdavar`. Chiude il punto "lambda nuda" del Piano 1.
 
 **Processi esterni FATTI (2026-10-17):** builtin `run(cmd)` → stdout (stringa) e `run_code(cmd)` →
 codice d'uscita (int), eseguiti via `sh -c`, output **catturato** (nativo `std::process`, interprete

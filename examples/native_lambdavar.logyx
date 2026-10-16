@@ -1,0 +1,20 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Lambda memorizzata in una variabile: con il tipo funzione annotato
+// (f: fn(...)->...) una lambda si assegna a una variabile libera e si richiama.
+
+fn applica(g: fn(int) -> int, x: int) -> int {
+    return g(x)
+}
+
+fn main() {
+    inc: fn(int) -> int = |x| x + 1
+    print(inc(5))                 // 6
+
+    somma: fn(int, int) -> int = |a, b| a + b
+    print(somma(3, 4))            // 7
+
+    // una lambda in variabile si passa anche a un parametro funzione
+    print(applica(inc, 10))       // 11
+}

@@ -63,7 +63,7 @@ pub enum Expr {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Stmt {
-    Decl { name: String, value: Expr, is_const: bool },
+    Decl { name: String, value: Expr, is_const: bool, ty: Option<String> },
     Assign { target: Expr, value: Expr },
     Expr(Expr),
     If { cond: Expr, then_block: Vec<Stmt>, else_block: Option<Vec<Stmt>> },

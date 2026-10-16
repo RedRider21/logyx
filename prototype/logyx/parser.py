@@ -290,9 +290,9 @@ class Parser:
         if t.type == T.IDENT and self.peek(1).type == T.COLON:
             name = self.advance().value
             self.advance()  # ':'
-            self.type_ref()
+            declared_type = self.type_ref()
             self.expect(T.ASSIGN)
-            return N.Decl(name, self.expression(), False)
+            return N.Decl(name, self.expression(), False, declared_type)
         expr = self.expression()
         if self.at(T.ASSIGN):
             self.advance()
@@ -409,11 +409,12 @@ class Parser:
     def const_decl(self):
         self.expect(T.CONST)
         name = self.expect(T.IDENT, "nome costante").value
+        declared_type = None
         if self.at(T.COLON):
             self.advance()
-            self.type_ref()
+            declared_type = self.type_ref()
         self.expect(T.ASSIGN)
-        return N.Decl(name, self.expression(), True)
+        return N.Decl(name, self.expression(), True, declared_type)
 
     # --- espressioni (per precedenza crescente) ---
 

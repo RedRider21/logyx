@@ -78,6 +78,7 @@ class Decl:
     name: str
     value: Any
     is_const: bool = False
+    decl_type: Any = None   # tipo annotato (es. "fn(int)->int"), oppure None
 
 
 @dataclass

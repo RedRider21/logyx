@@ -612,8 +612,10 @@ impl Codegen {
     fn collect_local_types(&self, stmts: &[Stmt], types: &mut HashMap<String, Option<String>>) {
         for s in stmts {
             match s {
-                Stmt::Decl { name, value, .. } => {
-                    if let Some(vt) = self.type_of(value, types) {
+                Stmt::Decl { name, value, ty, .. } => {
+                    if let Some(t) = ty.as_ref().filter(|t| parse_fn_type(t).is_some()) {
+                        types.insert(name.clone(), Some(t.clone()));
+                    } else if let Some(vt) = self.type_of(value, types) {
                         types.insert(name.clone(), Some(vt));
                     }
                 }
@@ -1487,8 +1489,18 @@ impl Codegen {
             Stmt::For { var, iterable, body, index } => {
                 self.for_stmt(var, iterable, body, index, declared, indent)
             }
-            Stmt::Decl { name, value, is_const } => {
+            Stmt::Decl { name, value, is_const, ty } => {
                 declared.insert(name.clone());
+                let kw = if *is_const { "let" } else { "let mut" };
+                // lambda memorizzata in variabile con tipo funzione annotato
+                // (`f: fn(int)->int = |x| x+1`) → valore funzione Rc<dyn Fn>
+                if let (Expr::Lambda { .. }, Some(t)) = (value, ty) {
+                    if parse_fn_type(t).is_some() {
+                        self.cur_types.insert(name.clone(), Some(t.clone()));
+                        let rhs = self.fn_value_arg(value, t)?;
+                        return Ok(format!("{pad}{kw} {name} = {rhs};"));
+                    }
+                }
                 if let Some(k) = value_kind(value) {
                     self.kinds.insert(name.clone(), k.to_string());
                 }
@@ -1496,7 +1508,6 @@ impl Codegen {
                 if let Some(vt) = self.type_of(value, &self.cur_types.clone()) {
                     self.cur_types.insert(name.clone(), Some(vt));
                 }
-                let kw = if *is_const { "let" } else { "let mut" };
                 Ok(format!("{pad}{kw} {name} = {};", self.expr(value)?))
             }
             Stmt::Assign { target, value } => {

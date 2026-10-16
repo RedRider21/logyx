@@ -30,7 +30,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | Moduli (`import`) | ✅ | — |
 | **`break` / `continue`** nei cicli | ✅ | — |
 | **Operatori composti** (`+=`, `-=`, `*=`, …) | ✅ | — |
-| **Funzioni come valori / closure / lambda** | 🟢 lambda `|a,b| expr`; **valori funzione** (`Rc<dyn Fn>`) passabili, chiamabili e **restituiti** (closure che catturano l'ambiente); lambda "nuda" in variabile libera ⏳ | **1** |
+| **Funzioni come valori / closure / lambda** | ✅ lambda `|a,b| expr`; **valori funzione** (`Rc<dyn Fn>`) passabili, chiamabili, **restituiti** (closure che catturano l'ambiente) e **assegnabili a variabile** con tipo annotato (`f: fn(int)->int = |x| x+1`) | — |
 | Parametri con default; numero variabile di argomenti | ⏳ | 3 |
 | **Record/struct** (tipi con campi, anche in liste/mappe) | ✅ | — |
 | `match` generale (sui valori, con `else`) | ✅ | — |

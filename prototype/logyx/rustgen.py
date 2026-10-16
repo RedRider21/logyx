@@ -497,9 +497,13 @@ class RustTranspiler:
         for s in stmts:
             t = type(s).__name__
             if t == "Decl":
-                vt = self._type_of(s.value, types)
-                if vt:
-                    types[s.name] = vt
+                dt = getattr(s, "decl_type", None)
+                if _parse_fn_type(dt) is not None:
+                    types[s.name] = dt
+                else:
+                    vt = self._type_of(s.value, types)
+                    if vt:
+                        types[s.name] = vt
             elif t == "Assign":
                 if isinstance(s.target, N.Identifier):
                     vt = self._type_of(s.value, types)
@@ -757,6 +761,13 @@ class RustTranspiler:
             return pad + "continue;"
         if t == "Decl":
             declared.add(s.name)
+            kw = "let" if s.is_const else "let mut"
+            # lambda memorizzata in variabile con tipo funzione annotato
+            # (f: fn(int)->int = |x| x+1) → valore funzione Rc<dyn Fn>
+            dt = getattr(s, "decl_type", None)
+            if type(s.value).__name__ == "Lambda" and _parse_fn_type(dt) is not None:
+                self.cur_types[s.name] = dt
+                return pad + f"{kw} {s.name} = {self._fn_value_arg(s.value, dt)};"
             k = self._value_kind(s.value)
             if k:
                 self.kinds[s.name] = k
@@ -764,7 +775,6 @@ class RustTranspiler:
             vt = self._type_of(s.value, self.cur_types)
             if vt:
                 self.cur_types[s.name] = vt
-            kw = "let" if s.is_const else "let mut"
             return pad + f"{kw} {s.name} = {self.expr(s.value)};"
         if t == "Assign":
             # assegnazione a un elemento: xs[i] = v (lista) oppure m[k] = v (mappa)
