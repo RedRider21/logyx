@@ -164,7 +164,7 @@ client, invece, servono l'interattività del DOM e per questo diventano JavaScri
 </tr>
 <tr>
 <td><code>logyxc build --harden &lt;file&gt;</code></td>
-<td>Come <code>build</code>, ma <strong>blinda</strong> il binario: <code>panic=abort</code>, overflow-checks, strip dei simboli, LTO</td>
+<td>Come <code>build</code>, ma <strong>blinda</strong> il binario (<code>panic=abort</code>, overflow-checks, strip, LTO) e scrive il <strong>checksum</strong> <code>&lt;bin&gt;.sha256</code> (verifica: <code>sha256sum -c</code>)</td>
 </tr>
 <tr>
 <td><code>logyxc gen &lt;file&gt;</code></td>

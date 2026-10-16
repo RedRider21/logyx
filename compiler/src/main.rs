@@ -420,12 +420,35 @@ fn build_rustc(path: &str, rust: &str, harden: bool) -> Result<(), error::LogyxE
             String::from_utf8_lossy(&comp.stderr)
         )));
     }
+    if harden {
+        write_checksum(&bin);
+    }
     println!("──── esecuzione del binario nativo ────");
     let run = std::process::Command::new(&bin)
         .output()
         .map_err(|e| error::LogyxError::new(format!("{bin}: {e}")))?;
     print!("{}", String::from_utf8_lossy(&run.stdout));
     Ok(())
+}
+
+/// Scrive accanto al binario il suo SHA-256 (`<bin>.sha256`, formato `sha256sum`),
+/// per la verifica d'integrità: `sha256sum -c <bin>.sha256`. Richiede `sha256sum`.
+fn write_checksum(bin: &str) {
+    if !which("sha256sum") {
+        println!("// (sha256sum non trovato: checksum saltato)");
+        return;
+    }
+    if let Ok(out) = std::process::Command::new("sha256sum").arg(bin).output() {
+        if out.status.success() {
+            let line = String::from_utf8_lossy(&out.stdout).to_string();
+            let sum_path = format!("{bin}.sha256");
+            if std::fs::write(&sum_path, line.as_bytes()).is_ok() {
+                let hash = line.split_whitespace().next().unwrap_or("");
+                println!("// checksum SHA-256: {hash}");
+                println!("//   scritto in {sum_path} — verifica: sha256sum -c {sum_path}");
+            }
+        }
+    }
 }
 
 /// Web Fase 2b: genera un progetto cargo con il server HTTP (`tiny_http`) e lo
@@ -534,6 +557,9 @@ fn build_cargo(
             "cargo ha segnalato errori:\n{}",
             String::from_utf8_lossy(&comp.stderr)
         )));
+    }
+    if harden {
+        write_checksum(&format!("{dir}/target/release/logyxprog"));
     }
     println!("──── esecuzione del binario nativo ────");
     let run = std::process::Command::new(format!("{dir}/target/release/logyxprog"))

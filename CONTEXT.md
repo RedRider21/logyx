@@ -224,8 +224,10 @@ valori funzione memorizzabili in variabili libere / ritorno; processi esterni.
 **Cybersecurity — hardening build: FATTO (primo passo)** — `logyxc build --harden <file>` blinda il
 binario: `panic=abort`, `overflow-checks=on`, strip dei simboli (rustc), e per cargo anche `lto`+
 `codegen-units=1` (profilo release). Output invariato, binario molto più piccolo (fib: 4.5 MB → 350 KB).
-Prossimi passi cyber (vedi memoria `logyx_cybersecurity_idee`): firma/build riproducibili, anti-tampering
-self-check opzionale (deterrenza), supply chain. Punto forte già presente: memory safety ereditata da Rust.
+Inoltre `--harden` scrive il **checksum** `<bin>.sha256` (via `sha256sum`, formato `sha256sum -c`) per la
+**verifica d'integrità** (anti-tampering onesto: checksum esterno pubblicabile; rileva le manomissioni).
+Prossimi passi cyber (vedi memoria `logyx_cybersecurity_idee`): firma crittografica (Ed25519/minisign),
+build riproducibili, supply chain. Punto forte già presente: memory safety ereditata da Rust.
 **DA FARE (verso la fine) — richiesta utente:** **documentazione professionale sul sito (Pages)** che
 spieghi **ogni comando/builtin** con **opzioni** ed **esempio pratico**, come i linguaggi noti (stile
 reference completo, non solo tabella). Oggi il sito ha una tabella sintetica; serve una pagina reference
