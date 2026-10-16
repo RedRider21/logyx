@@ -213,6 +213,7 @@ pub struct Codegen {
     enums: HashMap<String, Vec<(String, Vec<String>)>>,
     tmp: usize,
     cur_fallible: bool,
+    cur_ret: Option<String>,
     kinds: HashMap<String, String>,
     cur_types: HashMap<String, Option<String>>,
     // Per le variabili lista: tipo JSON dell'elemento (per `to_json`), es. "int" o "Persona".
@@ -238,6 +239,7 @@ impl Codegen {
             enums: HashMap::new(),
             tmp: 0,
             cur_fallible: false,
+            cur_ret: None,
             kinds: HashMap::new(),
             cur_types: HashMap::new(),
             list_elem: HashMap::new(),
@@ -1126,6 +1128,7 @@ impl Codegen {
             ))
         })?;
         self.cur_fallible = self.fallible[&f.name];
+        self.cur_ret = Some(ret.clone());
         let ret_str = if self.cur_fallible {
             let inner = if ret == "__void__" { "()".to_string() } else { self.rust_type(&ret)? };
             format!(" -> Result<{}, String>", inner)
@@ -1354,16 +1357,26 @@ impl Codegen {
         let pad = "    ".repeat(indent);
         match s {
             Stmt::Return(v) => {
+                // se la funzione ritorna un valore funzione, converte lambda/nome in Rc<dyn Fn>
+                let gen = |s: &mut Self, e: &Expr| -> R<String> {
+                    match &s.cur_ret {
+                        Some(rt) if parse_fn_type(rt).is_some() => {
+                            let rt = rt.clone();
+                            s.fn_value_arg(e, &rt)
+                        }
+                        _ => s.expr(e),
+                    }
+                };
                 if self.cur_fallible {
                     let inner = match v {
                         None => "()".to_string(),
-                        Some(e) => self.expr(e)?,
+                        Some(e) => gen(self, e)?,
                     };
                     Ok(format!("{pad}return Ok({inner});"))
                 } else {
                     match v {
                         None => Ok(format!("{pad}return;")),
-                        Some(e) => Ok(format!("{pad}return {};", self.expr(e)?)),
+                        Some(e) => Ok(format!("{pad}return {};", gen(self, e)?)),
                     }
                 }
             }

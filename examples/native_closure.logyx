@@ -1,0 +1,15 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Closure: una funzione che ritorna una funzione, catturando l'ambiente.
+
+fn sommatore(n: int) -> fn(int) -> int {
+    return |x| x + n
+}
+
+fn main() {
+    add5 = sommatore(5)
+    add10 = sommatore(10)
+    print(add5(10))
+    print(add10(10))
+}

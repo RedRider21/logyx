@@ -211,9 +211,12 @@ il nome del programma). In Rust `std::env::args().skip(1).collect::<Vec<String>>
 `std::rc::Rc<dyn Fn(…) -> …>` (clonabile → clone uniforme ok). Si **passa** una funzione nominata o una
 lambda a un parametro `fn(…)->…` e si **chiama** (`g(x)` → `(*g)(args)`). Nel codegen: `parse_fn_type`,
 `fn_value_arg` (lambda → `Rc::new(move |p: T| body) as Rc<dyn Fn>`, nome → `Rc::new(nome) as …`, var
-funzione → `.clone()`). L'interprete li gestisce nativamente (valori callable). Tre backend,
-`examples/native_funval.logyx`, suite **48/48**. **DA FARE valori funzione:** memorizzazione in variabili
-libere (serve inferenza del tipo funzione) e **ritorno** di funzioni.
+funzione → `.clone()`). L'interprete li gestisce nativamente (valori callable). **Ritorno di funzioni (closure): FATTO** — una
+funzione con ret `fn(…)->…` può restituire una lambda/nome (campo `cur_ret`; nel `Return` si applica
+`fn_value_arg`); la lambda cattura l'ambiente (`move`), e il risultato è memorizzabile via inferenza dal
+ret (`g = sommatore(5)` → `cur_types[g]` tipo funzione → `(*g)(…)`). Tre backend,
+`examples/native_funval.logyx` + `examples/native_closure.logyx`, suite **49/49**. **DA FARE valori
+funzione:** assegnare una lambda "nuda" a una variabile libera (servirebbe il tipo annotato sul `Decl`).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` di scalari/liste-di-scalari/mappe;
 valori funzione memorizzabili in variabili libere / ritorno; processi esterni.
 **DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,

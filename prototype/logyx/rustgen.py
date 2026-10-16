@@ -239,6 +239,7 @@ class RustTranspiler:
                 "aggiungi l'annotazione '-> tipo'"
             )
         self.cur_fallible = self.fallible.get(f.name, False)
+        self.cur_ret = ret
         if self.cur_fallible:
             inner = "()" if ret == "__void__" else self.ty(ret)
             ret_str = f" -> Result<{inner}, String>"
@@ -661,10 +662,15 @@ class RustTranspiler:
         pad = "    " * indent
         t = type(s).__name__
         if t == "Return":
+            def gen(e):
+                # ritorno di un valore funzione: lambda/nome -> Rc<dyn Fn>
+                if e is not None and _parse_fn_type(getattr(self, "cur_ret", None)) is not None:
+                    return self._fn_value_arg(e, self.cur_ret)
+                return self.expr(e)
             if self.cur_fallible:
-                inner = "()" if s.value is None else self.expr(s.value)
+                inner = "()" if s.value is None else gen(s.value)
                 return pad + f"return Ok({inner});"
-            return pad + ("return;" if s.value is None else f"return {self.expr(s.value)};")
+            return pad + ("return;" if s.value is None else f"return {gen(s.value)};")
         if t == "Fail":
             return pad + f"return Err({self.expr(s.value)});"
         if t == "Match":

@@ -367,10 +367,22 @@ applica(raddoppia, 5)      // 10  (nome di funzione)
 applica(|y| y + 1, 5)      // 6   (lambda)
 ```
 
-In Rust il valore funzione è un `Rc<dyn Fn(...) -> ...>`. v0: i valori funzione si passano come **argomenti**
-a parametri `fn(...)->...` (e si chiamano); non sono ancora memorizzabili in variabili libere né restituiti.
-Esempi: `examples/native_mapfilter.logyx`, `examples/native_reduce.logyx`, `examples/native_lambda.logyx`,
-`examples/native_funval.logyx`.
+Una funzione può anche **restituire una funzione** (il tipo di ritorno è `fn(...)->...`), creando una
+**closure** che cattura l'ambiente:
+
+```
+fn sommatore(n: int) -> fn(int) -> int {
+    return |x| x + n            // la lambda cattura n
+}
+
+add5 = sommatore(5)
+add5(10)                        // 15
+```
+
+In Rust il valore funzione è un `Rc<dyn Fn(...) -> ...>`. v0: i valori funzione si **passano** come argomenti
+a parametri `fn(...)->...`, si **chiamano**, e si **restituiscono** (il risultato è memorizzabile e
+ri-chiamabile). Non ancora: assegnare una lambda "nuda" a una variabile senza passare da una funzione.
+Esempi: `examples/native_lambda.logyx`, `examples/native_funval.logyx`, `examples/native_closure.logyx`.
 
 `to_json` serializza **int**, **float**, **bool**, **string**, **record** (anche annidati) e **liste**,
 in formato compatto; le stringhe sono "escaped". I float finiti e interi escono con il decimale (`3.0`);
