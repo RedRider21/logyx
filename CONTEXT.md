@@ -67,8 +67,18 @@ Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incremental
 (ora **53/53**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
 
 **Allineamento doc a ogni aggiunta:** aggiornare `MANUAL.md`, poi rigenerare il manuale online con
-`python3 tools/build_manual.py` (→ `docs/manuale.html`), e aggiungere la voce nella tabella/sezione
-"Riferimento" di `docs/index.html` (con le chiavi i18n IT/EN). Il sito ha: landing + `manuale.html`.
+`python3 tools/build_manual.py` (→ `docs/manuale.html`), aggiungere la voce nella tabella/sezione
+"Riferimento" di `docs/index.html` (con le chiavi i18n IT/EN) **e** nel reference completo
+`docs/riferimento.html` (array `E`, bilingue it/en — vedi sotto). Il sito ha: landing (`index.html`) +
+reference (`riferimento.html`) + manuale (`manuale.html`).
+
+**Reference professionale `docs/riferimento.html` (FATTO 2026-10-17):** pagina stand-alone bilingue IT/EN
+(stesso toggle lingua/tema e CSS della home), data-driven — tutte le voci sono nell'array JS `E`
+(91 voci in 18 categorie `CATS`): ogni voce ha `{cat, name, sig, it, en, code, out?, opts?, lang?}`.
+Barra laterale con scroll-spy, ricerca live, evidenziatore di sintassi Logyx/shell in JS. **Per aggiungere
+un comando/builtin:** inserisci una voce nell'array `E` con la categoria giusta (firma con `&lt;`/`&gt;`
+per i `<>`, codice con entità HTML che l'evidenziatore de-escapa). Linkata dalla home (bottone in sezione
+Riferimento + nav).
 
 **Già fatto in questa fase:** costrutti `break`/`continue`, operatori composti `+= -= *= /= %=`;
 builtin `push`, `remove`, `contains`, `trim`, `pow`, `sum`, `sort`, `floor`, `ceil`, `abs/min/max`,

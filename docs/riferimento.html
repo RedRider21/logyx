@@ -1,0 +1,832 @@
+<!doctype html>
+<!-- Copyright (C) 2026 Daniele Deplano (RedRider21) · SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logyx — Riferimento del linguaggio</title>
+<meta name="description" content="Riferimento completo di Logyx: ogni comando, costrutto e funzione builtin con firma, opzioni, esempio pratico e output. Bilingue IT/EN.">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="logo.svg">
+<style>
+  :root{
+    --bg:#f6f7fb; --panel:#ffffff; --panel-2:#f0f1f7;
+    --text:#171a2b; --muted:#5a6076; --border:#e3e5ef;
+    --accent:#5b4be1; --accent-2:#22c3dd; --accent-soft:#efeefc;
+    --code-bg:#0f1220; --code-text:#e7e9f5; --shadow:0 12px 40px rgba(23,26,43,.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c0e17; --panel:#141826; --panel-2:#1b2133;
+    --text:#e8eaf3; --muted:#9aa3bd; --border:#252b3f;
+    --accent:#8b7dff; --accent-2:#34d6ee; --accent-soft:#1c1f3a;
+    --code-bg:#0a0c15; --code-text:#e7e9f5; --shadow:0 14px 44px rgba(0,0,0,.45);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#0c0e17; --panel:#141826; --panel-2:#1b2133;
+      --text:#e8eaf3; --muted:#9aa3bd; --border:#252b3f;
+      --accent:#8b7dff; --accent-2:#34d6ee; --accent-soft:#1c1f3a;
+      --code-bg:#0a0c15; --code-text:#e7e9f5; --shadow:0 14px 44px rgba(0,0,0,.45);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent); text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px}
+
+  header{position:sticky; top:0; z-index:30; backdrop-filter:blur(10px);
+    background:color-mix(in srgb, var(--bg) 82%, transparent); border-bottom:1px solid var(--border)}
+  .nav{display:flex; align-items:center; gap:14px; padding:12px 0}
+  .brand{display:flex; align-items:center; gap:11px; font-weight:700; font-size:1.28rem; color:var(--text)}
+  .brand:hover{text-decoration:none}
+  .brand svg{width:40px; height:40px; display:block}
+  .nav .spacer{flex:1}
+  .nav a.link{color:var(--muted); font-weight:600; font-size:.94rem}
+  .nav a.link:hover{color:var(--text); text-decoration:none}
+  .ctrl{display:inline-flex; align-items:center; gap:6px; background:var(--panel);
+    border:1px solid var(--border); border-radius:10px; padding:4px}
+  .ctrl button{all:unset; cursor:pointer; padding:5px 9px; border-radius:7px; font-size:.82rem;
+    font-weight:600; color:var(--muted)}
+  .ctrl button.active{background:var(--accent-soft); color:var(--accent)}
+  @media(max-width:860px){ .nav a.link{display:none} }
+
+  .intro{padding:40px 0 10px}
+  .intro h1{font-size:clamp(1.8rem,4vw,2.6rem); margin:0 0 10px; letter-spacing:-.02em}
+  .intro h1 .grad{background:linear-gradient(100deg,var(--accent),var(--accent-2));
+    -webkit-background-clip:text; background-clip:text; color:transparent}
+  .intro p{color:var(--muted); max-width:720px; margin:0 0 18px}
+  .search{display:flex; align-items:center; gap:10px; background:var(--panel);
+    border:1px solid var(--border); border-radius:12px; padding:10px 14px; max-width:520px;
+    box-shadow:var(--shadow)}
+  .search input{all:unset; flex:1; color:var(--text); font-size:.98rem}
+  .search .ic{color:var(--muted)}
+  .search .count{color:var(--muted); font-size:.82rem; white-space:nowrap}
+
+  .layout{display:grid; grid-template-columns:240px 1fr; gap:34px; align-items:start; padding:26px 0 60px}
+  @media(max-width:860px){ .layout{grid-template-columns:1fr; gap:14px} }
+
+  nav.side{position:sticky; top:72px; align-self:start; max-height:calc(100vh - 92px); overflow:auto;
+    padding-right:6px}
+  @media(max-width:860px){ nav.side{position:static; max-height:none; border:1px solid var(--border);
+    border-radius:12px; background:var(--panel); padding:12px 14px} }
+  nav.side a{display:block; color:var(--muted); font-size:.9rem; font-weight:600;
+    padding:6px 10px; border-radius:8px}
+  nav.side a:hover{color:var(--text); background:var(--panel-2); text-decoration:none}
+  nav.side a.on{color:var(--accent); background:var(--accent-soft)}
+
+  .cat{scroll-margin-top:78px; margin:0 0 10px}
+  .cat h2{font-size:1.35rem; letter-spacing:-.01em; margin:30px 0 4px; padding-top:8px}
+  .cat:first-child h2{margin-top:0}
+  .cat .cat-note{color:var(--muted); font-size:.92rem; margin:0 0 14px}
+
+  .entry{scroll-margin-top:78px; background:var(--panel); border:1px solid var(--border);
+    border-radius:14px; padding:18px 20px; margin:0 0 16px; box-shadow:var(--shadow)}
+  .entry h3{margin:0 0 6px; font-size:1.08rem; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    color:var(--accent)}
+  .entry .sig{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:.9rem;
+    color:var(--text); background:var(--panel-2); border:1px solid var(--border); border-radius:8px;
+    padding:7px 11px; margin:0 0 10px; overflow:auto; white-space:pre}
+  .entry .desc{margin:0 0 12px; font-size:.96rem}
+  .entry .desc code, .cat .cat-note code{background:var(--panel-2); border:1px solid var(--border);
+    border-radius:5px; padding:1px 6px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.85em}
+  .entry ul.opts{margin:0 0 12px; padding-left:0; list-style:none}
+  .entry ul.opts li{padding:5px 0 5px 0; font-size:.92rem; border-top:1px dashed var(--border)}
+  .entry ul.opts li:first-child{border-top:none}
+  .entry ul.opts code{color:var(--accent); font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-weight:600; margin-right:6px}
+  .opts-lbl{font-size:.76rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--muted); margin:0 0 4px}
+
+  .code-wrap{background:var(--code-bg); border-radius:12px; padding:14px 16px; overflow:auto;
+    border:1px solid var(--border)}
+  pre{margin:0; font-family:"SF Mono",SFMono-Regular,ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+    font-size:.86rem; line-height:1.65; color:var(--code-text); white-space:pre}
+  .k{color:#c4b5ff} .s{color:#8ce6b0} .c{color:#6b7398; font-style:italic}
+  .n{color:#ffcf8a}
+  .out{margin-top:10px}
+  .out .out-lbl{font-size:.74rem; font-weight:700; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--muted); display:block; margin:0 0 4px}
+  .out .code-wrap{background:var(--panel-2)}
+  .out pre{color:var(--text)}
+
+  .empty{color:var(--muted); padding:30px 0; font-size:.95rem; display:none}
+
+  footer{border-top:1px solid var(--border); padding:30px 0; color:var(--muted); font-size:.9rem}
+  footer .wrap{display:flex; gap:16px; align-items:center; flex-wrap:wrap}
+  footer .spacer{flex:1}
+  .to-top{position:fixed; right:22px; bottom:22px; z-index:20; width:46px; height:46px;
+    border-radius:50%; border:1px solid var(--border); background:var(--panel); color:var(--accent);
+    font-size:1.3rem; cursor:pointer; box-shadow:var(--shadow); opacity:0; transform:translateY(12px);
+    pointer-events:none; transition:opacity .25s, transform .25s}
+  .to-top.show{opacity:1; transform:translateY(0); pointer-events:auto}
+  .to-top:hover{border-color:var(--accent)}
+  @media(max-width:720px){ .to-top{right:16px; bottom:16px} }
+  [hidden]{display:none !important}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="index.html">
+      <svg viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="120" fill="#5b4be1"/><path d="M494 1020 432 1188Q404 1265 366.5 1293.0Q329 1321 235 1321H123V1556H330Q512 1556 610.5 1479.0Q709 1402 777 1220L1235 0H877L654 588L419 0H61Z" transform="translate(64.70,216.00) scale(0.0977,-0.0977)" fill="#fff"/><circle cx="128" cy="44" r="15" fill="#22c3dd"/></svg>
+      <span>Logyx</span>
+    </a>
+    <a class="link" href="index.html" data-i18n="nav.home">Home</a>
+    <a class="link" href="index.html#codice" data-i18n="nav.code">Codice</a>
+    <a class="link" href="riferimento.html" data-i18n="nav.ref">Riferimento</a>
+    <a class="link" href="manuale.html" data-i18n="nav.manual">Manuale</a>
+    <div class="spacer"></div>
+    <div class="ctrl" role="group" aria-label="lingua">
+      <button data-lang="it">IT</button><button data-lang="en">EN</button>
+    </div>
+    <div class="ctrl" role="group" aria-label="tema">
+      <button data-theme-btn="light" title="chiaro">☀</button>
+      <button data-theme-btn="dark" title="scuro">☾</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap intro">
+    <h1 data-i18n-html="ref.title">Riferimento del <span class="grad">linguaggio</span></h1>
+    <p data-i18n="ref.lead">Ogni comando, costrutto e funzione builtin di Logyx — con firma, opzioni, un esempio pratico e il risultato. Usa la ricerca o la barra laterale per muoverti.</p>
+    <div class="search">
+      <span class="ic">🔍</span>
+      <input id="q" type="search" autocomplete="off" spellcheck="false" placeholder="Cerca un comando o una funzione…" aria-label="cerca">
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <div class="wrap layout">
+    <nav class="side" id="side" aria-label="indice"></nav>
+    <div>
+      <div id="content"></div>
+      <p class="empty" id="empty" data-i18n="ref.empty">Nessun risultato per questa ricerca.</p>
+    </div>
+  </div>
+</main>
+
+<button id="toTop" class="to-top" aria-label="Torna su" title="Torna su">↑</button>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <strong>Logyx</strong> — <span data-i18n="footer.author">di Daniele Deplano (RedRider21)</span><br>
+      <span data-i18n="footer.license">Licenza AGPL-3.0. Software libero.</span>
+    </div>
+    <div class="spacer"></div>
+    <a id="repo-foot" href="#">GitHub</a>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var REPO="https://github.com/RedRider21/logyx";
+  var rf=document.getElementById("repo-foot"); if(rf) rf.href=REPO;
+
+  // ---- i18n della cornice (nav, intro, etichette) ----
+  var UI={
+    it:{
+      "nav.home":"Home","nav.code":"Codice","nav.ref":"Riferimento","nav.manual":"Manuale",
+      "ref.title":"Riferimento del <span class='grad'>linguaggio</span>",
+      "ref.lead":"Ogni comando, costrutto e funzione builtin di Logyx — con firma, opzioni, un esempio pratico e il risultato. Usa la ricerca o la barra laterale per muoverti.",
+      "ref.empty":"Nessun risultato per questa ricerca.",
+      "ui.search":"Cerca un comando o una funzione…",
+      "ui.opts":"Opzioni","ui.out":"Output","ui.result":"risultato","ui.results":"risultati",
+      "footer.author":"di Daniele Deplano (RedRider21)","footer.license":"Licenza AGPL-3.0. Software libero.",
+      "a11y.top":"Torna su"
+    },
+    en:{
+      "nav.home":"Home","nav.code":"Code","nav.ref":"Reference","nav.manual":"Manual",
+      "ref.title":"Language <span class='grad'>reference</span>",
+      "ref.lead":"Every command, construct and builtin of Logyx — with signature, options, a practical example and its result. Use the search box or the sidebar to move around.",
+      "ref.empty":"No results for this search.",
+      "ui.search":"Search a command or a function…",
+      "ui.opts":"Options","ui.out":"Output","ui.result":"result","ui.results":"results",
+      "footer.author":"by Daniele Deplano (RedRider21)","footer.license":"AGPL-3.0 licensed. Free software.",
+      "a11y.top":"Back to top"
+    }
+  };
+
+  // ---- categorie ----
+  var CATS=[
+    {id:"cli",  it:"Riga di comando", en:"Command line",
+      nit:"Gli strumenti da sviluppo: il compilatore nativo <code>logyxc</code> e il prototipo <code>python3 main.py</code>. Girano sulla tua macchina e producono artefatti (eseguibili, server, WASM, HTML).",
+      nen:"The dev tools: the native compiler <code>logyxc</code> and the prototype <code>python3 main.py</code>. They run on your machine and produce artifacts (executables, servers, WASM, HTML)."},
+    {id:"basics", it:"Sintassi di base", en:"Basics", nit:"", nen:""},
+    {id:"types", it:"Tipi", en:"Types",
+      nit:"Tipi opzionali (gradual typing): si annotano dove servono con <code>nome: tipo</code>, altrimenti sono dedotti dall'uso.",
+      nen:"Optional types (gradual typing): annotate them where needed with <code>name: type</code>, otherwise they are inferred from use."},
+    {id:"ops", it:"Operatori", en:"Operators", nit:"", nen:""},
+    {id:"flow", it:"Controllo di flusso", en:"Control flow", nit:"", nen:""},
+    {id:"fn", it:"Funzioni", en:"Functions", nit:"", nen:""},
+    {id:"err", it:"Errori", en:"Errors",
+      nit:"Gli errori sono <b>valori</b> (modello Result), non eccezioni: in Rust diventano <code>Result&lt;T, String&gt;</code>.",
+      nen:"Errors are <b>values</b> (Result model), not exceptions: in Rust they become <code>Result&lt;T, String&gt;</code>."},
+    {id:"data", it:"Record ed enum", en:"Records & enums", nit:"", nen:""},
+    {id:"mod", it:"Moduli", en:"Modules", nit:"", nen:""},
+    {id:"str", it:"Stringhe", en:"Strings", nit:"", nen:""},
+    {id:"num", it:"Numeri", en:"Numbers", nit:"", nen:""},
+    {id:"coll", it:"Collezioni", en:"Collections",
+      nit:"Liste <code>[T]</code> e mappe <code>{K: V}</code>. Le chiavi di mappa si iterano <b>ordinate</b>: l'output è deterministico.",
+      nen:"Lists <code>[T]</code> and maps <code>{K: V}</code>. Map keys are iterated <b>sorted</b>: the output is deterministic."},
+    {id:"io", it:"I/O e sistema", en:"I/O & system", nit:"", nen:""},
+    {id:"json", it:"Dati: JSON, date, hash", en:"Data: JSON, dates, hash", nit:"", nen:""},
+    {id:"web", it:"Web (server e client)", en:"Web (server & client)",
+      nit:"Un solo sorgente: il codice server (<code>route</code>/<code>render</code>) diventa un binario; le isole client diventano JavaScript servito con la pagina.",
+      nen:"A single source: server code (<code>route</code>/<code>render</code>) becomes a binary; client islands become JavaScript served with the page."},
+    {id:"wasm", it:"WebAssembly", en:"WebAssembly", nit:"", nen:""},
+    {id:"ffi", it:"Librerie esterne", en:"External libraries",
+      nit:"Logyx transpila a Rust: eredita l'ecosistema di crates.io. Oggi i binding si agganciano con <code>use rust</code> / <code>extern rust</code>.",
+      nen:"Logyx transpiles to Rust: it inherits the crates.io ecosystem. Today bindings are wired with <code>use rust</code> / <code>extern rust</code>."},
+    {id:"sec", it:"Cybersecurity", en:"Cybersecurity", nit:"", nen:""}
+  ];
+
+  // ---- voci (ogni comando/costrutto/builtin) ----
+  // sig/desc possono contenere HTML (usa &lt; &gt; per < >). lang: 'logyx' (default) o 'sh'.
+  var E=[
+    // ======== CLI ========
+    {cat:"cli", name:"logyxc build", sig:"logyxc build &lt;file.logyx&gt; [--harden]",
+      it:"Transpila il sorgente a Rust, lo compila a eseguibile nativo e lo esegue. Senza dipendenze usa <code>rustc</code> diretto; se il programma usa una crate passa in automatico a <code>cargo</code> (build ibrido).",
+      en:"Transpiles the source to Rust, compiles it to a native executable and runs it. With no dependencies it uses <code>rustc</code> directly; if the program uses a crate it switches to <code>cargo</code> automatically (hybrid build).",
+      opts:[{c:"--harden",it:"blinda il binario (<code>panic=abort</code>, overflow-checks, strip, LTO) e scrive il checksum <code>&lt;bin&gt;.sha256</code>.",en:"hardens the binary (<code>panic=abort</code>, overflow-checks, strip, LTO) and writes the checksum <code>&lt;bin&gt;.sha256</code>."}],
+      lang:"sh", code:"logyxc build examples/native_fib.logyx\nlogyxc build --harden examples/native_fib.logyx"},
+    {cat:"cli", name:"logyxc gen", sig:"logyxc gen &lt;file.logyx&gt;",
+      it:"Stampa il <b>codice Rust</b> generato dal sorgente, senza compilarlo. Utile per capire la traduzione.",
+      en:"Prints the <b>Rust code</b> generated from the source, without compiling it. Handy to understand the translation.",
+      lang:"sh", code:"logyxc gen examples/native_fib.logyx"},
+    {cat:"cli", name:"logyxc tokens / parse", sig:"logyxc tokens &lt;file&gt;\nlogyxc parse &lt;file&gt;",
+      it:"Diagnostica: <code>tokens</code> stampa la sequenza di token del lexer, <code>parse</code> l'albero sintattico (AST).",
+      en:"Diagnostics: <code>tokens</code> prints the lexer token stream, <code>parse</code> the syntax tree (AST).",
+      lang:"sh", code:"logyxc tokens examples/native_fib.logyx\nlogyxc parse examples/native_fib.logyx"},
+    {cat:"cli", name:"logyxc build-wasm", sig:"logyxc build-wasm &lt;file.logyx&gt;",
+      it:"Compila a <b>WebAssembly</b> le funzioni con firma di soli <code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code> e genera una pagina HTML interattiva che le invoca dal browser. Produce <code>&lt;file&gt;.wasm</code> e <code>&lt;file&gt;.html</code>.",
+      en:"Compiles to <b>WebAssembly</b> the functions whose signature is only <code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code> and generates an interactive HTML page that calls them from the browser. Produces <code>&lt;file&gt;.wasm</code> and <code>&lt;file&gt;.html</code>.",
+      lang:"sh", code:"logyxc build-wasm examples/native_webstr.logyx\n# servi la cartella e apri la pagina:\npython3 -m http.server"},
+    {cat:"cli", name:"logyxc render", sig:"logyxc render &lt;file&gt; &lt;percorso&gt;",
+      it:"Compila il file a binario server e stampa l'<b>HTML reso</b> da una <code>route</code> per quel percorso. Per verificare in sviluppo.",
+      en:"Compiles the file to a server binary and prints the <b>rendered HTML</b> of a <code>route</code> for that path. For checking during development.",
+      lang:"sh", code:"logyxc render examples/web_demo.logyx /"},
+    {cat:"cli", name:"logyxc serve", sig:"logyxc serve &lt;file&gt; [porta]",
+      it:"Compila e <b>avvia un server HTTP</b> (crate <code>tiny_http</code>) che risponde alle <code>route</code> del file. Porta di default 8080.",
+      en:"Compiles and <b>starts an HTTP server</b> (crate <code>tiny_http</code>) that answers the file's <code>route</code>s. Default port 8080.",
+      lang:"sh", code:"logyxc serve examples/web_demo.logyx 8137\n# apri http://127.0.0.1:8137"},
+    {cat:"cli", name:"logyxc build-server", sig:"logyxc build-server &lt;file&gt;",
+      it:"Compila solo il binario server (non lo avvia) e stampa il percorso dell'eseguibile, da mettere su un server.",
+      en:"Compiles the server binary only (does not start it) and prints the executable path, to deploy on a server.",
+      lang:"sh", code:"logyxc build-server examples/web_demo.logyx"},
+    {cat:"cli", name:"python3 main.py", sig:"python3 main.py &lt;file&gt;\npython3 main.py render|serve|build …",
+      it:"Il <b>prototipo</b> (cartella <code>prototype/</code>, solo Python 3.8+). Esegue direttamente col solo <code>file</code>; ha anche <code>render</code>, <code>serve</code> e <code>build</code>. È il riferimento di conformità del compilatore.",
+      en:"The <b>prototype</b> (<code>prototype/</code> folder, Python 3.8+ only). Runs directly with just the <code>file</code>; it also has <code>render</code>, <code>serve</code> and <code>build</code>. It is the compiler's conformance reference.",
+      lang:"sh", code:"cd prototype\npython3 main.py ../examples/native_fib.logyx"},
+
+    // ======== BASICS ========
+    {cat:"basics", name:"Commenti", sig:"// riga singola\n/* blocco */",
+      it:"Commenti di riga con <code>//</code> e a blocco con <code>/* … */</code>.",
+      en:"Line comments with <code>//</code> and block comments with <code>/* … */</code>.",
+      code:"// questo è un commento\n/* anche\n   questo */\nx = 1"},
+    {cat:"basics", name:"Blocchi e punto e virgola", sig:"{ … }   ;",
+      it:"I blocchi usano le graffe <code>{ }</code> (l'indentazione è solo estetica). Il punto e virgola è opzionale: vale fine riga oppure <code>;</code>. Nei costrutti di controllo <b>non</b> si mettono le parentesi tonde attorno alla condizione.",
+      en:"Blocks use braces <code>{ }</code> (indentation is cosmetic). Semicolons are optional: end of line or <code>;</code>. Control constructs take <b>no</b> parentheses around the condition.",
+      code:"if x > 0 { print(\"positivo\") }   // non: if (x > 0)"},
+    {cat:"basics", name:"Variabili", sig:"nome = valore\nnome: tipo = valore",
+      it:"Dichiarazione e assegnazione con <code>=</code>. Il tipo è opzionale e si annota con <code>nome: tipo</code>.",
+      en:"Declaration and assignment with <code>=</code>. The type is optional and annotated as <code>name: type</code>.",
+      code:"x = 10\nnome: string = \"Ada\""},
+    {cat:"basics", name:"const", sig:"const NOME = valore",
+      it:"Costante: un valore non riassegnabile.",
+      en:"Constant: a value that cannot be reassigned.",
+      code:"const PI = 3.14159"},
+
+    // ======== TYPES ========
+    {cat:"types", name:"int", sig:"42   -7",
+      it:"Intero con segno. In Rust è <code>i64</code>. La divisione <code>/</code> fra interi è intera, troncata verso zero.",
+      en:"Signed integer. In Rust it is <code>i64</code>. Integer <code>/</code> is integer division, truncated toward zero.",
+      code:"n = 42\nprint(7 / 2)   // 3"},
+    {cat:"types", name:"float", sig:"3.14",
+      it:"Numero in virgola mobile. In Rust è <code>f64</code>.",
+      en:"Floating-point number. In Rust it is <code>f64</code>.",
+      code:"x = 3.14\nprint(x * 2.0)   // 6.28"},
+    {cat:"types", name:"bool", sig:"true   false",
+      it:"Valore booleano.",
+      en:"Boolean value.",
+      code:"attivo = true"},
+    {cat:"types", name:"string", sig:"\"ciao\"",
+      it:"Stringa di testo, con interpolazione <code>\"{…}\"</code> (vedi la sezione Stringhe).",
+      en:"Text string, with interpolation <code>\"{…}\"</code> (see the Strings section).",
+      code:"s = \"ciao\""},
+    {cat:"types", name:"nil", sig:"nil",
+      it:"Assenza di valore.",
+      en:"Absence of a value.",
+      code:"x = nil"},
+
+    // ======== OPERATORS ========
+    {cat:"ops", name:"Aritmetici", sig:"+  -  *  /  %",
+      it:"Somma, differenza, prodotto, divisione, resto. Fra interi <code>/</code> è divisione intera troncata verso zero.",
+      en:"Add, subtract, multiply, divide, remainder. Between integers <code>/</code> is integer division truncated toward zero.",
+      code:"print(10 % 3)   // 1\nprint(7 / 2)    // 3"},
+    {cat:"ops", name:"Confronto", sig:"==  !=  &lt;  &lt;=  &gt;  &gt;=",
+      it:"Operatori di confronto; restituiscono un <code>bool</code>.",
+      en:"Comparison operators; they return a <code>bool</code>.",
+      code:"print(3 &lt;= 3)   // true"},
+    {cat:"ops", name:"Logici", sig:"and   or   not",
+      it:"Congiunzione, disgiunzione e negazione (in parole, non simboli).",
+      en:"Conjunction, disjunction and negation (words, not symbols).",
+      code:"if x &gt; 0 and not finito { print(\"vai\") }"},
+    {cat:"ops", name:"Concatenazione", sig:"stringa + stringa",
+      it:"<code>+</code> fra stringhe (o stringa e numero) concatena.",
+      en:"<code>+</code> between strings (or a string and a number) concatenates.",
+      code:"print(\"ris = \" + str(42))   // ris = 42"},
+    {cat:"ops", name:"Assegnazione composta", sig:"+=  -=  *=  /=  %=",
+      it:"Scorciatoie: <code>x += 1</code> equivale a <code>x = x + 1</code>.",
+      en:"Shortcuts: <code>x += 1</code> is the same as <code>x = x + 1</code>.",
+      code:"x = 10\nx += 5\nprint(x)   // 15"},
+    {cat:"ops", name:"Assegnazione a indice", sig:"lista[i] = v\nmappa[k] = v",
+      it:"Assegna a un elemento di lista o a una chiave di mappa (la chiave viene aggiunta se non esiste).",
+      en:"Assigns to a list element or a map key (the key is added if missing).",
+      code:"xs = [1, 2, 3]\nxs[0] = 9\nm = {\"a\": 1}\nm[\"b\"] = 2"},
+
+    // ======== FLOW ========
+    {cat:"flow", name:"if / else", sig:"if cond { … } else if cond { … } else { … }",
+      it:"Esecuzione condizionale. <code>else if</code> ed <code>else</code> sono opzionali.",
+      en:"Conditional execution. <code>else if</code> and <code>else</code> are optional.",
+      code:"if x &gt; 0 { print(\"pos\") } else if x == 0 { print(\"zero\") } else { print(\"neg\") }"},
+    {cat:"flow", name:"while", sig:"while cond { … }",
+      it:"Ciclo con condizione in testa.",
+      en:"Loop with a leading condition.",
+      code:"x = 3\nwhile x &gt; 0 { print(x); x -= 1 }",
+      out:"3\n2\n1"},
+    {cat:"flow", name:"for … in", sig:"for x in lista | range | mappa { … }",
+      it:"Itera gli elementi di una lista, i numeri di un <code>range</code>, oppure le <b>chiavi ordinate</b> di una mappa.",
+      en:"Iterates a list's elements, a <code>range</code>'s numbers, or a map's <b>sorted keys</b>.",
+      code:"for n in range(3) { print(n) }\nfor v in [\"a\", \"b\"] { print(v) }",
+      out:"0\n1\n2\na\nb"},
+    {cat:"flow", name:"break / continue", sig:"break   continue",
+      it:"Dentro <code>while</code>/<code>for</code>: <code>break</code> esce dal ciclo, <code>continue</code> salta all'iterazione successiva.",
+      en:"Inside <code>while</code>/<code>for</code>: <code>break</code> exits the loop, <code>continue</code> jumps to the next iteration.",
+      code:"for n in range(5) {\n    if n == 3 { break }\n    if n == 1 { continue }\n    print(n)\n}",
+      out:"0\n2"},
+    {cat:"flow", name:"match (per valore)", sig:"match e { v1 { … } v2 { … } else { … } }",
+      it:"Sceglie un ramo per <b>uguaglianza</b> del valore; <code>else</code> è il default (opzionale). I rami <code>ok</code>/<code>err</code> sono invece la gestione errori.",
+      en:"Picks a branch by value <b>equality</b>; <code>else</code> is the (optional) default. The <code>ok</code>/<code>err</code> branches are error handling instead.",
+      code:"match n {\n    0 { print(\"zero\") }\n    1 { print(\"uno\") }\n    else { print(\"altro\") }\n}"},
+
+    // ======== FUNCTIONS ========
+    {cat:"fn", name:"fn", sig:"fn nome(p: tipo, …) -&gt; tipo { … }",
+      it:"Definisce una funzione. I tipi sono opzionali. Se esiste <code>main()</code> viene chiamata automaticamente. <code>return</code> restituisce un valore.",
+      en:"Defines a function. Types are optional. If <code>main()</code> exists it is called automatically. <code>return</code> returns a value.",
+      code:"fn saluta(nome: string) -&gt; string {\n    return \"Ciao \" + nome\n}\nfn main() { print(saluta(\"mondo\")) }",
+      out:"Ciao mondo"},
+    {cat:"fn", name:"Inferenza dei tipi", sig:"fn doppio(n) { return n * 2 }",
+      it:"I tipi di parametri e ritorno, se omessi, sono <b>dedotti dall'uso</b>: aritmetica → numero, <code>+</code> con stringhe → stringa, uso come condizione → bool. L'annotazione serve solo quando l'uso non basta.",
+      en:"When omitted, parameter and return types are <b>inferred from use</b>: arithmetic → number, <code>+</code> with strings → string, use as a condition → bool. Annotate only when use is not enough.",
+      code:"fn fib(n) {\n    if n &lt; 2 { return n }\n    return fib(n - 1) + fib(n - 2)\n}   // n e ritorno dedotti int"},
+    {cat:"fn", name:"lambda", sig:"|parametri| espressione",
+      it:"Funzione anonima con corpo-espressione, utile in <code>map</code>/<code>filter</code>/<code>reduce</code>.",
+      en:"Anonymous function with an expression body, handy in <code>map</code>/<code>filter</code>/<code>reduce</code>.",
+      code:"nums = [1, 2, 3]\nprint(map(nums, |x| x * 2))   // [2, 4, 6]"},
+    {cat:"fn", name:"Valori funzione", sig:"g: fn(T, …) -&gt; R",
+      it:"Una funzione o lambda si passa a un parametro di tipo funzione <code>fn(…)-&gt;…</code> e si chiama nel corpo. In Rust è un <code>Rc&lt;dyn Fn&gt;</code>.",
+      en:"A function or lambda can be passed to a function-typed parameter <code>fn(…)-&gt;…</code> and called in the body. In Rust it is an <code>Rc&lt;dyn Fn&gt;</code>.",
+      code:"fn applica(g: fn(int) -&gt; int, x: int) -&gt; int { return g(x) }\nfn raddoppia(n: int) -&gt; int { return n * 2 }\nprint(applica(raddoppia, 5))   // 10\nprint(applica(|y| y + 1, 5))   // 6"},
+    {cat:"fn", name:"Closure", sig:"fn f(n) -&gt; fn(int)-&gt;int { return |x| x + n }",
+      it:"Una funzione può <b>restituire</b> una funzione che cattura l'ambiente (closure). Il risultato è memorizzabile e ri-chiamabile.",
+      en:"A function can <b>return</b> a function that captures its environment (closure). The result can be stored and called again.",
+      code:"fn sommatore(n: int) -&gt; fn(int) -&gt; int {\n    return |x| x + n\n}\nadd5 = sommatore(5)\nprint(add5(10))   // 15",
+      out:"15"},
+
+    // ======== ERRORS ========
+    {cat:"err", name:"-&gt; T | error", sig:"fn f(…) -&gt; T | error { … }",
+      it:"Dichiara che una funzione restituisce un valore di tipo <code>T</code> <b>oppure</b> un errore. Spesso è dedotto se il corpo usa <code>fail</code> o <code>?</code>.",
+      en:"Declares that a function returns a value of type <code>T</code> <b>or</b> an error. Often inferred when the body uses <code>fail</code> or <code>?</code>.",
+      code:"fn dividi(a, b) -&gt; int | error {\n    if b == 0 { fail \"divisione per zero\" }\n    return a / b\n}"},
+    {cat:"err", name:"fail", sig:"fail \"messaggio\"",
+      it:"Esce dalla funzione restituendo un errore con quel messaggio. In Rust diventa <code>return Err(...)</code>.",
+      en:"Exits the function returning an error with that message. In Rust it becomes <code>return Err(...)</code>.",
+      code:"if b == 0 { fail \"divisione per zero\" }"},
+    {cat:"err", name:"? (propagazione)", sig:"espr?",
+      it:"Se <code>espr</code> è un errore lo propaga (esce dalla funzione); altrimenti dà il valore. È l'operatore <code>?</code> di Rust.",
+      en:"If <code>espr</code> is an error it propagates it (exits the function); otherwise it yields the value. It is Rust's <code>?</code> operator.",
+      code:"fn meta(x) -&gt; int | error {\n    return dividi(x, 2)?   // propaga se dividi fallisce\n}"},
+    {cat:"err", name:"match ok / err", sig:"match e { ok v { … } err e { … } }",
+      it:"Gestisce i due casi di un valore fallibile: <code>v</code> è il valore, <code>e</code> è il messaggio d'errore.",
+      en:"Handles the two cases of a fallible value: <code>v</code> is the value, <code>e</code> is the error message.",
+      code:"match dividi(10, 0) {\n    ok v  { print(\"risultato = {v}\") }\n    err e { print(\"errore: {e}\") }\n}",
+      out:"errore: divisione per zero"},
+
+    // ======== RECORDS & ENUMS ========
+    {cat:"data", name:"record", sig:"record Nome { campo: tipo, … }",
+      it:"Tipo con campi nominati (come una struct). Costruzione posizionale <code>Nome(v1, v2)</code>, accesso <code>valore.campo</code>. Passabile a/da funzioni e dentro liste e mappe. In Rust: <code>struct</code> con <code>#[derive(Clone, PartialEq)]</code>.",
+      en:"A type with named fields (like a struct). Positional construction <code>Nome(v1, v2)</code>, access <code>value.field</code>. Passable to/from functions and inside lists and maps. In Rust: a <code>struct</code> with <code>#[derive(Clone, PartialEq)]</code>.",
+      code:"record Persona { nome: string, eta: int }\nada = Persona(\"Ada\", 36)\nprint(ada.nome)   // Ada\nprint(ada.eta)    // 36"},
+    {cat:"data", name:"enum", sig:"enum Nome { VarA, VarB(tipo, …), … }",
+      it:"Tipo con un insieme chiuso di varianti, con <b>payload</b> posizionale opzionale. Costruzione <code>Nome.Variante</code> o <code>Nome.Variante(args)</code>. Nel <code>match</code>, i rami <code>Variante(bind, …)</code> legano i campi del payload.",
+      en:"A type with a closed set of variants, with optional positional <b>payload</b>. Construction <code>Nome.Variante</code> or <code>Nome.Variante(args)</code>. In <code>match</code>, branches <code>Variante(bind, …)</code> bind the payload fields.",
+      code:"enum Forma { Cerchio(float), Rettangolo(float, float), Punto }\nfn area(f: Forma) {\n    match f {\n        Cerchio(r)       { return 3.14 * r * r }\n        Rettangolo(b, h) { return b * h }\n        Punto            { return 0.0 }\n    }\n}\nprint(area(Forma.Cerchio(2.0)))   // 12.56"},
+
+    // ======== MODULES ========
+    {cat:"mod", name:"import", sig:"import \"file.logyx\"",
+      it:"Porta nel programma le funzioni di un altro file. Percorso relativo al file che importa; l'estensione <code>.logyx</code> è opzionale. Ogni file è caricato una sola volta (import ciclici gestiti); i nomi duplicati danno errore chiaro. L'inferenza dei tipi funziona anche fra moduli.",
+      en:"Brings in another file's functions. Path relative to the importing file; the <code>.logyx</code> extension is optional. Each file is loaded once (cyclic imports handled); duplicate names give a clear error. Type inference also works across modules.",
+      code:"// lib_math.logyx\nfn quadrato(n) { return n * n }\n\n// main.logyx\nimport \"lib_math.logyx\"\nfn main() { print(quadrato(9)) }",
+      out:"81"},
+
+    // ======== STRINGS ========
+    {cat:"str", name:"Interpolazione", sig:"\"testo {espressione} testo\"",
+      it:"Dentro una stringa, <code>{…}</code> inserisce il valore di un'espressione. Per i caratteri letterali <code>{</code> e <code>}</code> usa l'escape <code>\\{</code> e <code>\\}</code>.",
+      en:"Inside a string, <code>{…}</code> inserts an expression's value. For literal <code>{</code> and <code>}</code> use the escapes <code>\\{</code> and <code>\\}</code>.",
+      code:"nome = \"Logyx\"\nprint(\"Ciao da {nome}!\")",
+      out:"Ciao da Logyx!"},
+    {cat:"str", name:"len", sig:"len(s) -&gt; int",
+      it:"Lunghezza di una stringa (anche di lista o mappa).",
+      en:"Length of a string (also of a list or map).",
+      code:"print(len(\"ciao\"))   // 4"},
+    {cat:"str", name:"str", sig:"str(x) -&gt; string",
+      it:"Converte un valore in stringa.",
+      en:"Converts a value to a string.",
+      code:"print(str(42) + \"!\")   // 42!"},
+    {cat:"str", name:"upper / lower", sig:"upper(s)   lower(s)",
+      it:"La stringa in maiuscolo / minuscolo.",
+      en:"The string in upper / lower case.",
+      code:"print(upper(\"ciao\"))   // CIAO\nprint(lower(\"CIAO\"))   // ciao"},
+    {cat:"str", name:"trim", sig:"trim(s) -&gt; string",
+      it:"La stringa senza gli spazi iniziali e finali.",
+      en:"The string without leading and trailing whitespace.",
+      code:"print(trim(\"  ciao  \"))   // ciao"},
+    {cat:"str", name:"index_of", sig:"index_of(s, sub) -&gt; int",
+      it:"Posizione (in byte) della prima occorrenza di <code>sub</code> in <code>s</code>, oppure <code>-1</code> se assente.",
+      en:"Position (in bytes) of the first occurrence of <code>sub</code> in <code>s</code>, or <code>-1</code> if absent.",
+      code:"print(index_of(\"logyx\", \"gy\"))   // 2\nprint(index_of(\"logyx\", \"z\"))    // -1"},
+    {cat:"str", name:"substring", sig:"substring(s, a, b) -&gt; string",
+      it:"Sottostringa da <code>a</code> incluso a <code>b</code> escluso (indici in byte).",
+      en:"Substring from <code>a</code> inclusive to <code>b</code> exclusive (byte indices).",
+      code:"print(substring(\"logyx\", 0, 3))   // log"},
+    {cat:"str", name:"split", sig:"split(s, sep) -&gt; [string]",
+      it:"Divide la stringa sul separatore e restituisce la lista dei pezzi.",
+      en:"Splits the string on the separator and returns the list of pieces.",
+      code:"print(split(\"a,b,c\", \",\"))   // [a, b, c]"},
+    {cat:"str", name:"join", sig:"join(lista, sep) -&gt; string",
+      it:"Unisce una lista di stringhe inserendo <code>sep</code> fra gli elementi.",
+      en:"Joins a list of strings inserting <code>sep</code> between the elements.",
+      code:"print(join([\"a\", \"b\", \"c\"], \"-\"))   // a-b-c"},
+    {cat:"str", name:"replace", sig:"replace(s, da, a) -&gt; string",
+      it:"Sostituisce tutte le occorrenze di <code>da</code> con <code>a</code>.",
+      en:"Replaces every occurrence of <code>da</code> with <code>a</code>.",
+      code:"print(replace(\"a.b.c\", \".\", \"/\"))   // a/b/c"},
+    {cat:"str", name:"starts_with / ends_with", sig:"starts_with(s, p)   ends_with(s, p)",
+      it:"Vero se la stringa inizia / finisce con <code>p</code>.",
+      en:"True if the string starts / ends with <code>p</code>.",
+      code:"print(starts_with(\"logyx\", \"log\"))   // true\nprint(ends_with(\"logyx\", \"yx\"))      // true"},
+    {cat:"str", name:"matches (regex)", sig:"matches(s, pattern) -&gt; bool",
+      it:"Vero se l'espressione regolare <code>pattern</code> trova una corrispondenza in un punto qualsiasi di <code>s</code>. Nativo via crate <code>regex</code>.",
+      en:"True if the regular expression <code>pattern</code> matches anywhere in <code>s</code>. Native via the <code>regex</code> crate.",
+      code:"print(matches(\"logyx-2026\", \"[0-9]+\"))      // true\nprint(matches(\"abc123\", \"^[a-z]+[0-9]+$\"))   // true",
+      out:"true\ntrue"},
+
+    // ======== NUMBERS ========
+    {cat:"num", name:"abs", sig:"abs(x)",
+      it:"Valore assoluto (int o float).",
+      en:"Absolute value (int or float).",
+      code:"print(abs(-7))   // 7"},
+    {cat:"num", name:"min / max", sig:"min(a, b)   max(a, b)",
+      it:"Il minore / il maggiore fra due numeri dello stesso tipo.",
+      en:"The smaller / larger of two numbers of the same type.",
+      code:"print(min(3, 8))   // 3\nprint(max(3, 8))   // 8"},
+    {cat:"num", name:"pow", sig:"pow(base, esp)",
+      it:"<code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>).",
+      en:"<code>base</code> raised to <code>esp</code> (integers, <code>esp &gt;= 0</code>).",
+      code:"print(pow(2, 10))   // 1024"},
+    {cat:"num", name:"floor / ceil", sig:"floor(x)   ceil(x)",
+      it:"Arrotonda verso il basso / verso l'alto; restituisce un intero.",
+      en:"Rounds down / up; returns an integer.",
+      code:"print(floor(2.7))   // 2\nprint(ceil(2.1))    // 3"},
+    {cat:"num", name:"round", sig:"round(x) -&gt; int",
+      it:"Arrotonda all'intero più vicino, con la metà <b>lontano dallo zero</b> (<code>2.5</code>→<code>3</code>, <code>-2.5</code>→<code>-3</code>).",
+      en:"Rounds to the nearest integer, ties <b>away from zero</b> (<code>2.5</code>→<code>3</code>, <code>-2.5</code>→<code>-3</code>).",
+      code:"print(round(2.4))    // 2\nprint(round(2.5))    // 3\nprint(round(-2.5))   // -3",
+      out:"2\n3\n-3"},
+    {cat:"num", name:"sqrt", sig:"sqrt(x) -&gt; float",
+      it:"Radice quadrata (restituisce un float).",
+      en:"Square root (returns a float).",
+      code:"print(sqrt(9.0))   // 3"},
+    {cat:"num", name:"random", sig:"random() -&gt; float",
+      it:"Numero casuale in <code>[0, 1)</code>. <b>Non deterministico</b> (come <code>now()</code>); nativo via crate <code>rand</code>.",
+      en:"Random number in <code>[0, 1)</code>. <b>Non-deterministic</b> (like <code>now()</code>); native via the <code>rand</code> crate.",
+      code:"dado = int(random() * 6.0) + 1   // 1..6"},
+    {cat:"num", name:"int / float (conversione)", sig:"int(x)   float(x)",
+      it:"Convertono fra numeri e stringhe: <code>int</code> da stringa (0 se non valida) o da float (tronca); <code>float</code> da stringa (0.0 se non valida) o da int.",
+      en:"Convert between numbers and strings: <code>int</code> from a string (0 if invalid) or from a float (truncates); <code>float</code> from a string (0.0 if invalid) or from an int.",
+      code:"print(int(\"42\") + 8)   // 50\nprint(int(3.9))        // 3\nprint(float(\"3.5\"))    // 3.5"},
+
+    // ======== COLLECTIONS ========
+    {cat:"coll", name:"Liste", sig:"[v1, v2, …]   xs[i]   len(xs)",
+      it:"Letterale con <code>[…]</code>, indicizzazione con <code>xs[i]</code> (lettura e scrittura), lunghezza con <code>len</code>, iterazione con <code>for</code>.",
+      en:"Literal with <code>[…]</code>, indexing with <code>xs[i]</code> (read and write), length with <code>len</code>, iteration with <code>for</code>.",
+      code:"xs = [3, 1, 2]\nprint(xs[0])    // 3\nprint(len(xs))  // 3"},
+    {cat:"coll", name:"push", sig:"push(lista, x)",
+      it:"Aggiunge <code>x</code> in coda alla lista (la muta). Usala come istruzione.",
+      en:"Appends <code>x</code> to the list (mutates it). Use it as a statement.",
+      code:"xs = [1, 2]\npush(xs, 3)\nprint(xs)   // [1, 2, 3]"},
+    {cat:"coll", name:"remove", sig:"remove(lista, i)",
+      it:"Toglie l'elemento all'indice <code>i</code> (muta la lista). Usala come istruzione.",
+      en:"Removes the element at index <code>i</code> (mutates the list). Use it as a statement.",
+      code:"xs = [1, 2, 3]\nremove(xs, 0)\nprint(xs)   // [2, 3]"},
+    {cat:"coll", name:"contains", sig:"contains(lista, x) -&gt; bool",
+      it:"Vero se la lista contiene il valore <code>x</code>.",
+      en:"True if the list contains the value <code>x</code>.",
+      code:"print(contains([1, 2, 3], 2))   // true"},
+    {cat:"coll", name:"sum", sig:"sum(lista) -&gt; int",
+      it:"Somma degli elementi (lista di interi).",
+      en:"Sum of the elements (list of integers).",
+      code:"print(sum([1, 2, 3, 4]))   // 10"},
+    {cat:"coll", name:"sort", sig:"sort(lista)",
+      it:"Ordina la lista in ordine crescente (la muta). Usala come istruzione.",
+      en:"Sorts the list ascending (mutates it). Use it as a statement.",
+      code:"xs = [3, 1, 2]\nsort(xs)\nprint(xs)   // [1, 2, 3]"},
+    {cat:"coll", name:"slice", sig:"slice(lista, a, b) -&gt; lista",
+      it:"Nuova lista con gli elementi da <code>a</code> incluso a <code>b</code> escluso. Non muta l'originale.",
+      en:"New list with the elements from <code>a</code> inclusive to <code>b</code> exclusive. Does not mutate the original.",
+      code:"xs = [10, 20, 30, 40, 50]\nprint(slice(xs, 1, 4))   // [20, 30, 40]",
+      out:"[20, 30, 40]"},
+    {cat:"coll", name:"map / filter / reduce", sig:"map(xs, f)   filter(xs, p)   reduce(xs, init, f)",
+      it:"<code>map</code> applica <code>f</code> a ogni elemento; <code>filter</code> tiene quelli per cui <code>p</code> è vera; <code>reduce</code> accumula da <code>init</code> con <code>f(acc, elemento)</code>. <code>f</code>/<code>p</code> può essere il nome di una funzione o una lambda.",
+      en:"<code>map</code> applies <code>f</code> to each element; <code>filter</code> keeps those for which <code>p</code> is true; <code>reduce</code> accumulates from <code>init</code> with <code>f(acc, element)</code>. <code>f</code>/<code>p</code> can be a function name or a lambda.",
+      code:"nums = [1, 2, 3, 4]\nprint(map(nums, |x| x * 2))        // [2, 4, 6, 8]\nprint(filter(nums, |n| n &gt; 2))     // [3, 4]\nprint(reduce(nums, 0, |a, x| a + x))   // 10"},
+    {cat:"coll", name:"Mappe", sig:"{k: v, …}   m[k]   len(m)",
+      it:"Letterale con <code>{k: v}</code>, accesso <code>m[k]</code>, aggiunta/aggiornamento <code>m[k] = v</code>, lunghezza con <code>len</code>.",
+      en:"Literal with <code>{k: v}</code>, access <code>m[k]</code>, add/update <code>m[k] = v</code>, length with <code>len</code>.",
+      code:"m = {\"nome\": \"Ada\"}\nprint(m[\"nome\"])   // Ada\nm[\"eta\"] = 36"},
+    {cat:"coll", name:"has", sig:"has(mappa, chiave) -&gt; bool",
+      it:"Vero se la mappa contiene la chiave.",
+      en:"True if the map contains the key.",
+      code:"m = {\"a\": 1}\nprint(has(m, \"a\"))   // true"},
+    {cat:"coll", name:"keys / values", sig:"keys(mappa)   values(mappa)",
+      it:"Lista delle chiavi (<b>ordinate</b>, output deterministico) e dei valori nello stesso ordine.",
+      en:"List of keys (<b>sorted</b>, deterministic output) and of values in the same order.",
+      code:"m = {\"b\": 2, \"a\": 1}\nprint(keys(m))     // [a, b]\nprint(values(m))   // [1, 2]"},
+    {cat:"coll", name:"for k in mappa", sig:"for k in mappa { … }",
+      it:"Itera le <b>chiavi ordinate</b> della mappa.",
+      en:"Iterates the map's <b>sorted keys</b>.",
+      code:"m = {\"b\": 2, \"a\": 1}\nfor k in m { print(k + \"=\" + str(m[k])) }",
+      out:"a=1\nb=2"},
+    {cat:"coll", name:"range", sig:"range(n)   range(a, b)",
+      it:"Lista di interi <code>0 .. n-1</code>, oppure <code>a .. b-1</code>. Usata soprattutto nei cicli <code>for</code>.",
+      en:"List of integers <code>0 .. n-1</code>, or <code>a .. b-1</code>. Used mostly in <code>for</code> loops.",
+      code:"for i in range(2, 5) { print(i) }",
+      out:"2\n3\n4"},
+
+    // ======== I/O ========
+    {cat:"io", name:"print", sig:"print(x)",
+      it:"Stampa <code>x</code> su standard output, con conversione leggibile.",
+      en:"Prints <code>x</code> to standard output, with a readable conversion.",
+      code:"print(\"ciao\")\nprint(42)"},
+    {cat:"io", name:"read_file / write_file / file_exists", sig:"read_file(p)   write_file(p, testo)   file_exists(p)",
+      it:"Legge un file di testo (stringa vuota se non leggibile), lo scrive (<code>true</code> se riuscito), verifica se esiste. Nativo via <code>std::fs</code>.",
+      en:"Reads a text file (empty string if unreadable), writes it (<code>true</code> on success), checks existence. Native via <code>std::fs</code>.",
+      code:"write_file(\"out.txt\", \"ciao\")\nif file_exists(\"out.txt\") {\n    print(read_file(\"out.txt\"))\n}",
+      out:"ciao"},
+    {cat:"io", name:"read_line / read_all", sig:"read_line()   read_all()",
+      it:"Leggono da standard input: <code>read_line</code> una riga (senza il newline; <code>\"\"</code> a fine input), <code>read_all</code> tutto. Non deterministici → fuori dalla suite di conformità.",
+      en:"Read from standard input: <code>read_line</code> one line (no newline; <code>\"\"</code> at end of input), <code>read_all</code> everything. Non-deterministic → outside the conformance suite.",
+      code:"nome = read_line()\nprint(\"Ciao {nome}\")"},
+    {cat:"io", name:"env", sig:"env(nome) -&gt; string",
+      it:"Valore della variabile d'ambiente <code>nome</code> (<code>\"\"</code> se assente).",
+      en:"Value of the environment variable <code>nome</code> (<code>\"\"</code> if missing).",
+      code:"print(env(\"HOME\"))"},
+    {cat:"io", name:"args", sig:"args() -&gt; [string]",
+      it:"Lista degli argomenti da riga di comando (esclude il nome del programma).",
+      en:"List of command-line arguments (excludes the program name).",
+      code:"for a in args() { print(a) }"},
+
+    // ======== DATA: JSON, DATES, HASH ========
+    {cat:"json", name:"to_json", sig:"to_json(x) -&gt; string",
+      it:"Serializza <code>x</code> in JSON compatto: int, float, bool, string, record (anche annidati), liste e mappe (chiavi string). Le chiavi di mappa escono <b>ordinate</b> (output deterministico).",
+      en:"Serializes <code>x</code> to compact JSON: int, float, bool, string, records (nested too), lists and maps (string keys). Map keys come out <b>sorted</b> (deterministic output).",
+      code:"prezzi = {\"pane\": 2, \"latte\": 1}\nprint(to_json(prezzi))   // {\"latte\":1,\"pane\":2}",
+      out:"{\"latte\":1,\"pane\":2}"},
+    {cat:"json", name:"from_json", sig:"from_json(testo, tipo) -&gt; valore",
+      it:"Inverso di <code>to_json</code>: deserializza in uno scalare (<code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code>), un record, una lista con <code>[tipo]</code> o una mappa con <code>{string: tipo}</code>. Nativo via crate <code>serde</code>.",
+      en:"Inverse of <code>to_json</code>: deserializes into a scalar (<code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code>), a record, a list with <code>[tipo]</code> or a map with <code>{string: tipo}</code>. Native via the <code>serde</code> crate.",
+      code:"nums = from_json(\"[1, 2, 3]\", [int])\nprint(len(nums))   // 3"},
+    {cat:"json", name:"now", sig:"now() -&gt; int",
+      it:"Timestamp Unix corrente in secondi. Non deterministico → fuori dalla suite.",
+      en:"Current Unix timestamp in seconds. Non-deterministic → outside the suite.",
+      code:"t = now()\nprint(t)"},
+    {cat:"json", name:"format_date", sig:"format_date(ts) -&gt; string",
+      it:"Formatta un timestamp Unix come data UTC <code>YYYY-MM-DD HH:MM:SS</code>. Nativo via crate <code>chrono</code>.",
+      en:"Formats a Unix timestamp as a UTC date <code>YYYY-MM-DD HH:MM:SS</code>. Native via the <code>chrono</code> crate.",
+      code:"print(format_date(0))   // 1970-01-01 00:00:00",
+      out:"1970-01-01 00:00:00"},
+    {cat:"json", name:"sha256", sig:"sha256(s) -&gt; string",
+      it:"Hash SHA-256 di <code>s</code> in esadecimale. Nativo via crate <code>sha2</code>.",
+      en:"SHA-256 hash of <code>s</code> in hexadecimal. Native via the <code>sha2</code> crate.",
+      code:"print(sha256(\"ciao\"))"},
+
+    // ======== WEB ========
+    {cat:"web", name:"route", sig:"route \"/percorso\" { … }",
+      it:"Definisce il gestore di un percorso HTTP; il corpo gira sul <b>server</b>. Un file con <code>route</code> non deve definire <code>fn main</code> (il main è il server).",
+      en:"Defines the handler of an HTTP path; the body runs on the <b>server</b>. A file with <code>route</code> must not define <code>fn main</code> (the main is the server).",
+      code:"route \"/\" {\n    titolo = \"Ciao\"\n    render &lt;html&gt;&lt;body&gt;&lt;h1&gt;{titolo}&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;\n}"},
+    {cat:"web", name:"render", sig:"render &lt;html&gt; … &lt;/html&gt;",
+      it:"Produce HTML da un template. <code>{espressione}</code> interpola un valore con <b>escaping HTML automatico</b> (<code>&amp; &lt; &gt; \"</code>). I tag void vanno auto-chiusi (<code>&lt;br/&gt;</code>).",
+      en:"Produces HTML from a template. <code>{expression}</code> interpolates a value with <b>automatic HTML escaping</b> (<code>&amp; &lt; &gt; \"</code>). Void tags must be self-closed (<code>&lt;br/&gt;</code>).",
+      code:"route \"/\" {\n    nome = \"mondo\"\n    render &lt;html&gt;&lt;body&gt;&lt;p&gt;Ciao {nome}&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;\n}"},
+    {cat:"web", name:"Template: {for} / {if}", sig:"{ for x in xs { … } }   { if cond { … } else { … } }",
+      it:"Costrutti di controllo dentro il template: il corpo è a sua volta un template (interpolazioni annidate incluse). Supportato anche <code>else if</code>.",
+      en:"Control constructs inside the template: the body is itself a template (nested interpolation included). <code>else if</code> is also supported.",
+      code:"route \"/todo\" {\n    voci = [\"pane\", \"latte\"]\n    render &lt;html&gt;&lt;body&gt;\n      &lt;ul&gt;{ for v in voci { &lt;li&gt;{v}&lt;/li&gt; } }&lt;/ul&gt;\n    &lt;/body&gt;&lt;/html&gt;\n}"},
+    {cat:"web", name:"Isole client", sig:"@start-client … @end-client",
+      it:"Il codice fra i marcatori è compilato a <b>JavaScript</b> e iniettato come <code>&lt;script&gt;</code> nella pagina. DSL client: <code>on \"&lt;evento&gt;\" of \"&lt;sel&gt;\" { … }</code>, <code>set text of \"&lt;sel&gt;\" to …</code>, <code>set html of …</code>, più <code>if</code>/<code>for</code>/<code>while</code>.",
+      en:"The code between the markers is compiled to <b>JavaScript</b> and injected as a <code>&lt;script&gt;</code> in the page. Client DSL: <code>on \"&lt;event&gt;\" of \"&lt;sel&gt;\" { … }</code>, <code>set text of \"&lt;sel&gt;\" to …</code>, <code>set html of …</code>, plus <code>if</code>/<code>for</code>/<code>while</code>.",
+      code:"@start-client\n  on \"click\" of \"#btn\" {\n    set text of \"#out\" to \"premuto!\"\n  }\n@end-client"},
+
+    // ======== WASM ========
+    {cat:"wasm", name:"Compilare a WebAssembly", sig:"logyxc build-wasm &lt;file&gt;",
+      it:"Porta nel browser <b>funzioni di puro calcolo</b> come WebAssembly. Numeri (<code>int</code>/<code>float</code>/<code>bool</code>) esportati come funzioni \"C\"; le stringhe attraversano il confine JS↔WASM via <b>memoria lineare</b> (il modulo esporta <code>__logyx_alloc</code>/<code>__logyx_free</code>; stringhe come coppia <code>ptr, len</code>). Niente <code>wasm-bindgen</code>: solo il target <code>wasm32-unknown-unknown</code>.",
+      en:"Brings <b>pure-computation functions</b> to the browser as WebAssembly. Numbers (<code>int</code>/<code>float</code>/<code>bool</code>) exported as \"C\" functions; strings cross the JS↔WASM boundary via <b>linear memory</b> (the module exports <code>__logyx_alloc</code>/<code>__logyx_free</code>; strings as a <code>ptr, len</code> pair). No <code>wasm-bindgen</code>: just the <code>wasm32-unknown-unknown</code> target.",
+      lang:"sh", code:"logyxc build-wasm examples/native_webstr.logyx\n# → native_webstr.wasm + native_webstr.html"},
+
+    // ======== FFI ========
+    {cat:"ffi", name:"use rust", sig:"use rust \"&lt;crate&gt;\" = \"&lt;versione&gt;\"",
+      it:"Dichiara una dipendenza da una crate di crates.io; finisce nel <code>Cargo.toml</code> del progetto generato. Attiva il build ibrido con <code>cargo</code>.",
+      en:"Declares a dependency on a crates.io crate; it goes into the generated project's <code>Cargo.toml</code>. Enables the hybrid build with <code>cargo</code>.",
+      code:"use rust \"hex\" = \"0.4\""},
+    {cat:"ffi", name:"extern rust", sig:"extern rust fn nome(p: tipo, …) -&gt; tipo = \"&lt;espressione Rust&gt;\"",
+      it:"Definisce una funzione il cui corpo è codice Rust (i parametri sono i tipi Logyx mappati: <code>string</code>→<code>String</code>, <code>int</code>→<code>i64</code>…). Scrivi tu il \"glue\" verso la crate. Gira solo con <code>build</code> (il nativo), non nell'interprete.",
+      en:"Defines a function whose body is Rust code (parameters are the mapped Logyx types: <code>string</code>→<code>String</code>, <code>int</code>→<code>i64</code>…). You write the \"glue\" toward the crate. Runs only with <code>build</code> (native), not in the interpreter.",
+      code:"use rust \"hex\" = \"0.4\"\nextern rust fn to_hex(s: string) -&gt; string = \"hex::encode(s.as_bytes())\"\nfn main() { print(to_hex(\"ciao\")) }",
+      out:"6369616f"},
+
+    // ======== SECURITY ========
+    {cat:"sec", name:"build --harden", sig:"logyxc build --harden &lt;file&gt;",
+      it:"Blinda il binario: <code>panic=abort</code> (niente stack unwinding), <code>overflow-checks</code> (overflow interi → panico, non wrap-around), <code>strip</code> dei simboli, <code>LTO</code>. Scrive un <b>checksum</b> <code>&lt;bin&gt;.sha256</code> per verificare l'integrità dopo la distribuzione.",
+      en:"Hardens the binary: <code>panic=abort</code> (no stack unwinding), <code>overflow-checks</code> (integer overflow → panic, not wrap-around), symbol <code>strip</code>, <code>LTO</code>. Writes a <b>checksum</b> <code>&lt;bin&gt;.sha256</code> to verify integrity after distribution.",
+      opts:[{c:"sha256sum -c &lt;bin&gt;.sha256",it:"verifica che il binario non sia stato alterato.",en:"checks the binary has not been tampered with."}],
+      lang:"sh", code:"logyxc build --harden examples/native_fib.logyx\nsha256sum -c native_fib.sha256"}
+  ];
+
+  // ---- evidenziatore di sintassi ----
+  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+  var KW={"fn":1,"return":1,"if":1,"else":1,"while":1,"for":1,"in":1,"match":1,"enum":1,"record":1,
+    "const":1,"import":1,"route":1,"render":1,"break":1,"continue":1,"and":1,"or":1,"not":1,
+    "true":1,"false":1,"nil":1,"fail":1,"use":1,"rust":1,"extern":1,"ok":1,"err":1};
+  function hlLogyx(code){
+    var out="", re=/(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:\\.|[^"\\])*")|(\b\d+\.?\d*\b)|([A-Za-z_]\w*)|([\s\S])/g, m;
+    while((m=re.exec(code))){
+      if(m[1]) out+='<span class="c">'+esc(m[1])+'</span>';
+      else if(m[2]) out+='<span class="s">'+esc(m[2])+'</span>';
+      else if(m[3]) out+='<span class="n">'+esc(m[3])+'</span>';
+      else if(m[4]) out+= KW[m[4]] ? '<span class="k">'+m[4]+'</span>' : esc(m[4]);
+      else out+=esc(m[5]);
+    }
+    return out;
+  }
+  function hlSh(code){
+    return esc(code).replace(/(#[^\n]*)/g,'<span class="c">$1</span>');
+  }
+  // il codice nelle voci è già con entità HTML (&lt; ecc.): lo "de-escapo" prima di ri-evidenziare
+  function unesc(s){return s.replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&amp;/g,"&");}
+
+  // ---- rendering ----
+  var lang="it";
+  var content=document.getElementById("content");
+  var side=document.getElementById("side");
+  var countEl=document.getElementById("count");
+
+  function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");}
+
+  function build(){
+    content.innerHTML=""; side.innerHTML="";
+    CATS.forEach(function(cat){
+      var items=E.filter(function(e){return e.cat===cat.id;});
+      if(!items.length) return;
+      // sidebar
+      var a=document.createElement("a");
+      a.href="#cat-"+cat.id; a.textContent=lang==="en"?cat.en:cat.it;
+      a.setAttribute("data-cat", cat.id);
+      side.appendChild(a);
+      // sezione
+      var sec=document.createElement("section");
+      sec.className="cat"; sec.id="cat-"+cat.id;
+      var note=lang==="en"?cat.nen:cat.nit;
+      sec.innerHTML='<h2>'+(lang==="en"?cat.en:cat.it)+'</h2>'+(note?'<p class="cat-note">'+note+'</p>':'');
+      items.forEach(function(e){
+        var art=document.createElement("article");
+        art.className="entry"; art.id="e-"+slug(e.name);
+        var desc=lang==="en"?e.en:e.it;
+        var html='<h3>'+esc(e.name)+'</h3>';
+        if(e.sig) html+='<div class="sig">'+e.sig+'</div>';
+        html+='<p class="desc">'+desc+'</p>';
+        if(e.opts && e.opts.length){
+          html+='<div class="opts-lbl">'+(UI[lang]["ui.opts"])+'</div><ul class="opts">';
+          e.opts.forEach(function(o){ html+='<li><code>'+o.c+'</code> '+(lang==="en"?o.en:o.it)+'</li>'; });
+          html+='</ul>';
+        }
+        var hl=(e.lang==="sh")?hlSh(unesc(e.code)):hlLogyx(unesc(e.code));
+        html+='<div class="code-wrap"><pre>'+hl+'</pre></div>';
+        if(e.out){
+          html+='<div class="out"><span class="out-lbl">'+(UI[lang]["ui.out"])+'</span>'+
+                '<div class="code-wrap"><pre>'+esc(e.out)+'</pre></div></div>';
+        }
+        // indice di ricerca
+        art.setAttribute("data-k",(e.name+" "+e.sig+" "+desc).toLowerCase());
+        art.innerHTML=html;
+        sec.appendChild(art);
+      });
+      content.appendChild(sec);
+    });
+  }
+
+  function filter(q){
+    q=(q||"").trim().toLowerCase();
+    var shown=0;
+    document.querySelectorAll(".entry").forEach(function(a){
+      var ok=!q || a.getAttribute("data-k").indexOf(q)>=0;
+      a.hidden=!ok; if(ok) shown++;
+    });
+    document.querySelectorAll(".cat").forEach(function(c){
+      var any=c.querySelector(".entry:not([hidden])");
+      c.hidden=!any;
+    });
+    document.querySelectorAll("nav.side a").forEach(function(a){
+      var c=document.getElementById("cat-"+a.getAttribute("data-cat"));
+      a.hidden=c?c.hidden:true;
+    });
+    document.getElementById("empty").style.display=shown?"none":"block";
+    countEl.textContent=shown+" "+(shown===1?UI[lang]["ui.result"]:UI[lang]["ui.results"]);
+  }
+
+  // ---- toggle lingua/tema (stesso meccanismo della home) ----
+  function store(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+  function loadv(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+
+  function applyLang(l){
+    lang=(l==="en")?"en":"it";
+    var dict=UI[lang];
+    document.documentElement.lang=lang;
+    document.querySelectorAll("[data-i18n]").forEach(function(el){
+      var v=dict[el.getAttribute("data-i18n")]; if(v!=null) el.textContent=v;
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach(function(el){
+      var v=dict[el.getAttribute("data-i18n-html")]; if(v!=null) el.innerHTML=v;
+    });
+    var qi=document.getElementById("q"); if(qi) qi.placeholder=dict["ui.search"];
+    document.querySelectorAll("[data-lang]").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-lang")===lang);
+    });
+    var top=document.getElementById("toTop");
+    if(top && dict["a11y.top"]){ top.setAttribute("aria-label",dict["a11y.top"]); top.setAttribute("title",dict["a11y.top"]); }
+    store("logyx-lang",lang);
+    build(); filter(document.getElementById("q").value);
+  }
+  function applyTheme(mode){
+    if(mode==="light"||mode==="dark") document.documentElement.setAttribute("data-theme",mode);
+    else document.documentElement.removeAttribute("data-theme");
+    document.querySelectorAll("[data-theme-btn]").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-theme-btn")===mode);
+    });
+    store("logyx-theme",mode||"");
+  }
+  document.querySelectorAll("[data-lang]").forEach(function(b){
+    b.addEventListener("click",function(){applyLang(b.getAttribute("data-lang"));});
+  });
+  document.querySelectorAll("[data-theme-btn]").forEach(function(b){
+    b.addEventListener("click",function(){applyTheme(b.getAttribute("data-theme-btn"));});
+  });
+
+  var savedLang=loadv("logyx-lang");
+  if(!savedLang){ savedLang=(navigator.language||"it").toLowerCase().indexOf("it")===0?"it":"en"; }
+  applyTheme(loadv("logyx-theme")||"");
+  applyLang(savedLang);
+
+  document.getElementById("q").addEventListener("input",function(){ filter(this.value); });
+
+  // evidenzia la categoria attiva durante lo scroll
+  var spy=function(){
+    var secs=document.querySelectorAll(".cat:not([hidden])"), top=window.pageYOffset+90, cur=null;
+    secs.forEach(function(s){ if(s.offsetTop<=top) cur=s.id; });
+    document.querySelectorAll("nav.side a").forEach(function(a){
+      a.classList.toggle("on", a.getAttribute("href")==="#"+cur);
+    });
+  };
+  window.addEventListener("scroll", spy, {passive:true}); spy();
+
+  var toTop=document.getElementById("toTop");
+  if(toTop){
+    var onScroll=function(){ toTop.classList.toggle("show", window.pageYOffset>420); };
+    window.addEventListener("scroll", onScroll, {passive:true});
+    toTop.addEventListener("click", function(){ window.scrollTo({top:0, behavior:"smooth"}); });
+    onScroll();
+  }
+})();
+</script>
+</body>
+</html>
