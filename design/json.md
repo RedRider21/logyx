@@ -21,9 +21,10 @@ Obiettivo: serializzare i valori di Logyx in JSON, valorizzando i record appena 
   fa `sort`), perché l'iterazione di `HashMap` in Rust non è deterministica; l'ordinamento byte-wise
   UTF-8 coincide con quello per code point di Python, quindi i due backend restano conformi.
 - **`from_json(testo, tipo)`**: deserializza via `serde` in uno **scalare** (`int`/`float`/`bool`/`string`),
-  un **record**, o una **lista** con `[tipo]` (record o scalari); il risultato-lista è tracciato
-  (`list_elem`) così è usabile.
-- **Esclusi per ora**: `from_json`/`to_json` di **mappe**; chiavi di mappa non-string.
+  un **record**, una **lista** con `[tipo]`, o una **mappa** con `{string: tipo}`; il risultato
+  lista/mappa è tracciato (`list_elem`/`map_val`) così è usabile da `to_json`/`has`/ecc.
+- **JSON completo**: `to_json` e `from_json` coprono scalari, record, liste e mappe.
+- **Esclusi per ora**: chiavi di mappa non-string (le chiavi JSON restano sempre stringhe).
 
 ## Perché serve tracciare i tipi delle variabili locali
 

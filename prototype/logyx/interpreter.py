@@ -735,6 +735,12 @@ class Interpreter:
             if not isinstance(data, list):
                 raise LogyxError("from_json: atteso un array JSON")
             return [self._json_build(spec.elements[0], d) for d in data]
+        # mappa: {K: V}
+        if type(spec).__name__ == "MapLit" and len(spec.pairs) == 1:
+            if not isinstance(data, dict):
+                raise LogyxError("from_json: atteso un oggetto JSON")
+            _k_spec, v_spec = spec.pairs[0]
+            return {k: self._json_build(v_spec, val) for k, val in data.items()}
         if isinstance(spec, N.Identifier):
             name = spec.name
             if name in ("int", "float", "bool", "string"):
@@ -742,7 +748,7 @@ class Interpreter:
             if name in self.records:
                 return self._record_from_data(name, data)
         raise LogyxError(
-            "from_json: il secondo argomento deve essere un tipo (int/float/bool/string/Record) o [tipo]"
+            "from_json: il secondo argomento deve essere un tipo (int/float/bool/string/Record), [tipo] o {string: tipo}"
         )
 
     def _record_from_data(self, rec, data):

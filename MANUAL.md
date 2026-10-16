@@ -330,7 +330,7 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `filter(lista, p)` | Gli elementi della lista per cui la funzione `p` è vera |
 | `reduce(lista, init, f)` | Accumula da `init` applicando `f(acc, elemento)` |
 | `to_json(x)` | Serializza `x` (int, float, bool, string, record, lista o mappa) in una stringa JSON |
-| `from_json(testo, tipo)` | Deserializza il JSON nel tipo indicato: `int`/`float`/`bool`/`string`, un record, o `[tipo]` per una lista (crate `serde`) |
+| `from_json(testo, tipo)` | Deserializza il JSON nel tipo: scalare, record, `[tipo]` (lista) o `{string: tipo}` (mappa) (crate `serde`) |
 | `sha256(s)` | Hash SHA-256 di `s` in esadecimale (usa la crate Rust `sha2`) |
 | `now()` | Timestamp Unix corrente in secondi (`int`) |
 | `format_date(ts)` | Formatta il timestamp Unix `ts` come data UTC `YYYY-MM-DD HH:MM:SS` (crate `chrono`) |
@@ -392,8 +392,9 @@ dell'elemento si deduce da una lista letterale o da una variabile a cui è stata
 letterale (`numeri = [1,2,3]; to_json(numeri)`). Anche le **mappe** sono serializzabili (v0: solo
 chiavi `string`); le chiavi escono **ordinate** così l'output è deterministico
 (`prezzi = {"pane":2,"latte":1}; to_json(prezzi)` → `{"latte":1,"pane":2}`). `from_json(testo, tipo)` fa
-l'inverso: deserializza in uno scalare (`int`/`float`/`bool`/`string`), in un **record**, o in una **lista**
-con `[tipo]` (es. `from_json("[1,2,3]", [int])`, `from_json(elenco, [Persona])`), usando la crate `serde`.
+l'inverso: deserializza in uno scalare (`int`/`float`/`bool`/`string`), in un **record**, in una **lista**
+con `[tipo]` o in una **mappa** con `{string: tipo}` (es. `from_json("[1,2,3]", [int])`,
+`from_json(elenco, [Persona])`, `from_json(testo, {string: int})`), usando la crate `serde`.
 Vedi `examples/native_json.logyx` e `examples/native_fromjson.logyx`.
 
 Nota: nelle **stringhe letterali** i caratteri `{` e `}` avviano l'interpolazione; per inserirli alla

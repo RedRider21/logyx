@@ -109,8 +109,10 @@ deterministico; UTF-8 byte-order == code-point order Python → conformi). Tre b
 `from_json(testo, [Record])` → `Vec<Record>` (serde); il Decl registra `list_elem` per la lista-record
 così è usabile (`len`, `to_json`). `examples/native_fromjson.logyx` (round-trip verificato). **`from_json` esteso a scalari e liste di
 scalari**: `from_json(testo, int|float|bool|string)`, `from_json(testo, [tipo])` (helper `json_arg_type`
-+ `rust_json_target`; interprete `_json_build` ricorsivo). **DA FARE JSON:** `from_json`/`to_json` di
-**mappe**; chiavi di mappa non-string.
++ `rust_json_target`; interprete `_json_build` ricorsivo). **`from_json` di mappe FATTO**
+(`from_json(testo, {string: tipo})` → `HashMap`, con `map_val` tracciato per `to_json`/`has`). **JSON
+completo**: `to_json` e `from_json` coprono scalari/record/liste/mappe. **DA FARE JSON:** solo chiavi di
+mappa non-string.
 **`match` generale: FATTO**: `match x { <valore> { } ... else { } }` (confronto per uguaglianza →
 if/else-if), distinto dal `match ok/err` degli errori; interprete+nativo, suite 30/30
 (`examples/native_matchval.logyx`).

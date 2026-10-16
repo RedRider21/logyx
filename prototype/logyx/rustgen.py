@@ -914,12 +914,19 @@ class RustTranspiler:
             if kt and vt:
                 self.map_val[name] = (kt, vt)
         elif (type(value).__name__ == "Call" and isinstance(value.callee, N.Identifier)
-              and value.callee.name == "from_json" and len(value.args) == 2
-              and type(value.args[1]).__name__ == "ListLit" and value.args[1].elements):
-            # from_json(testo, [tipo]) -> lista: ricorda il tipo elemento
-            elem = self._json_arg_type(value.args[1].elements[0])
-            if elem:
-                self.list_elem[name] = elem
+              and value.callee.name == "from_json" and len(value.args) == 2):
+            spec = value.args[1]
+            if type(spec).__name__ == "ListLit" and spec.elements:
+                # from_json(testo, [tipo]) -> lista
+                elem = self._json_arg_type(spec.elements[0])
+                if elem:
+                    self.list_elem[name] = elem
+            elif type(spec).__name__ == "MapLit" and spec.pairs:
+                # from_json(testo, {K:V}) -> mappa
+                k, v = spec.pairs[0]
+                kt, vt = self._json_arg_type(k), self._json_arg_type(v)
+                if kt and vt:
+                    self.map_val[name] = (kt, vt)
 
     def _json_arg_type(self, e):
         if isinstance(e, N.Identifier):
@@ -929,11 +936,22 @@ class RustTranspiler:
         if type(e).__name__ == "ListLit" and len(e.elements) == 1:
             t = self._json_arg_type(e.elements[0])
             return f"list<{t}>" if t else None
+        if type(e).__name__ == "MapLit" and len(e.pairs) == 1:
+            k, v = e.pairs[0]
+            kt, vt = self._json_arg_type(k), self._json_arg_type(v)
+            if kt == "string" and vt:
+                return f"map<{kt},{vt}>"
+            return None
         return None
 
     def _rust_json_target(self, logyx):
         if logyx.startswith("list<") and logyx.endswith(">"):
             return f"Vec<{self.ty(logyx[5:-1])}>"
+        if logyx.startswith("map<") and logyx.endswith(">"):
+            inner = logyx[4:-1]
+            comma = inner.find(",")
+            k, v = inner[:comma], inner[comma + 1:]
+            return f"std::collections::HashMap<{self.ty(k)}, {self.ty(v)}>"
         return self.ty(logyx)
 
     def _make_record_expr(self, name, args):
@@ -1223,11 +1241,11 @@ class RustTranspiler:
                 if nm == "from_json":
                     if len(e.args) != 2:
                         raise LogyxError(
-                            "from_json richiede: from_json(testo, tipo), con tipo = int/float/bool/string/Record oppure [tipo]")
+                            "from_json richiede: from_json(testo, tipo), con tipo = int/float/bool/string/Record, [tipo] o {string: tipo}")
                     logyx = self._json_arg_type(e.args[1])
                     if not logyx:
                         raise LogyxError(
-                            "from_json: il 2º argomento dev'essere un tipo (int/float/bool/string/Record) o [tipo]")
+                            "from_json: il 2º argomento dev'essere un tipo (int/float/bool/string/Record), [tipo] o {string: tipo}")
                     target = self._rust_json_target(logyx)
                     self.uses_serde = True
                     self.deps["serde"] = '{ version = "1", features = ["derive"] }'

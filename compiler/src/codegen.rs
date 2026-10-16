@@ -1719,14 +1719,28 @@ impl Codegen {
             Expr::List(els) if els.len() == 1 => {
                 self.json_arg_type(&els[0]).map(|t| format!("list<{}>", t))
             }
+            Expr::Map(ps) if ps.len() == 1 => {
+                let (k, v) = &ps[0];
+                let kt = self.json_arg_type(k)?;
+                let vt = self.json_arg_type(v)?;
+                if kt != "string" {
+                    return None; // le chiavi JSON sono sempre stringhe
+                }
+                Some(format!("map<{},{}>", kt, vt))
+            }
             _ => None,
         }
     }
 
-    /// Tipo Rust bersaglio per `from_json`: `Vec<T>` per `list<T>`, altrimenti `rust_type`.
+    /// Tipo Rust bersaglio per `from_json`: `Vec<T>` per `list<T>`,
+    /// `HashMap<String,V>` per `map<string,V>`, altrimenti `rust_type`.
     fn rust_json_target(&self, logyx: &str) -> R<String> {
         if let Some(elem) = logyx.strip_prefix("list<").and_then(|s| s.strip_suffix('>')) {
             Ok(format!("Vec<{}>", self.rust_type(elem)?))
+        } else if let Some(inner) = logyx.strip_prefix("map<").and_then(|s| s.strip_suffix('>')) {
+            let comma = inner.find(',').ok_or_else(|| LogyxError::new("tipo mappa malformato"))?;
+            let (k, v) = (&inner[..comma], &inner[comma + 1..]);
+            Ok(format!("std::collections::HashMap<{}, {}>", self.rust_type(k)?, self.rust_type(v)?))
         } else {
             self.rust_type(logyx)
         }
@@ -1776,14 +1790,26 @@ impl Codegen {
                     }
                 }
             }
-            // from_json(testo, [tipo]) -> lista: ricorda il tipo elemento (per to_json ecc.)
+            // from_json(testo, [tipo] | {K:V}) -> lista/mappa: ricorda i tipi (per to_json ecc.)
             Expr::Call { callee, args } => {
                 if let Expr::Ident(f) = &**callee {
                     if f == "from_json" {
-                        if let Some(Expr::List(els)) = args.get(1) {
-                            if let Some(elem) = els.first().and_then(|e| self.json_arg_type(e)) {
-                                self.list_elem.insert(name.to_string(), elem);
+                        match args.get(1) {
+                            Some(Expr::List(els)) => {
+                                if let Some(elem) = els.first().and_then(|e| self.json_arg_type(e)) {
+                                    self.list_elem.insert(name.to_string(), elem);
+                                }
                             }
+                            Some(Expr::Map(ps)) => {
+                                if let Some((k, v)) = ps.first() {
+                                    if let (Some(kt), Some(vt)) =
+                                        (self.json_arg_type(k), self.json_arg_type(v))
+                                    {
+                                        self.map_val.insert(name.to_string(), (kt, vt));
+                                    }
+                                }
+                            }
+                            _ => {}
                         }
                     }
                 }
@@ -2300,12 +2326,12 @@ impl Codegen {
                     if name == "from_json" {
                         if args.len() != 2 {
                             return Err(LogyxError::new(
-                                "from_json richiede: from_json(testo, tipo), con tipo = int/float/bool/string/Record oppure [tipo]",
+                                "from_json richiede: from_json(testo, tipo), con tipo = int/float/bool/string/Record, [tipo] o {string: tipo}",
                             ));
                         }
                         let logyx = self.json_arg_type(&args[1]).ok_or_else(|| {
                             LogyxError::new(
-                                "from_json: il 2º argomento dev'essere un tipo (int/float/bool/string/Record) o [tipo]",
+                                "from_json: il 2º argomento dev'essere un tipo (int/float/bool/string/Record), [tipo] o {string: tipo}",
                             )
                         })?;
                         let target = self.rust_json_target(&logyx)?;

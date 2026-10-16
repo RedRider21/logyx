@@ -36,4 +36,9 @@ fn main() {
     print(join(nomi, "-"))
     numeri = from_json("[1,2,3]", [int])
     print(sum(numeri))
+
+    // mappa: from_json(testo, {string: tipo})
+    prezzi = from_json("\{\"pane\":2,\"latte\":1\}", {string: int})
+    print(has(prezzi, "pane"))
+    print(to_json(prezzi))
 }
