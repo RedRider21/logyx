@@ -619,9 +619,9 @@ class RustTranspiler:
                 return None
             if name in ("upper", "lower", "trim", "substring", "join", "replace",
                         "to_json", "sha256", "format_date", "read_file",
-                        "read_line", "read_all", "env"):
+                        "read_line", "read_all", "env", "run"):
                 return "string"
-            if name == "now":
+            if name in ("now", "run_code"):
                 return "int"
             if name in ("contains", "has", "starts_with", "ends_with",
                         "write_file", "file_exists", "matches"):
@@ -1288,6 +1288,19 @@ class RustTranspiler:
                         raise LogyxError("now non accetta argomenti")
                     return ("(std::time::SystemTime::now()"
                             ".duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)")
+                if nm == "run":
+                    if len(e.args) != 1:
+                        raise LogyxError("run accetta un solo argomento: run(comando)")
+                    return ('match std::process::Command::new("sh").arg("-c")'
+                            f'.arg(({self.expr(e.args[0])}).as_str()).output() '
+                            '{ Ok(__o) => String::from_utf8_lossy(&__o.stdout).into_owned(), '
+                            'Err(_) => String::new() }')
+                if nm == "run_code":
+                    if len(e.args) != 1:
+                        raise LogyxError("run_code accetta un solo argomento: run_code(comando)")
+                    return ('std::process::Command::new("sh").arg("-c")'
+                            f'.arg(({self.expr(e.args[0])}).as_str()).output()'
+                            '.map(|__o| __o.status.code().unwrap_or(-1) as i64).unwrap_or(-1)')
                 if nm == "format_date":
                     if len(e.args) != 1:
                         raise LogyxError("format_date accetta un solo argomento (timestamp)")

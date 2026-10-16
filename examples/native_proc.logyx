@@ -1,0 +1,13 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Processi esterni: run(comando) cattura lo stdout come stringa,
+// run_code(comando) restituisce il codice d'uscita. Eseguiti via "sh -c".
+
+fn main() {
+    out = run("echo ciao")
+    print(trim(out))                      // ciao
+    print(trim(run("printf '%s' hola")))  // hola
+    print(run_code("true"))               // 0
+    print(run_code("false"))              // 1
+}

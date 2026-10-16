@@ -8,6 +8,7 @@ import math
 import os
 import random as _random
 import re as _re
+import subprocess as _subprocess
 import sys
 import time
 
@@ -304,6 +305,18 @@ class Interpreter:
         g.define("read_all", lambda: sys.stdin.read())
         g.define("env", lambda name: os.environ.get(name, ""))
         g.define("args", lambda: list(self.program_args))
+        # processi esterni: run(cmd) -> stdout (stringa), run_code(cmd) -> codice d'uscita
+        # eseguiti via "sh -c"; l'output e' catturato (non inquina lo stdout del programma)
+        g.define(
+            "run",
+            lambda c: _subprocess.run(
+                c, shell=True, capture_output=True, text=True
+            ).stdout,
+        )
+        g.define(
+            "run_code",
+            lambda c: _subprocess.run(c, shell=True, capture_output=True).returncode,
+        )
         g.define("sqrt", lambda x: math.sqrt(x))
         # matches(stringa, pattern): vero se la regex trova una corrispondenza (ovunque)
         g.define("matches", lambda s, p: _re.search(p, s) is not None)

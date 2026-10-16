@@ -709,6 +709,7 @@ impl Codegen {
                         || name == "join" || name == "replace" || name == "to_json"
                         || name == "sha256" || name == "format_date" || name == "read_file"
                         || name == "read_line" || name == "read_all" || name == "env"
+                        || name == "run"
                     {
                         return Some("string".into());
                     }
@@ -722,7 +723,7 @@ impl Codegen {
                     {
                         return Some("bool".into());
                     }
-                    if name == "index_of" || name == "int" {
+                    if name == "index_of" || name == "int" || name == "run_code" {
                         return Some("int".into());
                     }
                     if name == "float" {
@@ -2398,6 +2399,28 @@ impl Codegen {
                             return Err(LogyxError::new("now non accetta argomenti"));
                         }
                         return Ok("(std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as i64)".to_string());
+                    }
+                    if name == "run" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(
+                                "run accetta un solo argomento: run(comando)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "match std::process::Command::new(\"sh\").arg(\"-c\").arg(({}).as_str()).output() {{ Ok(__o) => String::from_utf8_lossy(&__o.stdout).into_owned(), Err(_) => String::new() }}",
+                            self.expr(&args[0])?
+                        ));
+                    }
+                    if name == "run_code" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(
+                                "run_code accetta un solo argomento: run_code(comando)",
+                            ));
+                        }
+                        return Ok(format!(
+                            "std::process::Command::new(\"sh\").arg(\"-c\").arg(({}).as_str()).output().map(|__o| __o.status.code().unwrap_or(-1) as i64).unwrap_or(-1)",
+                            self.expr(&args[0])?
+                        ));
                     }
                     if name == "format_date" {
                         if args.len() != 1 {

@@ -609,6 +609,14 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <td><code>args()</code></td>
 <td>Lista degli argomenti da riga di comando (esclude il nome del programma)</td>
 </tr>
+<tr>
+<td><code>run(comando)</code></td>
+<td>Esegue <code>comando</code> via <code>sh -c</code> e restituisce il suo <strong>stdout</strong> come stringa (l'output è catturato)</td>
+</tr>
+<tr>
+<td><code>run_code(comando)</code></td>
+<td>Esegue <code>comando</code> via <code>sh -c</code> e restituisce il suo <strong>codice d'uscita</strong> (int)</td>
+</tr>
 </tbody>
 </table>
 <p>In <code>map</code>/<code>filter</code>/<code>reduce</code> la funzione può essere il <strong>nome di una funzione</strong> definita con <code>fn</code> <strong>oppure

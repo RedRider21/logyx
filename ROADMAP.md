@@ -49,7 +49,7 @@ Da costruire preferibilmente **in Logyx**, non come builtin infiniti nel compila
 | Liste | `len`, `push`, `remove`, `contains`, `sum`, `sort`, `map`, `filter`, `reduce`, `slice`, assegnazione `xs[i]=v` ✅ | ✅ |
 | Mappe | letterale, accesso, `len`, `has`, `keys`, `values`, iterazione `for k in mappa` (chiavi ordinate) ✅ | 🟢 |
 | Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil`, `sqrt`, `round`, `random`, conversioni `int`/`float` ✅ | ✅ |
-| I/O e sistema | `print`, **file** (`read_file`/`write_file`/`file_exists`), **stdin** (`read_line`/`read_all`), **ambiente** (`env`), **argomenti CLI** (`args`) ✅ · processi esterni ⏳ | 🟢 |
+| I/O e sistema | `print`, **file** (`read_file`/`write_file`/`file_exists`), **stdin** (`read_line`/`read_all`), **ambiente** (`env`), **argomenti CLI** (`args`), **processi esterni** (`run`/`run_code`) ✅ | ✅ |
 | Dati | **JSON**: `to_json` + `from_json` (scalari/record/liste/mappe) ✅ · **date/tempo**: `now`, `format_date` (crate `chrono`) ✅ | ✅ |
 
 ## Piano 2.5 — Librerie esterne (l'ecosistema)

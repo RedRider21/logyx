@@ -64,7 +64,12 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **54/54**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **55/55**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**Processi esterni FATTI (2026-10-17):** builtin `run(cmd)` → stdout (stringa) e `run_code(cmd)` →
+codice d'uscita (int), eseguiti via `sh -c`, output **catturato** (nativo `std::process`, interprete
+`subprocess`). Deterministici con comandi fissi → in suite (`examples/native_proc.logyx`). Chiude Piano 2
+I/O e sistema (✅).
 
 **`for` con indice FATTO (2026-10-17):** sintassi `for i, x in …` (indice intero 0-based + elemento),
 su liste/`range`/chiavi di mappa; nei tre backend via `.enumerate()` (nel nativo/transpiler il

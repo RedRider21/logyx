@@ -610,6 +610,11 @@
       it:"Lista degli argomenti da riga di comando (esclude il nome del programma).",
       en:"List of command-line arguments (excludes the program name).",
       code:"for a in args() { print(a) }"},
+    {cat:"io", name:"run / run_code", sig:"run(comando) -&gt; string\nrun_code(comando) -&gt; int",
+      it:"Esegue un processo esterno via <code>sh -c</code>: <code>run</code> cattura e restituisce lo <b>stdout</b> come stringa, <code>run_code</code> il <b>codice d'uscita</b>. L'output è catturato (non inquina lo stdout del programma). Nativo via <code>std::process</code>.",
+      en:"Runs an external process via <code>sh -c</code>: <code>run</code> captures and returns <b>stdout</b> as a string, <code>run_code</code> the <b>exit code</b>. Output is captured (does not pollute the program's stdout). Native via <code>std::process</code>.",
+      code:"print(trim(run(\"echo ciao\")))   // ciao\nprint(run_code(\"true\"))          // 0\nprint(run_code(\"false\"))         // 1",
+      out:"ciao\n0\n1"},
 
     // ======== DATA: JSON, DATES, HASH ========
     {cat:"json", name:"to_json", sig:"to_json(x) -&gt; string",
