@@ -221,11 +221,11 @@ funzione con ret `fn(…)->…` può restituire una lambda/nome (campo `cur_ret`
 ret (`g = sommatore(5)` → `cur_types[g]` tipo funzione → `(*g)(…)`). Tre backend,
 `examples/native_funval.logyx` + `examples/native_closure.logyx`, suite **49/49**. **DA FARE valori
 funzione:** assegnare una lambda "nuda" a una variabile libera (servirebbe il tipo annotato sul `Decl`).
-**DA FARE PRIORITARI (ergonomia pratica, emersi 2026-10-16):**
-- **Assegnazione a indice** `xs[i] = v` / `m[k] = v`: il parser la accetta ma il codegen dà "il backend
-  assegna solo a variabili semplici" → NON supportata nel nativo. Serve per modificare liste/mappe in place.
-- **Conversione stringa→numero**: manca (`int("42")`, `float("3.14")`); c'è solo `str` (num→string).
-  Essenziale per CLI/stdin (args/input sono stringhe da convertire).
+**Ergonomia pratica (emersi 2026-10-16): FATTI.**
+- **Assegnazione a indice** `xs[i] = v` / `m[k] = v`: FATTO in tutti i backend (lista → indicizzazione,
+  mappa → `.insert`; nel codegen `kinds` distingue lista/mappa). `examples/native_indexset.logyx`.
+- **Conversione stringa→numero**: FATTO — builtin `int(x)` / `float(x)` (da stringa con parse → 0/0.0 se
+  non valido; fra int/float con cast). type-directed. `examples/native_convert.logyx`.
 **Altro DA FARE:** extern con corpi Rust multi-riga;
 valori funzione memorizzabili in variabili libere / ritorno; processi esterni.
 **Cybersecurity — hardening build: FATTO (primo passo)** — `logyxc build --harden <file>` blinda il

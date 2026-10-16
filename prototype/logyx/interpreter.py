@@ -197,6 +197,27 @@ class Interpreter:
         g.define("len", lambda x: len(x))
         g.define("str", logyx_str)
 
+        def _to_int(x):
+            if isinstance(x, bool):
+                return 1 if x else 0
+            if isinstance(x, str):
+                try:
+                    return int(x)
+                except ValueError:
+                    return 0
+            return int(x)  # float -> tronca verso zero; int -> sé stesso
+
+        def _to_float(x):
+            if isinstance(x, str):
+                try:
+                    return float(x)
+                except ValueError:
+                    return 0.0
+            return float(x)
+
+        g.define("int", _to_int)
+        g.define("float", _to_float)
+
         def _range(*args):
             if len(args) == 1:
                 return list(range(int(args[0])))

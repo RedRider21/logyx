@@ -277,12 +277,14 @@ Liste e mappe: letterali, indicizzazione, `len`, iterazione con `for`.
 
 ```
 xs = [3, 1, 2]
-xs[0]            // 3
+xs[0]            // 3  (lettura)
+xs[0] = 9        // assegnazione a un elemento
 len(xs)          // 3
 for x in xs { ... }
 
 m = {"nome": "Ada"}
 m["nome"]              // "Ada"
+m["eta"] = 36          // aggiunge/aggiorna una chiave
 has(m, "nome")         // true
 keys(m)                // chiavi, ordinate (deterministico)
 values(m)              // valori, nell'ordine delle chiavi
@@ -309,6 +311,8 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `print(x)` | Stampa `x` (con conversione leggibile) |
 | `len(x)` | Lunghezza di lista, mappa o stringa |
 | `str(x)` | Converte in stringa |
+| `int(x)` | Converte in intero: da stringa (0 se non valido) o da float (tronca) |
+| `float(x)` | Converte in float: da stringa (0.0 se non valido) o da intero |
 | `range(n)` / `range(a, b)` | Lista `0 .. n-1`, oppure `a .. b-1` |
 | `push(lista, x)` | Aggiunge `x` in coda alla lista (la muta); usala come istruzione |
 | `remove(lista, i)` | Toglie l'elemento all'indice `i` (muta la lista); usala come istruzione |

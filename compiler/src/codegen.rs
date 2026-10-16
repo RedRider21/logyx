@@ -721,8 +721,11 @@ impl Codegen {
                     {
                         return Some("bool".into());
                     }
-                    if name == "index_of" {
+                    if name == "index_of" || name == "int" {
                         return Some("int".into());
+                    }
+                    if name == "float" {
+                        return Some("float".into());
                     }
                     if name == "sum" {
                         return Some("int".into());
@@ -1493,11 +1496,23 @@ impl Codegen {
                 Ok(format!("{pad}{kw} {name} = {};", self.expr(value)?))
             }
             Stmt::Assign { target, value } => {
+                // assegnazione a un elemento: xs[i] = v (lista) oppure m[k] = v (mappa)
+                if let Expr::Index { target: inner, index } = target {
+                    let base = self.expr(inner)?;
+                    let is_map = matches!(&**inner,
+                        Expr::Ident(n) if self.kinds.get(n).map(|s| s.as_str()) == Some("map"));
+                    let val = self.arg(value)?;
+                    return if is_map {
+                        Ok(format!("{pad}{}.insert({}, {});", base, self.arg(index)?, val))
+                    } else {
+                        Ok(format!("{pad}{}[({}) as usize] = {};", base, self.expr(index)?, val))
+                    };
+                }
                 let name = match target {
                     Expr::Ident(n) => n.clone(),
                     _ => {
                         return Err(LogyxError::new(
-                            "il backend assegna solo a variabili semplici",
+                            "il backend assegna solo a variabili o a elementi (x[i] = v)",
                         ))
                     }
                 };
@@ -2057,6 +2072,22 @@ impl Codegen {
                             return Err(LogyxError::new("str accetta un solo argomento"));
                         }
                         return Ok(format!("format!(\"{{}}\", {})", self.expr(&args[0])?));
+                    }
+                    if name == "int" || name == "float" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(format!("{name} accetta un solo argomento")));
+                        }
+                        let ct = self.cur_types.clone();
+                        let at = self.type_of(&args[0], &ct);
+                        let e = self.expr(&args[0])?;
+                        let (rust_ty, default) =
+                            if name == "int" { ("i64", "0") } else { ("f64", "0.0") };
+                        return Ok(match at.as_deref() {
+                            // numero -> numero: cast diretto
+                            Some("int") | Some("float") => format!("(({}) as {})", e, rust_ty),
+                            // stringa (o tipo non deducibile): parsing, 0 se non valido
+                            _ => format!("({}).parse::<{}>().unwrap_or({})", e, rust_ty, default),
+                        });
                     }
                     if name == "abs" {
                         if args.len() != 1 {

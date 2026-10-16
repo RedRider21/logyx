@@ -418,12 +418,14 @@ a = area(Forma.Cerchio(2.0))                       // costruzione: Nome.Variante
 <h2 id="7-collezioni">7. Collezioni 🟡</h2>
 <p>Liste e mappe: letterali, indicizzazione, <code>len</code>, iterazione con <code>for</code>.</p>
 <pre><code>xs = [3, 1, 2]
-xs[0]            // 3
+xs[0]            // 3  (lettura)
+xs[0] = 9        // assegnazione a un elemento
 len(xs)          // 3
 for x in xs { ... }
 
 m = {&quot;nome&quot;: &quot;Ada&quot;}
 m[&quot;nome&quot;]              // &quot;Ada&quot;
+m[&quot;eta&quot;] = 36          // aggiunge/aggiorna una chiave
 has(m, &quot;nome&quot;)         // true
 keys(m)                // chiavi, ordinate (deterministico)
 values(m)              // valori, nell'ordine delle chiavi
@@ -458,6 +460,14 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <tr>
 <td><code>str(x)</code></td>
 <td>Converte in stringa</td>
+</tr>
+<tr>
+<td><code>int(x)</code></td>
+<td>Converte in intero: da stringa (0 se non valido) o da float (tronca)</td>
+</tr>
+<tr>
+<td><code>float(x)</code></td>
+<td>Converte in float: da stringa (0.0 se non valido) o da intero</td>
 </tr>
 <tr>
 <td><code>range(n)</code> / <code>range(a, b)</code></td>

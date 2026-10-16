@@ -603,6 +603,10 @@ class RustTranspiler:
             name = e.callee.name
             if name == "str":
                 return "string"
+            if name == "int":
+                return "int"
+            if name == "float":
+                return "float"
             if name == "len":
                 return "int"
             if name in ("abs", "pow") and e.args:
@@ -763,8 +767,17 @@ class RustTranspiler:
             kw = "let" if s.is_const else "let mut"
             return pad + f"{kw} {s.name} = {self.expr(s.value)};"
         if t == "Assign":
+            # assegnazione a un elemento: xs[i] = v (lista) oppure m[k] = v (mappa)
+            if type(s.target).__name__ == "Index":
+                base = self.expr(s.target.target)
+                is_map = (isinstance(s.target.target, N.Identifier)
+                          and getattr(self, "kinds", {}).get(s.target.target.name) == "map")
+                val = self._arg(s.value)
+                if is_map:
+                    return pad + f"{base}.insert({self._arg(s.target.index)}, {val});"
+                return pad + f"{base}[({self.expr(s.target.index)}) as usize] = {val};"
             if not isinstance(s.target, N.Identifier):
-                raise LogyxError("il transpiler v0 assegna solo a variabili semplici")
+                raise LogyxError("il transpiler v0 assegna solo a variabili o a elementi (x[i] = v)")
             name = s.target.name
             k = self._value_kind(s.value)
             if k:
@@ -1108,6 +1121,15 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("str accetta un solo argomento")
                     return f'format!("{{}}", {self.expr(e.args[0])})'
+                if nm in ("int", "float"):
+                    if len(e.args) != 1:
+                        raise LogyxError(f"{nm} accetta un solo argomento")
+                    at = self._type_of(e.args[0], self.cur_types)
+                    ex = self.expr(e.args[0])
+                    rust_ty, default = ("i64", "0") if nm == "int" else ("f64", "0.0")
+                    if at in ("int", "float"):
+                        return f"(({ex}) as {rust_ty})"
+                    return f"({ex}).parse::<{rust_ty}>().unwrap_or({default})"
                 if nm == "abs":
                     if len(e.args) != 1:
                         raise LogyxError("abs accetta un solo argomento")

@@ -1,0 +1,13 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Conversione stringa -> numero: int(x) e float(x).
+
+fn main() {
+    n = int("42")
+    print(n + 8)          // 50
+    x = float("3.5")
+    print(x * 2.0)        // 7
+    print(int(3.9))       // 3 (float -> int, tronca)
+    print(int("abc"))     // 0 (non convertibile)
+}
