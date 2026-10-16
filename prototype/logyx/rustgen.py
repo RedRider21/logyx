@@ -634,8 +634,8 @@ class RustTranspiler:
                 return self._type_of(e.args[1], ptypes)
             if name in getattr(self, "records", {}):
                 return name
-            if name == "from_json" and len(e.args) == 2 and isinstance(e.args[1], N.Identifier):
-                return e.args[1].name
+            if name == "from_json" and len(e.args) == 2:
+                return self._json_arg_type(e.args[1])
             return self.func_rets.get(name)
         return None
 
@@ -915,11 +915,26 @@ class RustTranspiler:
                 self.map_val[name] = (kt, vt)
         elif (type(value).__name__ == "Call" and isinstance(value.callee, N.Identifier)
               and value.callee.name == "from_json" and len(value.args) == 2
-              and type(value.args[1]).__name__ == "ListLit" and value.args[1].elements
-              and isinstance(value.args[1].elements[0], N.Identifier)
-              and value.args[1].elements[0].name in self.records):
-            # from_json(testo, [Record]) -> lista di Record
-            self.list_elem[name] = value.args[1].elements[0].name
+              and type(value.args[1]).__name__ == "ListLit" and value.args[1].elements):
+            # from_json(testo, [tipo]) -> lista: ricorda il tipo elemento
+            elem = self._json_arg_type(value.args[1].elements[0])
+            if elem:
+                self.list_elem[name] = elem
+
+    def _json_arg_type(self, e):
+        if isinstance(e, N.Identifier):
+            if e.name in ("int", "float", "bool", "string") or e.name in self.records:
+                return e.name
+            return None
+        if type(e).__name__ == "ListLit" and len(e.elements) == 1:
+            t = self._json_arg_type(e.elements[0])
+            return f"list<{t}>" if t else None
+        return None
+
+    def _rust_json_target(self, logyx):
+        if logyx.startswith("list<") and logyx.endswith(">"):
+            return f"Vec<{self.ty(logyx[5:-1])}>"
+        return self.ty(logyx)
 
     def _make_record_expr(self, name, args):
         fields = self.records[name]
@@ -1208,16 +1223,12 @@ class RustTranspiler:
                 if nm == "from_json":
                     if len(e.args) != 2:
                         raise LogyxError(
-                            "from_json richiede: from_json(testo, NomeRecord) oppure from_json(testo, [NomeRecord])")
-                    spec = e.args[1]
-                    if isinstance(spec, N.Identifier) and spec.name in self.records:
-                        target = spec.name
-                    elif (type(spec).__name__ == "ListLit" and len(spec.elements) == 1
-                          and isinstance(spec.elements[0], N.Identifier)
-                          and spec.elements[0].name in self.records):
-                        target = f"Vec<{spec.elements[0].name}>"
-                    else:
-                        raise LogyxError("from_json: il secondo argomento deve essere un record o [Record]")
+                            "from_json richiede: from_json(testo, tipo), con tipo = int/float/bool/string/Record oppure [tipo]")
+                    logyx = self._json_arg_type(e.args[1])
+                    if not logyx:
+                        raise LogyxError(
+                            "from_json: il 2º argomento dev'essere un tipo (int/float/bool/string/Record) o [tipo]")
+                    target = self._rust_json_target(logyx)
                     self.uses_serde = True
                     self.deps["serde"] = '{ version = "1", features = ["derive"] }'
                     self.deps["serde_json"] = '"1"'

@@ -107,8 +107,10 @@ deterministico; UTF-8 byte-order == code-point order Python → conformi). Tre b
 (interprete + transpiler + compiler), suite 38/38 (`examples/native_json.logyx`).
 **`from_json`: FATTO per record e liste di record** — `from_json(testo, Record)` → record,
 `from_json(testo, [Record])` → `Vec<Record>` (serde); il Decl registra `list_elem` per la lista-record
-così è usabile (`len`, `to_json`). `examples/native_fromjson.logyx` (round-trip verificato). **DA FARE
-JSON:** `from_json` di scalari/liste di scalari/mappe; chiavi di mappa non-string.
+così è usabile (`len`, `to_json`). `examples/native_fromjson.logyx` (round-trip verificato). **`from_json` esteso a scalari e liste di
+scalari**: `from_json(testo, int|float|bool|string)`, `from_json(testo, [tipo])` (helper `json_arg_type`
++ `rust_json_target`; interprete `_json_build` ricorsivo). **DA FARE JSON:** `from_json`/`to_json` di
+**mappe**; chiavi di mappa non-string.
 **`match` generale: FATTO**: `match x { <valore> { } ... else { } }` (confronto per uguaglianza →
 if/else-if), distinto dal `match ok/err` degli errori; interprete+nativo, suite 30/30
 (`examples/native_matchval.logyx`).
@@ -219,6 +221,10 @@ ret (`g = sommatore(5)` → `cur_types[g]` tipo funzione → `(*g)(…)`). Tre b
 funzione:** assegnare una lambda "nuda" a una variabile libera (servirebbe il tipo annotato sul `Decl`).
 **Altro DA FARE:** extern con corpi Rust multi-riga; `from_json` di scalari/liste-di-scalari/mappe;
 valori funzione memorizzabili in variabili libere / ritorno; processi esterni.
+**DA FARE (verso la fine) — richiesta utente:** **documentazione professionale sul sito (Pages)** che
+spieghi **ogni comando/builtin** con **opzioni** ed **esempio pratico**, come i linguaggi noti (stile
+reference completo, non solo tabella). Oggi il sito ha una tabella sintetica; serve una pagina reference
+ricca (per comando: sintassi, parametri, esempio, output).
 **DA FARE (al compilatore finale) — richiesta utente:** sezione completa "Librerie esterne" su README,
 sito (Pages) e manuale: **come** si caricano le librerie (oggi `use rust`/`extern rust`; in futuro binding
 pronti) e un **elenco completo** delle librerie utilizzabili per categoria (file, grafica, gestione

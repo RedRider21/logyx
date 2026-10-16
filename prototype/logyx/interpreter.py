@@ -727,22 +727,23 @@ class Interpreter:
             data = json.loads(testo)
         except Exception:
             raise LogyxError("from_json: JSON non valido")
-        # lista di record: from_json(testo, [Record])
-        if (type(spec).__name__ == "ListLit" and len(spec.elements) == 1
-                and isinstance(spec.elements[0], N.Identifier)):
-            rec = spec.elements[0].name
-            if rec not in self.records:
-                raise LogyxError(f"from_json: '{rec}' non è un record")
+        return self._json_build(spec, data)
+
+    def _json_build(self, spec, data):
+        # lista: [tipo]
+        if type(spec).__name__ == "ListLit" and len(spec.elements) == 1:
             if not isinstance(data, list):
                 raise LogyxError("from_json: atteso un array JSON")
-            return [self._record_from_data(rec, d) for d in data]
-        # record singolo
+            return [self._json_build(spec.elements[0], d) for d in data]
         if isinstance(spec, N.Identifier):
-            rec = spec.name
-            if rec not in self.records:
-                raise LogyxError(f"from_json: '{rec}' non è un record")
-            return self._record_from_data(rec, data)
-        raise LogyxError("from_json: il secondo argomento deve essere un record o [Record]")
+            name = spec.name
+            if name in ("int", "float", "bool", "string"):
+                return data  # json.loads dà già int/float/bool/str
+            if name in self.records:
+                return self._record_from_data(name, data)
+        raise LogyxError(
+            "from_json: il secondo argomento deve essere un tipo (int/float/bool/string/Record) o [tipo]"
+        )
 
     def _record_from_data(self, rec, data):
         fields = {}

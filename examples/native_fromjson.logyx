@@ -28,4 +28,12 @@ fn main() {
     gente = from_json(elenco, [Persona])
     print(len(gente))
     print(to_json(gente))
+
+    // scalari e liste di scalari
+    n = from_json("42", int)
+    print(n + 1)
+    nomi = from_json("[\"a\",\"b\",\"c\"]", [string])
+    print(join(nomi, "-"))
+    numeri = from_json("[1,2,3]", [int])
+    print(sum(numeri))
 }

@@ -740,20 +740,7 @@ impl Codegen {
                         return Some(name.clone());
                     }
                     if name == "from_json" {
-                        match args.get(1) {
-                            Some(Expr::Ident(r)) if self.records.contains_key(r) => {
-                                return Some(r.clone())
-                            }
-                            Some(Expr::List(els)) if els.len() == 1 => {
-                                if let Expr::Ident(r) = &els[0] {
-                                    if self.records.contains_key(r) {
-                                        return Some(format!("list<{}>", r));
-                                    }
-                                }
-                            }
-                            _ => {}
-                        }
-                        return None;
+                        return args.get(1).and_then(|e| self.json_arg_type(e));
                     }
                     return self.rets.get(name).cloned().flatten();
                 }
@@ -1716,6 +1703,35 @@ impl Codegen {
 
     /// Tipo JSON di un'espressione passata a `to_json`: i tipi noti via `type_of`,
     /// più le liste (letterali o variabili) come `list<ELEM>`.
+    /// Il tipo bersaglio di `from_json` dato il 2º argomento-tipo: uno scalare
+    /// (`int`/`float`/`bool`/`string`), un nome di record, oppure `list<T>` per `[T]`.
+    fn json_arg_type(&self, e: &Expr) -> Option<String> {
+        match e {
+            Expr::Ident(n) => {
+                if matches!(n.as_str(), "int" | "float" | "bool" | "string")
+                    || self.records.contains_key(n)
+                {
+                    Some(n.clone())
+                } else {
+                    None
+                }
+            }
+            Expr::List(els) if els.len() == 1 => {
+                self.json_arg_type(&els[0]).map(|t| format!("list<{}>", t))
+            }
+            _ => None,
+        }
+    }
+
+    /// Tipo Rust bersaglio per `from_json`: `Vec<T>` per `list<T>`, altrimenti `rust_type`.
+    fn rust_json_target(&self, logyx: &str) -> R<String> {
+        if let Some(elem) = logyx.strip_prefix("list<").and_then(|s| s.strip_suffix('>')) {
+            Ok(format!("Vec<{}>", self.rust_type(elem)?))
+        } else {
+            self.rust_type(logyx)
+        }
+    }
+
     fn json_type_of(&self, e: &Expr) -> Option<String> {
         if let Some(t) = self.type_of(e, &self.cur_types) {
             return Some(t);
@@ -1760,15 +1776,13 @@ impl Codegen {
                     }
                 }
             }
-            // from_json(testo, [Record]) -> lista di Record: ricorda il tipo elemento
+            // from_json(testo, [tipo]) -> lista: ricorda il tipo elemento (per to_json ecc.)
             Expr::Call { callee, args } => {
                 if let Expr::Ident(f) = &**callee {
                     if f == "from_json" {
                         if let Some(Expr::List(els)) = args.get(1) {
-                            if let Some(Expr::Ident(r)) = els.first() {
-                                if self.records.contains_key(r) {
-                                    self.list_elem.insert(name.to_string(), r.clone());
-                                }
+                            if let Some(elem) = els.first().and_then(|e| self.json_arg_type(e)) {
+                                self.list_elem.insert(name.to_string(), elem);
                             }
                         }
                     }
@@ -2286,28 +2300,15 @@ impl Codegen {
                     if name == "from_json" {
                         if args.len() != 2 {
                             return Err(LogyxError::new(
-                                "from_json richiede: from_json(testo, NomeRecord) oppure from_json(testo, [NomeRecord])",
+                                "from_json richiede: from_json(testo, tipo), con tipo = int/float/bool/string/Record oppure [tipo]",
                             ));
                         }
-                        // tipo target: Record  oppure  Vec<Record> (per [Record])
-                        let target = match &args[1] {
-                            Expr::Ident(n) if self.records.contains_key(n) => n.clone(),
-                            Expr::List(els)
-                                if els.len() == 1
-                                    && matches!(&els[0], Expr::Ident(r) if self.records.contains_key(r)) =>
-                            {
-                                if let Expr::Ident(r) = &els[0] {
-                                    format!("Vec<{}>", r)
-                                } else {
-                                    unreachable!()
-                                }
-                            }
-                            _ => {
-                                return Err(LogyxError::new(
-                                    "from_json: il secondo argomento deve essere un record o [Record]",
-                                ))
-                            }
-                        };
+                        let logyx = self.json_arg_type(&args[1]).ok_or_else(|| {
+                            LogyxError::new(
+                                "from_json: il 2º argomento dev'essere un tipo (int/float/bool/string/Record) o [tipo]",
+                            )
+                        })?;
+                        let target = self.rust_json_target(&logyx)?;
                         self.uses_serde = true;
                         self.deps.insert(
                             "serde".to_string(),
