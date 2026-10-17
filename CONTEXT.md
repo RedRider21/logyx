@@ -64,7 +64,13 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **57/57**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **58/58**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**Collezioni come parametro/ritorno FATTE (2026-10-17):** liste `[T]` e mappe `{K: V}` ora si passano
+alle funzioni e si restituiscono anche nei backend tipizzati (`rust_type`/`ty` estesi a `Vec<T>`/
+`HashMap<K,V>` con helper `list_inner`/`map_inner`; i parametri collezione registrano `kinds`+`list_elem`/
+`map_val` così index/len/has/for funzionano). Rimosso il limite storico del manuale §12. Resta solo la
+lista vuota `[]` non tipizzabile. Esempio `native_collparams`. **Sblocca i varargs.**
 
 **Parametri con default FATTI (2026-10-17):** `fn f(a, b = valore)`; gli argomenti in coda si omettono e
 assumono il default (riempiti **al call-site** nei tre backend), i parametri con default vanno in coda

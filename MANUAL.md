@@ -618,12 +618,13 @@ Target WASM: previsto. ⏳
   → `bool`, confronti e chiamate propagano il tipo dell'altro lato. L'annotazione resta possibile e serve
   solo quando l'uso non basta (es. un parametro che compare unicamente in un'interpolazione).
 - **Liste** (di `int`/`float`/`bool` **o `string`**): letterale `[...]` → `Vec<T>`, indicizzazione
-  `xs[i]`, `len(xs)`, e `for x in xs`. Usale come variabili locali. Vedi `examples/native_list.logyx`
-  e `examples/native_strlist.logyx`.
-- **Mappe**: letterale `{k: v}` → `HashMap<K, V>`, accesso `m[k]`, `len(m)`, `has(m, k)`. Chiavi e
-  valori possono essere scalari **o stringhe**. Vedi `examples/native_map.logyx`.
-- Non ancora: iterazione su mappa (`keys`/`values`), collezioni come parametro/ritorno di
-  funzione, `route`/`render`, codice dinamico senza tipi. In quei casi dà un errore chiaro.
+  `xs[i]`, `len(xs)`, e `for x in xs`. Vedi `examples/native_list.logyx` e `examples/native_strlist.logyx`.
+- **Mappe**: letterale `{k: v}` → `HashMap<K, V>`, accesso `m[k]`, `len(m)`, `has(m, k)`, `keys`/`values`,
+  `for k in m` (chiavi ordinate). Chiavi e valori scalari **o stringhe**. Vedi `examples/native_map.logyx`.
+- **Liste e mappe come parametro e tipo di ritorno** di funzione: `fn somma(xs: [int]) -> int`,
+  `fn chiavi(m: {string: int}) -> [string]`. Vedi `examples/native_collparams.logyx`.
+- Non ancora: lista vuota `[]` senza elementi (il backend non ne deduce il tipo), codice dinamico senza
+  tipi. In quei casi dà un errore chiaro.
 
 ```
 fn fib(n) {                       // nessuna annotazione

@@ -34,6 +34,18 @@ fn ty(t: &str) -> R<&'static str> {
     }
 }
 
+/// Se `t` è un tipo lista `[T]`, ritorna `T`.
+fn list_inner(t: &str) -> Option<&str> {
+    t.strip_prefix('[').and_then(|s| s.strip_suffix(']'))
+}
+
+/// Se `t` è un tipo mappa `{K: V}`, ritorna `(K, V)` (divisi sul primo ':').
+fn map_inner(t: &str) -> Option<(&str, &str)> {
+    let inner = t.strip_prefix('{').and_then(|s| s.strip_suffix('}'))?;
+    let ci = inner.find(':')?;
+    Some((inner[..ci].trim(), inner[ci + 1..].trim()))
+}
+
 fn rust_str_lit(s: &str) -> String {
     // {:?} produce una stringa Rust valida (virgolette ed escape corretti).
     format!("{:?}", s)
@@ -301,6 +313,17 @@ impl Codegen {
     fn rust_type(&self, t: &str) -> R<String> {
         if self.records.contains_key(t) || self.enums.contains_key(t) {
             return Ok(t.to_string());
+        }
+        // tipi collezione: lista [T] → Vec<T>, mappa {K: V} → HashMap<K, V>
+        if let Some(inner) = list_inner(t) {
+            return Ok(format!("Vec<{}>", self.rust_type(inner)?));
+        }
+        if let Some((k, v)) = map_inner(t) {
+            return Ok(format!(
+                "std::collections::HashMap<{}, {}>",
+                self.rust_type(k)?,
+                self.rust_type(v)?
+            ));
         }
         if let Some((params, ret)) = parse_fn_type(t) {
             // valore funzione: Rc<dyn Fn(...)> (clonabile → compatibile col clone uniforme)
@@ -1145,6 +1168,19 @@ impl Codegen {
         self.list_elem.clear();
         self.map_val.clear();
         self.cur_types = pt.clone();
+        // parametri di tipo collezione: registra il "kind" (list/map) e il tipo elemento,
+        // così indicizzazione, len, has e for funzionano come sui locali
+        for p in &f.params {
+            if let Some(Some(t)) = pt.get(&p.name) {
+                if let Some(inner) = list_inner(t) {
+                    self.kinds.insert(p.name.clone(), "list".to_string());
+                    self.list_elem.insert(p.name.clone(), inner.to_string());
+                } else if let Some((k, v)) = map_inner(t) {
+                    self.kinds.insert(p.name.clone(), "map".to_string());
+                    self.map_val.insert(p.name.clone(), (k.to_string(), v.to_string()));
+                }
+            }
+        }
         let body = self.block(&f.body, &mut declared, 1)?;
         Ok(format!("fn {}({}){} {{\n{}\n}}", f.name, params, ret_str, body))
     }

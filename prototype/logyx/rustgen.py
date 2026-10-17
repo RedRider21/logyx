@@ -14,6 +14,21 @@ from .errors import LogyxError
 _TYPES = {"int": "i64", "float": "f64", "bool": "bool", "string": "String"}
 
 
+def _list_inner(t):
+    """Se t è un tipo lista '[T]' ritorna 'T', altrimenti None."""
+    if isinstance(t, str) and t.startswith("[") and t.endswith("]"):
+        return t[1:-1]
+    return None
+
+def _map_inner(t):
+    """Se t è un tipo mappa '{K: V}' ritorna (K, V) sul primo ':', altrimenti None."""
+    if isinstance(t, str) and t.startswith("{") and t.endswith("}"):
+        inner = t[1:-1]
+        ci = inner.find(":")
+        if ci >= 0:
+            return inner[:ci].strip(), inner[ci + 1:].strip()
+    return None
+
 def _parse_fn_type(t):
     """Da 'fn(T1,T2)->R' ritorna (['T1','T2'], 'R'); None se non è un tipo funzione."""
     if not isinstance(t, str) or not t.startswith("fn("):
@@ -263,6 +278,18 @@ class RustTranspiler:
         self.list_elem = {}  # nome lista -> tipo JSON dell'elemento (per to_json)
         self.map_val = {}  # nome mappa -> (tipo chiave, tipo valore) JSON (per to_json)
         self.cur_types = {n: t for n, t in pt.items() if t}  # tipi noti (param + locali)
+        # parametri di tipo collezione: registra il "kind" (list/map) e il tipo elemento
+        for n in f.params:
+            t = pt.get(n)
+            inner = _list_inner(t)
+            if inner is not None:
+                self.kinds[n] = "list"
+                self.list_elem[n] = inner
+                continue
+            kv = _map_inner(t)
+            if kv is not None:
+                self.kinds[n] = "map"
+                self.map_val[n] = kv
         body = self.block(f.body, declared, 1)
         return f"fn {f.name}({params}){ret_str} {{\n{body}\n}}"
 
@@ -672,6 +699,13 @@ class RustTranspiler:
             ps, ret = parsed
             params_rust = ", ".join(self.ty(p) for p in ps)
             return f"std::rc::Rc<dyn Fn({params_rust}) -> {self.ty(ret)}>"
+        # tipi collezione: lista [T] → Vec<T>, mappa {K: V} → HashMap<K, V>
+        inner = _list_inner(t)
+        if inner is not None:
+            return f"Vec<{self.ty(inner)}>"
+        kv = _map_inner(t)
+        if kv is not None:
+            return f"std::collections::HashMap<{self.ty(kv[0])}, {self.ty(kv[1])}>"
         raise LogyxError(f"tipo non supportato dal transpiler v0: '{t}'")
 
     # --- istruzioni ---
