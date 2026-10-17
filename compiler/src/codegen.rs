@@ -268,6 +268,8 @@ pub struct Codegen {
     wasm: bool,
     /// impostato a true se il programma usa un builtin DOM (serve alla pagina/host WASM).
     pub uses_dom: bool,
+    /// variabili e costanti globali (a primo livello): nome -> (tipo Logyx, is_const).
+    globals: HashMap<String, (String, bool)>,
     pub deps: HashMap<String, String>,
 }
 
@@ -295,6 +297,7 @@ impl Codegen {
             emit_server: false,
             wasm: false,
             uses_dom: false,
+            globals: HashMap::new(),
             deps: HashMap::new(),
         }
     }
@@ -394,6 +397,8 @@ impl Codegen {
         let mut funcs: Vec<Function> = Vec::new();
         let mut externs: Vec<ExternFn> = Vec::new();
         let mut routes: Vec<(String, Vec<Stmt>)> = Vec::new();
+        // globali a primo livello: (nome, is_const, valore iniziale)
+        let mut global_defs: Vec<(String, bool, Expr)> = Vec::new();
         for it in items {
             match it {
                 Item::Func(f) => funcs.push(f.clone()),
@@ -409,13 +414,41 @@ impl Codegen {
                 Item::Enum { name, variants } => {
                     self.enums.insert(name.clone(), variants.clone());
                 }
+                // variabili e costanti globali a primo livello
+                Item::Stmt(Stmt::Decl { name, value, is_const, .. }) => {
+                    global_defs.push((name.clone(), *is_const, value.clone()));
+                }
+                Item::Stmt(Stmt::Assign { target: Expr::Ident(n), value }) => {
+                    global_defs.push((n.clone(), false, value.clone()));
+                }
                 Item::Stmt(_) => {
                     return Err(LogyxError::new(
-                        "il backend supporta solo definizioni di funzione \
-                         (niente codice a primo livello)",
+                        "al primo livello sono ammesse solo funzioni, record, enum e \
+                         variabili/costanti globali (non altro codice)",
                     ))
                 }
             }
+        }
+        // tipi dei globali (in ordine: un globale può riferirne uno definito prima)
+        for (name, is_const, value) in &global_defs {
+            if self.globals.contains_key(name) {
+                return Err(LogyxError::new(format!("globale '{}' definito più volte", name)));
+            }
+            let ty = self.type_of(value, &HashMap::new()).ok_or_else(|| {
+                LogyxError::new(format!(
+                    "non riesco a dedurre il tipo del globale '{}' (v0: usa un valore scalare, \
+                     stringa, record o enum; l'inizializzatore non può chiamare funzioni definite)",
+                    name
+                ))
+            })?;
+            if list_inner(&ty).is_some() || map_inner(&ty).is_some() || tuple_parts(&ty).is_some() {
+                return Err(LogyxError::new(format!(
+                    "v0: il globale '{}' è di tipo collezione/tupla, non ancora supportato \
+                     nel backend tipizzato (usa scalari, stringhe, record o enum)",
+                    name
+                )));
+            }
+            self.globals.insert(name.clone(), (ty, *is_const));
         }
         if routes.is_empty() && !funcs.iter().any(|f| f.name == "main") {
             return Err(LogyxError::new("manca 'fn main()': serve un punto d'ingresso"));
@@ -473,6 +506,25 @@ impl Codegen {
             self.fallible.insert(f.name.clone(), fal);
         }
         self.infer(&funcs);
+        // globali: static thread_local (RefCell) + getter (clone) + setter (se non const).
+        // Generati dopo la registrazione delle firme; l'init non deve dipendere da cur_types,
+        // così un riferimento a un altro globale diventa __get_<altro>().
+        let mut global_code = Vec::new();
+        for (name, is_const, value) in &global_defs {
+            let (ty, _) = self.globals[name].clone();
+            let rty = self.rust_type(&ty)?;
+            self.cur_types = HashMap::new();
+            let init = self.expr(value)?;
+            global_code.push(format!(
+                "thread_local! {{ static __G_{name}: std::cell::RefCell<{rty}> = std::cell::RefCell::new({init}); }}\n\
+                 fn __get_{name}() -> {rty} {{ __G_{name}.with(|__c| __c.borrow().clone()) }}"
+            ));
+            if !is_const {
+                global_code.push(format!(
+                    "fn __set_{name}(__v: {rty}) {{ __G_{name}.with(|__c| *__c.borrow_mut() = __v); }}"
+                ));
+            }
+        }
         // le funzioni per prime: possono impostare uses_json / uses_serde / deps
         let mut func_defs = Vec::new();
         for f in &funcs {
@@ -564,6 +616,7 @@ impl Codegen {
             out.push(HTML_HELPER.to_string());
         }
         out.extend(structs);
+        out.extend(global_code);
         out.extend(extern_defs);
         out.extend(func_defs);
         out.extend(route_defs);
@@ -758,7 +811,18 @@ impl Codegen {
             Expr::Float(_) => Some("float".into()),
             Expr::Bool(_) => Some("bool".into()),
             Expr::Nil => None,
-            Expr::Ident(name) => ptypes.get(name).cloned().flatten(),
+            Expr::Ident(name) => ptypes
+                .get(name)
+                .cloned()
+                .flatten()
+                // non locale/param → eventuale globale
+                .or_else(|| {
+                    if ptypes.contains_key(name) {
+                        None
+                    } else {
+                        self.globals.get(name).map(|(t, _)| t.clone())
+                    }
+                }),
             Expr::Unary { op, operand } => match op {
                 UnOp::Not => Some("bool".into()),
                 UnOp::Neg => self.type_of(operand, ptypes),
@@ -1652,6 +1716,9 @@ impl Codegen {
                 if let Some(vt) = self.type_of(value, &self.cur_types.clone()) {
                     self.cur_types.insert(name.clone(), Some(vt));
                 }
+                // marca il nome come locale in scope (anche se il tipo è ignoto): così un
+                // globale omonimo non viene scambiato per il locale (vedi expr Ident)
+                self.cur_types.entry(name.clone()).or_insert(None);
                 Ok(format!("{pad}{kw} {name} = {};", self.expr(value)?))
             }
             Stmt::Destructure { names, value } => {
@@ -1706,6 +1773,17 @@ impl Codegen {
                         ))
                     }
                 };
+                // assegnazione a una variabile GLOBALE (non oscurata da un locale in scope)
+                if self.globals.contains_key(&name) && !declared.contains(&name) {
+                    if self.globals[&name].1 {
+                        return Err(LogyxError::new(format!(
+                            "non si può riassegnare la costante globale '{}'",
+                            name
+                        )));
+                    }
+                    let val = self.expr(value)?;
+                    return Ok(format!("{pad}__set_{name}({val});"));
+                }
                 if let Some(k) = value_kind(value) {
                     self.kinds.insert(name.clone(), k.to_string());
                 }
@@ -1713,6 +1791,7 @@ impl Codegen {
                 if let Some(vt) = self.type_of(value, &self.cur_types.clone()) {
                     self.cur_types.insert(name.clone(), Some(vt));
                 }
+                self.cur_types.entry(name.clone()).or_insert(None);
                 let val = self.expr(value)?;
                 if declared.contains(&name) {
                     Ok(format!("{pad}{name} = {val};"))
@@ -2198,7 +2277,14 @@ impl Codegen {
                     Ok(format!("format!({}{})", rust_str_lit(&fmt), fargs))
                 }
             }
-            Expr::Ident(name) => Ok(name.clone()),
+            Expr::Ident(name) => {
+                // globale (se non oscurato da un locale/param in scope) → getter
+                if self.globals.contains_key(name) && !self.cur_types.contains_key(name) {
+                    Ok(format!("__get_{name}()"))
+                } else {
+                    Ok(name.clone())
+                }
+            }
             Expr::Unary { op, operand } => {
                 let s = self.expr(operand)?;
                 Ok(format!("{}{}", if *op == UnOp::Not { "!" } else { "-" }, s))

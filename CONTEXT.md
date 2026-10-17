@@ -62,13 +62,12 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 ## RIPRENDI DA QUI — cose da fare
 
-> ⭐ **PRIORITARIO (richiesta utente): variabili e costanti GLOBALI a primo livello.** Oggi `const`/
-> variabili fuori dalle funzioni funzionano **solo nell'interprete**; nel backend tipizzato
-> (compilatore `logyxc` + transpiler) il codice a primo livello dà "il backend supporta solo definizioni
-> di funzione". Da implementare nei tre backend (globali tipizzate: `static`/`const` o `Lazy` in Rust;
-> ambiente globale nel transpiler). Ogni linguaggio serio le ha. Vedi ROADMAP, Piano 1.
+> ✅ **Variabili e costanti globali FATTE (2026-10-17, sera):** nei tre backend. Interprete già le aveva;
+> nel backend tipizzato realizzate con `thread_local! RefCell` + getter `__get_X()`/setter `__set_X()`;
+> accessor in `expr` solo se il nome non è un locale/param in scope (guardia via `cur_types`); errore su
+> riassegnazione di `const`; v0 esclude globali di tipo collezione/tupla. Esempio `native_globals`.
 >
-> **Analisi di copertura (2026-10-17) — buchi del nucleo da colmare, in ordine:** globali → **operatore
+> **Prossimo (analisi di copertura, in ordine):** **operatore
 > ternario** (`cond ? a : b`) → **`in` come operatore** (`x in lista`) → esponente (`**`) → bitwise
 > (`& | ^ << >> ~`) → indicizzazione stringhe/char (`s[i]`) → tipo **`set`** → comprehension → libreria
 > **matematica** (`sin`/`cos`/`log`/`exp`). **Scelte di design (non buchi):** OOP/metodi, generici,
@@ -80,8 +79,13 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **62/62**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **63/63**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**Globali FATTE (2026-10-17 sera):** `const NOME = …` e variabili globali mutabili a primo livello, nei
+tre backend. Tipizzati: `thread_local! RefCell` + `__get_X()`/`__set_X()`; `Item::Stmt(Decl/Assign)` al
+top-level raccolto come globale; `type_of`/`expr` degli Ident con fallback/accessor ai globali; shadowing
+locale gestito (guardia `cur_types`). Esempio `native_globals`.
 
 **Database SQLite FATTO (2026-10-17):** tre builtin — `db_open(path)` (anche `":memory:"`) → handle
 opaco `DB` (`Rc<rusqlite::Connection>` in Rust, oggetto `sqlite3` nell'interprete), `db_exec(db, sql)` →

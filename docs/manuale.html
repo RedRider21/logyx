@@ -254,6 +254,11 @@ client, invece, servono l'interattività del DOM e per questo diventano JavaScri
 nome: string = &quot;Ada&quot;   // con tipo esplicito
 const PI = 3.14159     // costante (non riassegnabile)
 </code></pre>
+<p><strong>Variabili e costanti globali</strong> (a primo livello, fuori dalle funzioni): si dichiarano come le locali
+(<code>const NOME = …</code> oppure <code>totale = 0</code>) e sono accessibili da <strong>qualunque funzione</strong>; le <code>const</code> non si
+riassegnano. Un parametro o un locale con lo stesso nome <strong>oscura</strong> il globale. Funzionano nei tre backend
+(nel compilatore/transpiler sono realizzate con <code>thread_local!</code> + <code>RefCell</code>). v0: non ancora globali di
+tipo collezione/tupla nel backend tipizzato. Esempio <code>examples/native_globals.logyx</code>.</p>
 <ul>
 <li>Aritmetici: <code>+  -  *  /  %</code> — fra interi <code>/</code> è divisione intera troncata verso zero (come Rust)</li>
 <li>Confronto: <code>==  !=  &lt;  &lt;=  &gt;  &gt;=</code></li>
@@ -1024,8 +1029,9 @@ JavaScript) resta previsto. ⏳</p>
   <code>for k in m</code> (chiavi ordinate). Chiavi e valori scalari <strong>o stringhe</strong>. Vedi <code>examples/native_map.logyx</code>.</li>
 <li><strong>Liste e mappe come parametro e tipo di ritorno</strong> di funzione: <code>fn somma(xs: [int]) -&gt; int</code>,
   <code>fn chiavi(m: {string: int}) -&gt; [string]</code>. Vedi <code>examples/native_collparams.logyx</code>.</li>
+<li><strong>Variabili e costanti globali</strong> a primo livello: supportate (vedi §4). v0: non ancora globali di tipo
+  collezione/tupla.</li>
 <li>Non ancora nel backend tipizzato: lista/mappa <strong>vuota</strong> senza elementi (tipo non deducibile),
-  <strong>costanti globali a primo livello</strong> (<code>const</code> fuori da una funzione — funziona nell'interprete),
   codice dinamico senza tipi. In quei casi dà un errore chiaro.</li>
 </ul>
 <pre><code>fn fib(n) {                       // nessuna annotazione
@@ -1079,8 +1085,10 @@ fn main() {
 </ul>
 <h2 id="14-cosa-non-ce-ancora">14. Cosa non c'è ancora ⏳</h2>
 <ul>
-<li>Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); accesso a tupla per posizione
-  (<code>t.0</code>).</li>
+<li>Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); globali di tipo collezione/tupla;
+  accesso a tupla per posizione (<code>t.0</code>).</li>
+<li>Operatore ternario, <code>in</code> come operatore, esponente <code>**</code>, bitwise, tipo <code>set</code>, comprehension (vedi
+  <code>ROADMAP.md</code>, "analisi di copertura").</li>
 <li>Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; eventi DOM dal WASM (oggi gli handler si
   invocano dai pulsanti della pagina generata); self-hosting del compilatore.</li>
 </ul>

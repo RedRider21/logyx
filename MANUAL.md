@@ -101,6 +101,12 @@ nome: string = "Ada"   // con tipo esplicito
 const PI = 3.14159     // costante (non riassegnabile)
 ```
 
+**Variabili e costanti globali** (a primo livello, fuori dalle funzioni): si dichiarano come le locali
+(`const NOME = …` oppure `totale = 0`) e sono accessibili da **qualunque funzione**; le `const` non si
+riassegnano. Un parametro o un locale con lo stesso nome **oscura** il globale. Funzionano nei tre backend
+(nel compilatore/transpiler sono realizzate con `thread_local!` + `RefCell`). v0: non ancora globali di
+tipo collezione/tupla nel backend tipizzato. Esempio `examples/native_globals.logyx`.
+
 - Aritmetici: `+  -  *  /  %` — fra interi `/` è divisione intera troncata verso zero (come Rust)
 - Confronto: `==  !=  <  <=  >  >=`
 - Logici: `and  or  not`
@@ -719,8 +725,9 @@ JavaScript) resta previsto. ⏳
   `for k in m` (chiavi ordinate). Chiavi e valori scalari **o stringhe**. Vedi `examples/native_map.logyx`.
 - **Liste e mappe come parametro e tipo di ritorno** di funzione: `fn somma(xs: [int]) -> int`,
   `fn chiavi(m: {string: int}) -> [string]`. Vedi `examples/native_collparams.logyx`.
+- **Variabili e costanti globali** a primo livello: supportate (vedi §4). v0: non ancora globali di tipo
+  collezione/tupla.
 - Non ancora nel backend tipizzato: lista/mappa **vuota** senza elementi (tipo non deducibile),
-  **costanti globali a primo livello** (`const` fuori da una funzione — funziona nell'interprete),
   codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```
@@ -763,7 +770,9 @@ fn main() {
 
 ## 14. Cosa non c'è ancora ⏳
 
-- Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); accesso a tupla per posizione
-  (`t.0`).
+- Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); globali di tipo collezione/tupla;
+  accesso a tupla per posizione (`t.0`).
+- Operatore ternario, `in` come operatore, esponente `**`, bitwise, tipo `set`, comprehension (vedi
+  `ROADMAP.md`, "analisi di copertura").
 - Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; eventi DOM dal WASM (oggi gli handler si
   invocano dai pulsanti della pagina generata); self-hosting del compilatore.

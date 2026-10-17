@@ -1,0 +1,34 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Variabili e costanti globali a primo livello (fuori dalle funzioni).
+//   const NOME = …   costante (non riassegnabile)
+//   totale = 0       variabile globale (mutabile da qualunque funzione)
+// Nel backend tipizzato un locale/parametro omonimo oscura il globale.
+
+const APP = "Logyx"
+const IVA = 22
+totale = 0
+
+fn aggiungi(importo) {
+    totale = totale + importo          // muta il globale
+}
+
+fn con_iva(prezzo) {
+    return prezzo + prezzo * IVA / 100  // usa la costante globale
+}
+
+// il parametro APP oscura la costante globale APP
+fn eco(APP) {
+    return APP
+}
+
+fn main() {
+    print(APP)                 // Logyx
+    print(con_iva(100))        // 122
+    aggiungi(10)
+    aggiungi(32)
+    print(totale)              // 42
+    print(eco("locale"))       // locale (oscura il globale)
+    print("app = {APP}, iva = {IVA}%")
+}

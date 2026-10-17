@@ -308,6 +308,11 @@
       it:"Costante: un valore non riassegnabile.",
       en:"Constant: a value that cannot be reassigned.",
       code:"const PI = 3.14159"},
+    {cat:"basics", name:"Variabili e costanti globali", sig:"const NOME = valore\ntotale = 0",
+      it:"A primo livello (fuori dalle funzioni): accessibili da <b>qualunque funzione</b>; le <code>const</code> non si riassegnano. Un locale/parametro omonimo <b>oscura</b> il globale. Funzionano nei tre backend. v0: non ancora globali di tipo collezione/tupla.",
+      en:"At top level (outside functions): accessible from <b>any function</b>; <code>const</code> cannot be reassigned. A local/param with the same name <b>shadows</b> the global. Works in all three backends. v0: no collection/tuple globals yet.",
+      code:"const IVA = 22\ntotale = 0\nfn aggiungi(x) { totale = totale + x }\nfn con_iva(p) { return p + p * IVA / 100 }\nfn main() {\n    aggiungi(10); aggiungi(32)\n    print(totale)        // 42\n    print(con_iva(100))  // 122\n}",
+      out:"42\n122"},
 
     // ======== TYPES ========
     {cat:"types", name:"int", sig:"42   -7",

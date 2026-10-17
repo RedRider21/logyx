@@ -132,12 +132,24 @@ class RustTranspiler:
         externs = [i for i in items if isinstance(i, N.ExternFn)]
         uses = [i for i in items if isinstance(i, N.UseRust)]
         allowed = (N.FunctionDef, N.RecordDef, N.EnumDef, N.ExternFn, N.UseRust)
-        others = [i for i in items if not isinstance(i, allowed)]
+        # variabili e costanti globali a primo livello: (nome, is_const, valore)
+        global_defs = []
+        others = []
+        for i in items:
+            if isinstance(i, allowed):
+                continue
+            if isinstance(i, N.Decl):
+                global_defs.append((i.name, i.is_const, i.value))
+            elif isinstance(i, N.Assign) and isinstance(i.target, N.Identifier):
+                global_defs.append((i.target.name, False, i.value))
+            else:
+                others.append(i)
         if others:
             raise LogyxError(
-                "il transpiler Rust v0 supporta solo funzioni, record, use/extern rust "
-                "(niente route/render o codice a primo livello)"
+                "il transpiler Rust v0 supporta solo funzioni, record, use/extern rust e "
+                "variabili/costanti globali (niente route/render o altro codice a primo livello)"
             )
+        self.globals = {}  # nome -> (tipo Logyx, is_const)
         if not any(f.name == "main" for f in funcs):
             raise LogyxError("manca 'fn main()': serve un punto d'ingresso")
         self.records = {r.name: r.fields for r in records}
@@ -183,6 +195,22 @@ class RustTranspiler:
             self.param_types[ex.name] = dict(zip(ex.params, ex.param_types))
             self.func_rets[ex.name] = ex.ret_type
             self.fallible[ex.name] = False
+        # tipi dei globali (in ordine: un globale può riferirne uno definito prima)
+        for name, is_const, value in global_defs:
+            if name in self.globals:
+                raise LogyxError(f"globale '{name}' definito più volte")
+            ty = self._type_of(value, {})
+            if ty is None:
+                raise LogyxError(
+                    f"non riesco a dedurre il tipo del globale '{name}' (v0: usa un valore "
+                    "scalare, stringa, record o enum; l'inizializzatore non può chiamare funzioni)"
+                )
+            if _list_inner(ty) or _map_inner(ty) or _tuple_parts(ty):
+                raise LogyxError(
+                    f"v0: il globale '{name}' è di tipo collezione/tupla, non ancora supportato "
+                    "(usa scalari, stringhe, record o enum)"
+                )
+            self.globals[name] = (ty, is_const)
         self._tmp = 0
         self.uses_json = False
         self.uses_serde = False
@@ -190,6 +218,22 @@ class RustTranspiler:
         for u in uses:
             self.deps[u.crate] = f'"{u.version}"'
         self._infer(funcs)
+        # globali: static thread_local (RefCell) + getter (clone) + setter (se non const)
+        global_code = []
+        for name, is_const, value in global_defs:
+            ty, _ = self.globals[name]
+            rty = self.ty(ty)
+            self.cur_types = {}
+            init = self.expr(value)
+            global_code.append(
+                f"thread_local! {{ static __G_{name}: std::cell::RefCell<{rty}> = "
+                f"std::cell::RefCell::new({init}); }}\n"
+                f"fn __get_{name}() -> {rty} {{ __G_{name}.with(|__c| __c.borrow().clone()) }}"
+            )
+            if not is_const:
+                global_code.append(
+                    f"fn __set_{name}(__v: {rty}) {{ __G_{name}.with(|__c| *__c.borrow_mut() = __v); }}"
+                )
         extern_defs = []
         for ex in externs:
             params = ", ".join(f"{n}: {self.ty(t)}" for n, t in zip(ex.params, ex.param_types))
@@ -213,7 +257,7 @@ class RustTranspiler:
             pieces.append("use serde::{Serialize, Deserialize};")
         if self.uses_json:
             pieces.append(_JSON_HELPER)
-        pieces += struct_defs + extern_defs + func_defs
+        pieces += struct_defs + global_code + extern_defs + func_defs
         return "\n\n".join(pieces) + "\n"
 
     # --- rilevazione di fallibilità (presenza di `fail` o `?`) ---
@@ -664,7 +708,10 @@ class RustTranspiler:
                 return "float"
             return None
         if t == "Identifier":
-            return ptypes.get(e.name)
+            if e.name in ptypes:
+                return ptypes.get(e.name)
+            g = getattr(self, "globals", {}).get(e.name)
+            return g[0] if g else None
         if t == "Unary":
             return "bool" if e.op == "not" else self._type_of(e.operand, ptypes)
         if t == "Logical":
@@ -871,6 +918,8 @@ class RustTranspiler:
             vt = self._type_of(s.value, self.cur_types)
             if vt:
                 self.cur_types[s.name] = vt
+            # marca il nome come locale in scope (anche se il tipo è ignoto)
+            self.cur_types.setdefault(s.name, None)
             return pad + f"{kw} {s.name} = {self.expr(s.value)};"
         if t == "Destructure":
             # destructuring di tupla: let (a, b) = valore;
@@ -908,6 +957,11 @@ class RustTranspiler:
             if not isinstance(s.target, N.Identifier):
                 raise LogyxError("il transpiler v0 assegna solo a variabili o a elementi (x[i] = v)")
             name = s.target.name
+            # assegnazione a una variabile GLOBALE (non oscurata da un locale in scope)
+            if name in getattr(self, "globals", {}) and name not in declared:
+                if self.globals[name][1]:
+                    raise LogyxError(f"non si può riassegnare la costante globale '{name}'")
+                return pad + f"__set_{name}({self.expr(s.value)});"
             k = self._value_kind(s.value)
             if k:
                 self.kinds[name] = k
@@ -915,6 +969,7 @@ class RustTranspiler:
             vt = self._type_of(s.value, self.cur_types)
             if vt:
                 self.cur_types[name] = vt
+            self.cur_types.setdefault(name, None)
             val = self.expr(s.value)
             if name in declared:
                 return pad + f"{name} = {val};"
@@ -1206,6 +1261,9 @@ class RustTranspiler:
             fmt, fargs = self._format(e)
             return f"format!({_rust_str(fmt)}{fargs})"
         if t == "Identifier":
+            # globale (se non oscurato da un locale/param in scope) -> getter
+            if e.name in getattr(self, "globals", {}) and e.name not in self.cur_types:
+                return f"__get_{e.name}()"
             return e.name
         if t == "Unary":
             return ("!" if e.op == "not" else "-") + self.expr(e.operand)
