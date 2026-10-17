@@ -71,7 +71,8 @@ Dal compilatore nativo `logyxc` (cartella `compiler/`, build con `cargo build --
 ## 2. Sintassi di base ✅
 
 - **Non posizionale**: i blocchi usano le graffe `{ }`; l'indentazione è solo estetica.
-- **Punto e virgola opzionale**: fine riga o `;`.
+- **Niente terminatori di statement**: non si usa il `;` (è un errore lessicale). Le istruzioni sono
+  delimitate dalla struttura; gli a-capo sono liberi (un'espressione può continuare sulla riga successiva).
 - **Commenti**: `//` a riga singola, `/* ... */` a blocco.
 - **Poche parentesi tonde**: nei costrutti di controllo NON si usano `()` attorno alla condizione.
 
@@ -123,6 +124,17 @@ for n in numeri { print(n) }
 
 Dentro `while` e `for` si possono usare `break` (esce dal ciclo) e `continue` (passa all'iterazione
 successiva).
+
+**Operatore condizionale (ternario)**: `condizione ? valore_se_vero : valore_se_falso`. A differenza
+dell'istruzione `if`, è un'**espressione** (ha un valore) e si usa ovunque serva un valore. Si annida a
+destra. (Il `?` qui non si confonde con la propagazione errori `espr?`: è ternario solo quando seguito da
+un valore.)
+
+```
+segno = n > 0 ? "positivo" : n < 0 ? "negativo" : "zero"
+assoluto = n < 0 ? -n : n
+print(x > 5 ? "grande" : "piccolo")
+```
 
 Il `for` ha anche la forma **con indice**: `for i, x in …` lega `i` all'indice (intero, 0-based) e
 `x` all'elemento. Vale su liste, `range` e chiavi (ordinate) di mappa.

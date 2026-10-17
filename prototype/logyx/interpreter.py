@@ -711,6 +711,9 @@ class Interpreter:
     def ex_TupleLit(self, n, env):
         return tuple(self.eval(e, env) for e in n.elements)
 
+    def ex_Ternary(self, n, env):
+        return self.eval(n.then, env) if self.eval(n.cond, env) else self.eval(n.els, env)
+
     def ex_MapLit(self, n, env):
         return {self.eval(k, env): self.eval(v, env) for k, v in n.pairs}
 

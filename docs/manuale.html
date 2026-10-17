@@ -195,7 +195,8 @@ client, invece, servono l'interattività del DOM e per questo diventano JavaScri
 <h2 id="2-sintassi-di-base">2. Sintassi di base ✅</h2>
 <ul>
 <li><strong>Non posizionale</strong>: i blocchi usano le graffe <code>{ }</code>; l'indentazione è solo estetica.</li>
-<li><strong>Punto e virgola opzionale</strong>: fine riga o <code>;</code>.</li>
+<li><strong>Niente terminatori di statement</strong>: non si usa il <code>;</code> (è un errore lessicale). Le istruzioni sono
+  delimitate dalla struttura; gli a-capo sono liberi (un'espressione può continuare sulla riga successiva).</li>
 <li><strong>Commenti</strong>: <code>//</code> a riga singola, <code>/* ... */</code> a blocco.</li>
 <li><strong>Poche parentesi tonde</strong>: nei costrutti di controllo NON si usano <code>()</code> attorno alla condizione.</li>
 </ul>
@@ -273,6 +274,14 @@ for n in numeri { print(n) }
 </code></pre>
 <p>Dentro <code>while</code> e <code>for</code> si possono usare <code>break</code> (esce dal ciclo) e <code>continue</code> (passa all'iterazione
 successiva).</p>
+<p><strong>Operatore condizionale (ternario)</strong>: <code>condizione ? valore_se_vero : valore_se_falso</code>. A differenza
+dell'istruzione <code>if</code>, è un'<strong>espressione</strong> (ha un valore) e si usa ovunque serva un valore. Si annida a
+destra. (Il <code>?</code> qui non si confonde con la propagazione errori <code>espr?</code>: è ternario solo quando seguito da
+un valore.)</p>
+<pre><code>segno = n &gt; 0 ? &quot;positivo&quot; : n &lt; 0 ? &quot;negativo&quot; : &quot;zero&quot;
+assoluto = n &lt; 0 ? -n : n
+print(x &gt; 5 ? &quot;grande&quot; : &quot;piccolo&quot;)
+</code></pre>
 <p>Il <code>for</code> ha anche la forma <strong>con indice</strong>: <code>for i, x in …</code> lega <code>i</code> all'indice (intero, 0-based) e
 <code>x</code> all'elemento. Vale su liste, <code>range</code> e chiavi (ordinate) di mappa.</p>
 <pre><code>for i, f in [&quot;mela&quot;, &quot;pera&quot;] { print(&quot;{i}: {f}&quot;) }   // 0: mela / 1: pera

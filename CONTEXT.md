@@ -79,8 +79,16 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **63/63**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **64/64**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**Operatore ternario FATTO (2026-10-17 sera):** `cond ? a : b` (stile C; `?`/`if` scelti valutando che il
+lexer **scarta i newline** → niente terminatori di statement, quindi `a if c else b` romperebbe
+`x=f()` + `if`). Disambiguazione dal `?` di propagazione: in postfisso `?` è ternario **solo se seguito da
+un inizio-espressione** (`starts_expr`), altrimenti `Try`; l'esistente `expr?` è sempre a fine espressione
+(prima di `}`/newline) → nessuna regressione. Nodo `Expr::Ternary`/`N.Ternary`; gen `(if c { a } else { b })`,
+JS `(c ? a : b)`; inferenza via `scan_expr`/`_scan_expr`. Esempio `native_ternary`. **Nota doc:** il `;`
+NON è supportato (errore lessicale) — corretto nel manuale.
 
 **Globali FATTE (2026-10-17 sera):** `const NOME = …` e variabili globali mutabili a primo livello, nei
 tre backend. Tipizzati: `thread_local! RefCell` + `__get_X()`/`__set_X()`; `Item::Stmt(Decl/Assign)` al

@@ -6,6 +6,16 @@ from . import nodes as N
 from .errors import LogyxError
 from .lexer import Lexer
 
+# token che possono iniziare un'espressione (per distinguere `?` ternario da propagazione)
+_STARTS_EXPR = {
+    T.INT, T.FLOAT, T.STRING, T.TRUE, T.FALSE, T.NIL, T.IDENT,
+    T.LPAREN, T.LBRACK, T.LBRACE, T.MINUS, T.NOT, T.PIPE,
+}
+
+
+def _starts_expr(ttype):
+    return ttype in _STARTS_EXPR
+
 
 class Parser:
     """Discesa ricorsiva: dai token all'AST."""
@@ -477,7 +487,15 @@ class Parser:
     # --- espressioni (per precedenza crescente) ---
 
     def expression(self):
-        return self.or_expr()
+        cond = self.or_expr()
+        # espressione condizionale (ternario): `cond ? then : els`
+        if self.at(T.QUESTION):
+            self.advance()
+            then = self.or_expr()
+            self.expect(T.COLON)
+            els = self.expression()  # destra-associativo
+            return N.Ternary(cond, then, els)
+        return cond
 
     def or_expr(self):
         left = self.and_expr()
@@ -549,6 +567,9 @@ class Parser:
                 self.expect(T.RBRACK)
                 e = N.Index(e, idx)
             elif self.at(T.QUESTION):
+                # `?` è ternario se seguito da un inizio di espressione; altrimenti è propagazione
+                if _starts_expr(self.peek(1).type):
+                    break
                 self.advance()
                 e = N.Try(e)
             elif self.at(T.DOT):

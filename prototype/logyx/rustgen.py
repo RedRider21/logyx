@@ -320,6 +320,9 @@ class RustTranspiler:
             return any(self._expr_has_try(x) for x in e.elements)
         if t == "MapLit":
             return any(self._expr_has_try(k) or self._expr_has_try(v) for k, v in e.pairs)
+        if t == "Ternary":
+            return (self._expr_has_try(e.cond) or self._expr_has_try(e.then)
+                    or self._expr_has_try(e.els))
         return False
 
     def func(self, f):
@@ -499,6 +502,12 @@ class RustTranspiler:
             self._scan_expr(e.operand, pt, ev)
         elif t == "Try":
             self._scan_expr(e.operand, pt, ev)
+        elif t == "Ternary":
+            if isinstance(e.cond, N.Identifier) and e.cond.name in ev:
+                ev[e.cond.name].add("bool")
+            self._scan_expr(e.cond, pt, ev)
+            self._scan_expr(e.then, pt, ev)
+            self._scan_expr(e.els, pt, ev)
         elif t == "Call":
             self._call_ev(e, pt, ev)
             for a in e.args:
@@ -680,6 +689,8 @@ class RustTranspiler:
             if all(parts):
                 return "(" + ",".join(parts) + ")"
             return None
+        if t == "Ternary":
+            return self._type_of(e.then, ptypes) or self._type_of(e.els, ptypes)
         if t == "Call":
             # costruzione di variante enum con payload: E.Var(args) -> tipo E
             if (isinstance(e.callee, N.Field) and isinstance(e.callee.target, N.Identifier)
@@ -1282,6 +1293,9 @@ class RustTranspiler:
             return "vec![" + ", ".join(self.expr(x) for x in e.elements) + "]"
         if t == "TupleLit":
             return "(" + ", ".join(self._arg(x) for x in e.elements) + ")"
+        if t == "Ternary":
+            return (f"(if ({self.expr(e.cond)}) {{ {self.expr(e.then)} }} "
+                    f"else {{ {self.expr(e.els)} }})")
         if t == "MapLit":
             if not e.pairs:
                 raise LogyxError(

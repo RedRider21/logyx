@@ -690,7 +690,20 @@ impl Parser {
     // --- espressioni (per precedenza crescente) ---
 
     pub fn expression(&mut self) -> Result<Expr, LogyxError> {
-        self.or_expr()
+        let cond = self.or_expr()?;
+        // espressione condizionale (ternario): `cond ? then : els`
+        if self.is(&TokenKind::Question) {
+            self.advance();
+            let then = self.or_expr()?;
+            self.expect(&TokenKind::Colon, "':' nell'espressione condizionale (cond ? a : b)")?;
+            let els = self.expression()?; // destra-associativo
+            return Ok(Expr::Ternary {
+                cond: Box::new(cond),
+                then: Box::new(then),
+                els: Box::new(els),
+            });
+        }
+        Ok(cond)
     }
 
     fn or_expr(&mut self) -> Result<Expr, LogyxError> {
@@ -809,6 +822,10 @@ impl Parser {
                 self.expect(&TokenKind::RBrack, "]")?;
                 e = Expr::Index { target: Box::new(e), index: Box::new(idx) };
             } else if self.is(&TokenKind::Question) {
+                // `?` è ternario se seguito da un inizio di espressione; altrimenti è propagazione
+                if starts_expr(self.kind_at(1)) {
+                    break;
+                }
                 self.advance();
                 e = Expr::Try(Box::new(e));
             } else if self.is(&TokenKind::Dot) {
@@ -1214,6 +1231,12 @@ impl ClientCompiler {
                 let a: Result<Vec<_>, _> = els.iter().map(|x| self.js_expr(x)).collect();
                 Ok(format!("[{}]", a?.join(", ")))
             }
+            Expr::Ternary { cond, then, els } => Ok(format!(
+                "({} ? {} : {})",
+                self.js_expr(cond)?,
+                self.js_expr(then)?,
+                self.js_expr(els)?
+            )),
             Expr::Map(pairs) => {
                 let mut ps = Vec::new();
                 for (k, v) in pairs {
@@ -1226,6 +1249,26 @@ impl ClientCompiler {
             }
         }
     }
+}
+
+/// Un token può iniziare un'espressione? (per distinguere `?` ternario da `?` di propagazione)
+fn starts_expr(k: &TokenKind) -> bool {
+    matches!(
+        k,
+        TokenKind::Int(_)
+            | TokenKind::Float(_)
+            | TokenKind::Str(_)
+            | TokenKind::True
+            | TokenKind::False
+            | TokenKind::Nil
+            | TokenKind::Ident(_)
+            | TokenKind::LParen
+            | TokenKind::LBrack
+            | TokenKind::LBrace
+            | TokenKind::Minus
+            | TokenKind::Not
+            | TokenKind::Pipe
+    )
 }
 
 fn js_binop(op: &BinOp) -> &'static str {

@@ -669,6 +669,9 @@ impl Codegen {
             Expr::List(xs) => xs.iter().any(|x| self.expr_has_try(x)),
             Expr::Tuple(xs) => xs.iter().any(|x| self.expr_has_try(x)),
             Expr::Map(ps) => ps.iter().any(|(k, v)| self.expr_has_try(k) || self.expr_has_try(v)),
+            Expr::Ternary { cond, then, els } => {
+                self.expr_has_try(cond) || self.expr_has_try(then) || self.expr_has_try(els)
+            }
             _ => false,
         }
     }
@@ -801,6 +804,9 @@ impl Codegen {
     fn type_of(&self, e: &Expr, ptypes: &HashMap<String, Option<String>>) -> Option<String> {
         match e {
             Expr::Try(inner) => self.type_of(inner, ptypes),
+            Expr::Ternary { then, els, .. } => {
+                self.type_of(then, ptypes).or_else(|| self.type_of(els, ptypes))
+            }
             Expr::Tuple(xs) => {
                 let parts: Option<Vec<String>> =
                     xs.iter().map(|x| self.type_of(x, ptypes)).collect();
@@ -1069,6 +1075,12 @@ impl Codegen {
                 self.scan_expr(operand, pt, ev);
             }
             Expr::Try(inner) => self.scan_expr(inner, pt, ev),
+            Expr::Ternary { cond, then, els } => {
+                self.cond_bool(cond, ev);
+                self.scan_expr(cond, pt, ev);
+                self.scan_expr(then, pt, ev);
+                self.scan_expr(els, pt, ev);
+            }
             Expr::Tuple(xs) => {
                 for x in xs {
                     self.scan_expr(x, pt, ev);
@@ -2346,6 +2358,12 @@ impl Codegen {
                     "{{ let mut {name} = std::collections::HashMap::new(); {inserts}{name} }}"
                 ))
             }
+            Expr::Ternary { cond, then, els } => Ok(format!(
+                "(if ({}) {{ {} }} else {{ {} }})",
+                self.expr(cond)?,
+                self.expr(then)?,
+                self.expr(els)?
+            )),
             Expr::Try(inner) => Ok(format!("({})?", self.expr(inner)?)),
             Expr::Lambda { .. } => Err(LogyxError::new(
                 "le lambda |…| … sono ammesse solo come argomento di map/filter/reduce",

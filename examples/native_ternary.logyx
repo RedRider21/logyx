@@ -1,0 +1,32 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Operatore condizionale (ternario): `condizione ? valore_se_vero : valore_se_falso`.
+// È un'espressione (ha un valore), a differenza dell'istruzione `if`. Si annida a destra.
+
+fn segno(n) {
+    return n > 0 ? "positivo" : n < 0 ? "negativo" : "zero"
+}
+
+fn massimo(a, b) {
+    return a > b ? a : b
+}
+
+fn parita(n) {
+    return n % 2 == 0 ? "pari" : "dispari"
+}
+
+fn main() {
+    print(segno(5))              // positivo
+    print(segno(-3))             // negativo
+    print(segno(0))              // zero
+    print(massimo(4, 9))         // 9
+    print(parita(10))            // pari
+    print(parita(7))             // dispari
+
+    // usabile ovunque serva un valore (interpolazione, assegnazione)
+    n = 42
+    etichetta = n > 100 ? "grande" : "normale"
+    print("n = {n} ({etichetta})")
+    print(n < 0 ? -n : n)        // valore assoluto: 42
+}

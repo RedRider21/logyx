@@ -196,6 +196,9 @@ class ClientCompiler:
         op = "&&" if n.op == "and" else "||"
         return f"({self.js_expr(n.left)} {op} {self.js_expr(n.right)})"
 
+    def js_Ternary(self, n):
+        return f"({self.js_expr(n.cond)} ? {self.js_expr(n.then)} : {self.js_expr(n.els)})"
+
     def js_Call(self, n):
         args = ", ".join(self.js_expr(a) for a in n.args)
         return f"{self.js_expr(n.callee)}({args})"

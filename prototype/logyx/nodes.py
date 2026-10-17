@@ -70,6 +70,13 @@ class TupleLit:
     elements: List[Any]
 
 
+@dataclass
+class Ternary:
+    cond: Any
+    then: Any
+    els: Any
+
+
 # --- istruzioni ---
 
 @dataclass

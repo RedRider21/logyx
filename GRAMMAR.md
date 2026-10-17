@@ -163,8 +163,11 @@ while        := "while" espressione blocco
 for          := "for" IDENT ("," IDENT)? "in" espressione blocco   // "for indice, elemento in ..."
 
 render       := "render" template
-espressione  := ... (letterali, chiamate, operatori aritmetici/confronto/logici, postfisso "?", lambda)
-                // e? propaga l'errore: se e è un errore, esce dalla funzione; altrimenti dà il valore
+espressione  := condizionale
+condizionale := orExpr ("?" orExpr ":" espressione)?    // ternario: cond ? a : b (destra-assoc)
+orExpr       := ... (letterali, chiamate, operatori aritmetici/confronto/logici, postfisso "?", lambda)
+                // e? propaga l'errore (postfisso): è ternario solo se "?" è seguito da un valore
+                // Nota: niente ";" — gli statement sono delimitati dalla struttura (a-capo liberi)
 lambda       := "|" (IDENT ("," IDENT)*)? "|" espressione    // passabile, ritornabile, assegnabile a variabile (con tipo fn(...)->...)
 tipo         := tipoBase ("|" "error")?          // "T | error" = fallibile (Result in Rust)
 tipoBase     := "int" | "float" | "bool" | "string" | "nil"
