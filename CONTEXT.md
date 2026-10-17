@@ -64,7 +64,13 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **56/56**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **57/57**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**Parametri con default FATTI (2026-10-17):** `fn f(a, b = valore)`; gli argomenti in coda si omettono e
+assumono il default (riempiti **al call-site** nei tre backend), i parametri con default vanno in coda
+(validato nel parser), il tipo non annotato è dedotto dal default. `Param`/`FunctionDef` estesi con
+`default`/`param_defaults`; registro `defaults`+riempimento in codegen/rustgen; interprete riempie i
+mancanti valutando il default. Esempio `native_defaults`. Resta del Piano 1 solo: **varargs** e **tuple**.
 
 **Lambda in variabile FATTA (2026-10-17):** `f: fn(int)->int = |x| x+1` poi `f(5)`. Nel compilatore/
 transpiler serve l'**annotazione di tipo** `fn(...)->...` (l'interprete funziona anche senza). Nodo `Decl`

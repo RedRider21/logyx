@@ -845,13 +845,19 @@ class Interpreter:
                 "non nell'interprete"
             )
         if isinstance(callee, LogyxFunction):
-            if len(args) != callee.arity:
+            params = callee.decl.params
+            defaults = callee.decl.param_defaults or [None] * len(params)
+            required = sum(1 for d in defaults if d is None)
+            if len(args) < required or len(args) > len(params):
+                attesi = f"{required}" if required == len(params) else f"{required}-{len(params)}"
                 raise LogyxError(
-                    f"la funzione '{callee.decl.name}' attende {callee.arity} "
+                    f"la funzione '{callee.decl.name}' attende {attesi} "
                     f"argomenti, ricevuti {len(args)}"
                 )
             env = Environment(callee.closure)
-            for name, value in zip(callee.decl.params, args):
+            for i, name in enumerate(params):
+                # argomento fornito, oppure valore di default (valutato ora)
+                value = args[i] if i < len(args) else self.eval(defaults[i], env)
                 env.define(name, value)
             try:
                 self._exec_all(callee.decl.body, env)

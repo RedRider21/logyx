@@ -206,6 +206,7 @@ fn resolve_ev(ev: &HashSet<String>) -> Option<String> {
 pub struct Codegen {
     ptype: HashMap<String, HashMap<String, Option<String>>>,
     param_order: HashMap<String, Vec<String>>,
+    defaults: HashMap<String, Vec<Option<Expr>>>,
     rets: HashMap<String, Option<String>>,
     fallible: HashMap<String, bool>,
     records: HashMap<String, Vec<(String, String)>>,
@@ -233,6 +234,7 @@ impl Codegen {
         Codegen {
             ptype: HashMap::new(),
             param_order: HashMap::new(),
+            defaults: HashMap::new(),
             rets: HashMap::new(),
             fallible: HashMap::new(),
             records: HashMap::new(),
@@ -369,11 +371,18 @@ impl Codegen {
         for f in &funcs {
             let mut m = HashMap::new();
             for p in &f.params {
-                m.insert(p.name.clone(), p.ty.clone());
+                // parametro con default ma senza annotazione → tipo dedotto dal default
+                let ty = match (&p.ty, &p.default) {
+                    (None, Some(d)) => self.type_of(d, &HashMap::new()),
+                    _ => p.ty.clone(),
+                };
+                m.insert(p.name.clone(), ty);
             }
             self.ptype.insert(f.name.clone(), m);
             self.param_order
                 .insert(f.name.clone(), f.params.iter().map(|p| p.name.clone()).collect());
+            self.defaults
+                .insert(f.name.clone(), f.params.iter().map(|p| p.default.clone()).collect());
             let (rt, mut fal) = match &f.ret {
                 Some(r) if r.ends_with("|error") => {
                     (Some(r[..r.len() - "|error".len()].to_string()), true)
@@ -2563,8 +2572,19 @@ impl Codegen {
                 if let Expr::Ident(name) = &**callee {
                     if let Some(order) = self.param_order.get(name).cloned() {
                         let ptypes = self.ptype.get(name).cloned().unwrap_or_default();
+                        let defs = self.defaults.get(name).cloned().unwrap_or_default();
+                        // argomenti mancanti in coda → riempiti con i valori di default
+                        let mut all: Vec<Expr> = args.to_vec();
+                        if all.len() < order.len() {
+                            for d in defs.iter().skip(all.len()) {
+                                match d {
+                                    Some(e) => all.push(e.clone()),
+                                    None => break,
+                                }
+                            }
+                        }
                         let mut a = Vec::new();
-                        for (i, arg) in args.iter().enumerate() {
+                        for (i, arg) in all.iter().enumerate() {
                             let expected =
                                 order.get(i).and_then(|pn| ptypes.get(pn)).cloned().flatten();
                             match &expected {

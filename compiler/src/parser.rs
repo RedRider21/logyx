@@ -291,6 +291,17 @@ impl Parser {
             }
         }
         self.expect(&TokenKind::RParen, ")")?;
+        // i parametri con valore di default devono stare in coda
+        let mut seen_default = false;
+        for p in &params {
+            if p.default.is_some() {
+                seen_default = true;
+            } else if seen_default {
+                return Err(self.error(
+                    "un parametro senza valore di default non può seguirne uno con default",
+                ));
+            }
+        }
         let mut ret = None;
         if self.is(&TokenKind::Arrow) {
             self.advance();
@@ -307,7 +318,12 @@ impl Parser {
             self.advance();
             ty = Some(self.type_ref()?);
         }
-        Ok(Param { name, ty })
+        let mut default = None;
+        if self.is(&TokenKind::Assign) {
+            self.advance();
+            default = Some(self.expression()?);
+        }
+        Ok(Param { name, ty, default })
     }
 
     fn type_ref(&mut self) -> Result<TypeRef, LogyxError> {

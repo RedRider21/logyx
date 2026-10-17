@@ -103,6 +103,7 @@ pub struct EnumCase {
 pub struct Param {
     pub name: String,
     pub ty: Option<TypeRef>,
+    pub default: Option<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -131,7 +131,7 @@ externRust   := "extern" "rust" "fn" IDENT "(" parametri ")" "->" tipo "=" STRIN
 
 funzione     := "fn" IDENT "(" parametri? ")" ("->" tipo)? blocco
 parametri    := parametro ("," parametro)*
-parametro    := IDENT (":" tipo)?
+parametro    := IDENT (":" tipo)? ("=" espressione)?   // default; i parametri con default vanno in coda
 
 route        := "route" STRINGA ("(" IDENT ")")? blocco
 

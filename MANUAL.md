@@ -152,6 +152,21 @@ fn main() { print(saluta("mondo")) }
 
 Se esiste `main()`, viene chiamata automaticamente.
 
+**Parametri con valore di default.** Un parametro può avere un valore di default (`p = espressione`);
+gli argomenti in coda si possono allora omettere nella chiamata. I parametri con default devono stare
+**in fondo** alla lista. Il tipo, se non annotato, è dedotto dal valore di default.
+
+```
+fn saluta(nome: string, saluto: string = "Ciao") -> string {
+    return saluto + ", " + nome
+}
+fn passo(n, step = 1) { return n + step }   // step dedotto int dal default
+
+saluta("Ada")           // Ciao, Ada
+saluta("Ada", "Ehi")    // Ehi, Ada
+passo(10)               // 11
+```
+
 ## 6b. Moduli e import ✅
 
 `import "file.logyx"` porta nel programma le definizioni (funzioni) di un altro file. Il percorso è

@@ -1,0 +1,27 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Parametri con valore di default: gli argomenti in coda si possono omettere
+// e assumono il default. I parametri con default devono stare in fondo.
+
+fn saluta(nome: string, saluto: string = "Ciao") -> string {
+    return saluto + ", " + nome
+}
+
+// default dedotto dal valore (nessuna annotazione di tipo)
+fn passo(n, step = 1) {
+    return n + step
+}
+
+fn potenza(base, esp = 2) {
+    return pow(base, esp)
+}
+
+fn main() {
+    print(saluta("Ada"))            // Ciao, Ada
+    print(saluta("Ada", "Ehi"))     // Ehi, Ada
+    print(passo(10))                // 11
+    print(passo(10, 5))             // 15
+    print(potenza(3))               // 9
+    print(potenza(2, 10))           // 1024
+}

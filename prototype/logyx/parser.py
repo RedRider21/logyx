@@ -137,14 +137,14 @@ class Parser:
         self.expect(T.LPAREN)
         params, ptypes = [], []
         if not self.at(T.RPAREN):
-            n, t = self.param()
+            n, t, _d = self.param()
             if t is None:
                 self.error("i parametri di una funzione extern richiedono un tipo")
             params.append(n)
             ptypes.append(t)
             while self.at(T.COMMA):
                 self.advance()
-                n, t = self.param()
+                n, t, _d = self.param()
                 if t is None:
                     self.error("i parametri di una funzione extern richiedono un tipo")
                 params.append(n)
@@ -182,23 +182,28 @@ class Parser:
         self.expect(T.FN)
         name = self.expect(T.IDENT, "nome di funzione").value
         self.expect(T.LPAREN)
-        params, ptypes = [], []
+        params, ptypes, defaults = [], [], []
         if not self.at(T.RPAREN):
-            n, t = self.param()
-            params.append(n)
-            ptypes.append(t)
+            n, t, d = self.param()
+            params.append(n); ptypes.append(t); defaults.append(d)
             while self.at(T.COMMA):
                 self.advance()
-                n, t = self.param()
-                params.append(n)
-                ptypes.append(t)
+                n, t, d = self.param()
+                params.append(n); ptypes.append(t); defaults.append(d)
         self.expect(T.RPAREN)
+        # i parametri con valore di default devono stare in coda
+        seen = False
+        for d in defaults:
+            if d is not None:
+                seen = True
+            elif seen:
+                self.error("un parametro senza valore di default non può seguirne uno con default")
         ret = None
         if self.at(T.ARROW):
             self.advance()
             ret = self.type_ref()
         body = self.block()
-        return N.FunctionDef(name, params, body, ptypes, ret)
+        return N.FunctionDef(name, params, body, ptypes, ret, defaults)
 
     def param(self):
         name = self.expect(T.IDENT, "nome di parametro").value
@@ -206,7 +211,11 @@ class Parser:
         if self.at(T.COLON):
             self.advance()
             ptype = self.type_ref()
-        return name, ptype
+        default = None
+        if self.at(T.ASSIGN):
+            self.advance()
+            default = self.expression()
+        return name, ptype, default
 
     def type_ref(self):
         # Un tipo, eventualmente fallibile:  T | error

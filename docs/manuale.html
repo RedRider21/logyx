@@ -291,6 +291,18 @@ fn doppio(n) { return n * 2 }   // tipi opzionali
 fn main() { print(saluta(&quot;mondo&quot;)) }
 </code></pre>
 <p>Se esiste <code>main()</code>, viene chiamata automaticamente.</p>
+<p><strong>Parametri con valore di default.</strong> Un parametro può avere un valore di default (<code>p = espressione</code>);
+gli argomenti in coda si possono allora omettere nella chiamata. I parametri con default devono stare
+<strong>in fondo</strong> alla lista. Il tipo, se non annotato, è dedotto dal valore di default.</p>
+<pre><code>fn saluta(nome: string, saluto: string = &quot;Ciao&quot;) -&gt; string {
+    return saluto + &quot;, &quot; + nome
+}
+fn passo(n, step = 1) { return n + step }   // step dedotto int dal default
+
+saluta(&quot;Ada&quot;)           // Ciao, Ada
+saluta(&quot;Ada&quot;, &quot;Ehi&quot;)    // Ehi, Ada
+passo(10)               // 11
+</code></pre>
 <h2 id="6b-moduli-e-import">6b. Moduli e import ✅</h2>
 <p><code>import "file.logyx"</code> porta nel programma le definizioni (funzioni) di un altro file. Il percorso è
 relativo al file che importa; l'estensione <code>.logyx</code> può essere omessa.</p>

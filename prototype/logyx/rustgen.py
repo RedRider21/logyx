@@ -113,6 +113,19 @@ class RustTranspiler:
         self.param_types = {
             f.name: dict(zip(f.params, f.param_types or [None] * len(f.params))) for f in funcs
         }
+        # ordine dei parametri e relativi valori di default (per riempire le chiamate)
+        self.param_names = {f.name: list(f.params) for f in funcs}
+        self.param_defaults = {
+            f.name: list(f.param_defaults or [None] * len(f.params)) for f in funcs
+        }
+        # se un parametro ha un default ma nessuna annotazione, deduci il tipo dal default
+        for f in funcs:
+            pt = self.param_types[f.name]
+            for name, d in zip(f.params, self.param_defaults[f.name]):
+                if pt.get(name) is None and d is not None:
+                    dt = self._type_of(d, {})
+                    if dt:
+                        pt[name] = dt
         self.func_rets = {}
         self.fallible = {}
         for f in funcs:
@@ -1368,8 +1381,16 @@ class RustTranspiler:
                 ptypes = getattr(self, "param_types", {}).get(e.callee.name)
                 if ptypes is not None:
                     order = list(ptypes.keys())
+                    # argomenti mancanti in coda -> riempiti con i valori di default
+                    full = list(e.args)
+                    defs = getattr(self, "param_defaults", {}).get(e.callee.name, [])
+                    if len(full) < len(order):
+                        for d in defs[len(full):]:
+                            if d is None:
+                                break
+                            full.append(d)
                     parts = []
-                    for i, arg in enumerate(e.args):
+                    for i, arg in enumerate(full):
                         expected = ptypes.get(order[i]) if i < len(order) else None
                         if expected and _parse_fn_type(expected) is not None:
                             parts.append(self._fn_value_arg(arg, expected))
