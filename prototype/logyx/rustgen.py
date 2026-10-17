@@ -323,6 +323,8 @@ class RustTranspiler:
         if t == "Ternary":
             return (self._expr_has_try(e.cond) or self._expr_has_try(e.then)
                     or self._expr_has_try(e.els))
+        if t == "In":
+            return self._expr_has_try(e.item) or self._expr_has_try(e.coll)
         return False
 
     def func(self, f):
@@ -508,6 +510,9 @@ class RustTranspiler:
             self._scan_expr(e.cond, pt, ev)
             self._scan_expr(e.then, pt, ev)
             self._scan_expr(e.els, pt, ev)
+        elif t == "In":
+            self._scan_expr(e.item, pt, ev)
+            self._scan_expr(e.coll, pt, ev)
         elif t == "Call":
             self._call_ev(e, pt, ev)
             for a in e.args:
@@ -691,6 +696,8 @@ class RustTranspiler:
             return None
         if t == "Ternary":
             return self._type_of(e.then, ptypes) or self._type_of(e.els, ptypes)
+        if t == "In":
+            return "bool"
         if t == "Call":
             # costruzione di variante enum con payload: E.Var(args) -> tipo E
             if (isinstance(e.callee, N.Field) and isinstance(e.callee.target, N.Identifier)
@@ -1296,6 +1303,17 @@ class RustTranspiler:
         if t == "Ternary":
             return (f"(if ({self.expr(e.cond)}) {{ {self.expr(e.then)} }} "
                     f"else {{ {self.expr(e.els)} }})")
+        if t == "In":
+            coll_ty = self._type_of(e.coll, self.cur_types)
+            is_map = (type(e.coll).__name__ == "MapLit"
+                      or (isinstance(e.coll, N.Identifier)
+                          and getattr(self, "kinds", {}).get(e.coll.name) == "map"))
+            c, x = self.expr(e.coll), self.expr(e.item)
+            if coll_ty == "string":
+                return f"(({c}).contains(({x}).as_str()))"
+            if is_map:
+                return f"(({c}).contains_key(&({x})))"
+            return f"(({c}).iter().any(|__e| *__e == ({x})))"
         if t == "MapLit":
             if not e.pairs:
                 raise LogyxError(

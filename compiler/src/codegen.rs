@@ -672,6 +672,7 @@ impl Codegen {
             Expr::Ternary { cond, then, els } => {
                 self.expr_has_try(cond) || self.expr_has_try(then) || self.expr_has_try(els)
             }
+            Expr::In { item, coll } => self.expr_has_try(item) || self.expr_has_try(coll),
             _ => false,
         }
     }
@@ -807,6 +808,7 @@ impl Codegen {
             Expr::Ternary { then, els, .. } => {
                 self.type_of(then, ptypes).or_else(|| self.type_of(els, ptypes))
             }
+            Expr::In { .. } => Some("bool".into()),
             Expr::Tuple(xs) => {
                 let parts: Option<Vec<String>> =
                     xs.iter().map(|x| self.type_of(x, ptypes)).collect();
@@ -1080,6 +1082,10 @@ impl Codegen {
                 self.scan_expr(cond, pt, ev);
                 self.scan_expr(then, pt, ev);
                 self.scan_expr(els, pt, ev);
+            }
+            Expr::In { item, coll } => {
+                self.scan_expr(item, pt, ev);
+                self.scan_expr(coll, pt, ev);
             }
             Expr::Tuple(xs) => {
                 for x in xs {
@@ -2364,6 +2370,21 @@ impl Codegen {
                 self.expr(then)?,
                 self.expr(els)?
             )),
+            Expr::In { item, coll } => {
+                let coll_ty = self.type_of(coll, &self.cur_types.clone());
+                let is_map = matches!(&**coll, Expr::Map(_))
+                    || matches!(&**coll, Expr::Ident(n)
+                        if self.kinds.get(n).map(|s| s.as_str()) == Some("map"));
+                let c = self.expr(coll)?;
+                let x = self.expr(item)?;
+                if coll_ty.as_deref() == Some("string") {
+                    Ok(format!("(({}).contains(({}).as_str()))", c, x))
+                } else if is_map {
+                    Ok(format!("(({}).contains_key(&({})))", c, x))
+                } else {
+                    Ok(format!("(({}).iter().any(|__e| *__e == ({})))", c, x))
+                }
+            }
             Expr::Try(inner) => Ok(format!("({})?", self.expr(inner)?)),
             Expr::Lambda { .. } => Err(LogyxError::new(
                 "le lambda |…| … sono ammesse solo come argomento di map/filter/reduce",

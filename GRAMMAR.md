@@ -165,6 +165,7 @@ for          := "for" IDENT ("," IDENT)? "in" espressione blocco   // "for indic
 render       := "render" template
 espressione  := condizionale
 condizionale := orExpr ("?" orExpr ":" espressione)?    // ternario: cond ? a : b (destra-assoc)
+                // livello confronto: include anche `item in collezione` (lista/mappa/stringa) -> bool
 orExpr       := ... (letterali, chiamate, operatori aritmetici/confronto/logici, postfisso "?", lambda)
                 // e? propaga l'errore (postfisso): è ternario solo se "?" è seguito da un valore
                 // Nota: niente ";" — gli statement sono delimitati dalla struttura (a-capo liberi)

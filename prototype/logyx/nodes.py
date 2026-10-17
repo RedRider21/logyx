@@ -77,6 +77,12 @@ class Ternary:
     els: Any
 
 
+@dataclass
+class In:
+    item: Any
+    coll: Any
+
+
 # --- istruzioni ---
 
 @dataclass

@@ -110,7 +110,10 @@ tipo collezione/tupla nel backend tipizzato. Esempio `examples/native_globals.lo
 
 - Aritmetici: `+  -  *  /  %` — fra interi `/` è divisione intera troncata verso zero (come Rust)
 - Confronto: `==  !=  <  <=  >  >=`
+- **Appartenenza**: `elemento in collezione` → `bool` (lista: contiene il valore; mappa: ha la chiave;
+  stringa: contiene la sottostringa). È distinto dal ciclo `for x in …`.
 - Logici: `and  or  not`
+- **Condizionale (ternario)**: `cond ? a : b` (vedi §5).
 - `+` fra stringhe (o stringa e numero) concatena.
 - Assegnazione composta: `+=  -=  *=  /=  %=` — per esempio `x += 1` equivale a `x = x + 1`.
 

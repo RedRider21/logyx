@@ -744,6 +744,13 @@ impl Parser {
     fn comparison(&mut self) -> Result<Expr, LogyxError> {
         let mut left = self.term()?;
         loop {
+            // test di appartenenza: `item in coll`
+            if self.is(&TokenKind::In) {
+                self.advance();
+                let coll = self.term()?;
+                left = Expr::In { item: Box::new(left), coll: Box::new(coll) };
+                continue;
+            }
             let op = match self.kind() {
                 TokenKind::Lt => BinOp::Lt,
                 TokenKind::Le => BinOp::Le,
@@ -1237,6 +1244,13 @@ impl ClientCompiler {
                 self.js_expr(then)?,
                 self.js_expr(els)?
             )),
+            Expr::In { item, coll } => {
+                // array/stringa → includes; oggetto (mappa) → operatore `in`
+                let (i, c) = (self.js_expr(item)?, self.js_expr(coll)?);
+                Ok(format!(
+                    "((Array.isArray({c})||typeof {c}===\"string\") ? {c}.includes({i}) : ({i} in {c}))"
+                ))
+            }
             Expr::Map(pairs) => {
                 let mut ps = Vec::new();
                 for (k, v) in pairs {

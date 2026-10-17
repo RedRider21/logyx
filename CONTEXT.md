@@ -79,8 +79,13 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **64/64**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **65/65**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**`in` come operatore FATTO (2026-10-17 sera):** `item in coll` → bool (lista→`.iter().any`, mappa→
+`.contains_key`, stringa→`.contains`; JS `includes`/`in`; interprete `in` di Python). Aggiunto al livello
+`comparison` (nodo `Expr::In`/`N.In`); nessun conflitto col `for … in` (il `for` consuma il proprio `in`).
+Esempio `native_inop`.
 
 **Operatore ternario FATTO (2026-10-17 sera):** `cond ? a : b` (stile C; `?`/`if` scelti valutando che il
 lexer **scarta i newline** → niente terminatori di statement, quindi `a if c else b` romperebbe

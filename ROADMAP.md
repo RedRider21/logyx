@@ -39,7 +39,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | **Variabili e costanti globali** (a primo livello, fuori dalle funzioni) | ✅ nei tre backend — `const NOME = …` (immutabile) e variabili globali mutabili; accesso da qualunque funzione, un locale/param omonimo le oscura. Nel backend tipizzato: `thread_local! RefCell` + getter/setter. v0: non ancora globali di tipo collezione/tupla | — |
 | Conversioni esplicite (`int()`, `float()`) | ✅ | — |
 | **Operatore condizionale (ternario)** `cond ? a : b` | ✅ nei tre backend — espressione, annidabile a destra; `?` disambiguato dalla propagazione errori (ternario solo se seguito da un valore). `examples/native_ternary.logyx` | — |
-| **`in` come operatore booleano** (`x in lista`, `k in mappa`) | ⏳ — oggi `in` esiste solo nel `for`; per il test servono `contains()`/`has()` | **3** |
+| **`in` come operatore booleano** (`x in lista`, `k in mappa`, `sub in stringa`) | ✅ nei tre backend — distinto dal `for … in`; lista→contiene, mappa→chiave, stringa→sottostringa. `examples/native_inop.logyx` | — |
 | **Operatore di esponente** (`**` o `^`) | ⏳ — oggi solo il builtin `pow()` | 4 |
 | **Operatori bit a bit** `& \| ^ << >> ~` | ⏳ — assenti; utili per basso livello/cybersecurity (attenzione a `\|` già usato per lambda/Result) | 4 |
 | **Indicizzazione di stringhe / tipo carattere** (`s[i]`), bytes | ⏳ — oggi solo `substring`/`index_of` | 5 |
@@ -102,7 +102,7 @@ nucleo. Da decidere se e quando adottarli (dopo il nucleo e, in parte, dopo il s
 ## Ordine consigliato (le prossime tappe)
 
 1. **Completare il nucleo con gli elementi "da ogni linguaggio"** (Piano 1): variabili/costanti globali
-   ✅, operatore ternario ✅; prossimi → **`in` come operatore**, poi esponente, bitwise, `set`,
+   ✅, operatore ternario ✅, `in` come operatore ✅; prossimi → **esponente `**`**, **bitwise**, `set`,
    indicizzazione stringhe, comprehension.
 2. **Libreria matematica** (Piano 2): `sin`/`cos`/`log`/`exp`, costanti.
 3. **Self-hosting** (orizzonte): lexer di Logyx scritto in Logyx + test a specchio contro

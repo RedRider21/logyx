@@ -199,6 +199,10 @@ class ClientCompiler:
     def js_Ternary(self, n):
         return f"({self.js_expr(n.cond)} ? {self.js_expr(n.then)} : {self.js_expr(n.els)})"
 
+    def js_In(self, n):
+        i, c = self.js_expr(n.item), self.js_expr(n.coll)
+        return (f'((Array.isArray({c})||typeof {c}==="string") ? {c}.includes({i}) : ({i} in {c}))')
+
     def js_Call(self, n):
         args = ", ".join(self.js_expr(a) for a in n.args)
         return f"{self.js_expr(n.callee)}({args})"

@@ -60,6 +60,8 @@ pub enum Expr {
     Tuple(Vec<Expr>),
     /// Espressione condizionale: `then if cond else els`.
     Ternary { cond: Box<Expr>, then: Box<Expr>, els: Box<Expr> },
+    /// Test di appartenenza: `item in coll` → bool (lista/mappa/stringa).
+    In { item: Box<Expr>, coll: Box<Expr> },
     Try(Box<Expr>),
     /// Lambda inline `|p1, p2| espressione` (v0: argomento di map/filter/reduce).
     Lambda { params: Vec<String>, body: Box<Expr> },

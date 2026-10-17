@@ -1,0 +1,30 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// `in` come operatore booleano: `elemento in collezione`.
+//   lista:    x in [..]   → true se la lista contiene x
+//   mappa:    k in {..}   → true se la mappa ha la chiave k
+//   stringa:  sub in s    → true se s contiene la sottostringa sub
+// (Distinto da `for x in collezione`, che è il ciclo.)
+
+fn main() {
+    nums = [1, 2, 3, 4]
+    print(3 in nums)             // true
+    print(9 in nums)             // false
+
+    prezzi = {"pane": 2, "latte": 1}
+    print("pane" in prezzi)      // true
+    print("uova" in prezzi)      // false
+
+    print("gy" in "logyx")       // true  (sottostringa)
+    print("z" in "logyx")        // false
+
+    // usabile in una condizione e con la negazione
+    if 2 in nums { print("c'e' il 2") }
+    if not (5 in nums) { print("manca il 5") }
+
+    // convive col ciclo for ... in ...
+    for n in nums {
+        if n in [2, 4] { print(n) }   // 2, 4
+    }
+}

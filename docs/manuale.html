@@ -263,7 +263,10 @@ tipo collezione/tupla nel backend tipizzato. Esempio <code>examples/native_globa
 <ul>
 <li>Aritmetici: <code>+  -  *  /  %</code> — fra interi <code>/</code> è divisione intera troncata verso zero (come Rust)</li>
 <li>Confronto: <code>==  !=  &lt;  &lt;=  &gt;  &gt;=</code></li>
+<li><strong>Appartenenza</strong>: <code>elemento in collezione</code> → <code>bool</code> (lista: contiene il valore; mappa: ha la chiave;
+  stringa: contiene la sottostringa). È distinto dal ciclo <code>for x in …</code>.</li>
 <li>Logici: <code>and  or  not</code></li>
+<li><strong>Condizionale (ternario)</strong>: <code>cond ? a : b</code> (vedi §5).</li>
 <li><code>+</code> fra stringhe (o stringa e numero) concatena.</li>
 <li>Assegnazione composta: <code>+=  -=  *=  /=  %=</code> — per esempio <code>x += 1</code> equivale a <code>x = x + 1</code>.</li>
 </ul>

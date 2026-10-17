@@ -714,6 +714,9 @@ class Interpreter:
     def ex_Ternary(self, n, env):
         return self.eval(n.then, env) if self.eval(n.cond, env) else self.eval(n.els, env)
 
+    def ex_In(self, n, env):
+        return self.eval(n.item, env) in self.eval(n.coll, env)
+
     def ex_MapLit(self, n, env):
         return {self.eval(k, env): self.eval(v, env) for k, v in n.pairs}
 

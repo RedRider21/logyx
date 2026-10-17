@@ -520,9 +520,17 @@ class Parser:
 
     def comparison(self):
         left = self.term()
-        while self.peek().type in (T.LT, T.LE, T.GT, T.GE):
-            op = self.advance().value
-            left = N.Binary(op, left, self.term())
+        while True:
+            # test di appartenenza: `item in coll`
+            if self.at(T.IN):
+                self.advance()
+                left = N.In(left, self.term())
+                continue
+            if self.peek().type in (T.LT, T.LE, T.GT, T.GE):
+                op = self.advance().value
+                left = N.Binary(op, left, self.term())
+                continue
+            break
         return left
 
     def term(self):
