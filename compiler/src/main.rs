@@ -78,8 +78,10 @@ fn run_build_wasm(path: &str) -> Result<(), error::LogyxError> {
     use ast::Item;
     let items = modules::load_program(path)?;
     let mut cg = codegen::Codegen::new();
+    cg.set_wasm_mode(true);
     let rust = cg.generate(&items)?;
     let deps = cg.deps.clone();
+    let uses_dom = cg.uses_dom;
     let names: Vec<String> = items
         .iter()
         .filter_map(|it| if let Item::Func(f) = it { Some(f.name.clone()) } else { None })
@@ -97,7 +99,7 @@ fn run_build_wasm(path: &str) -> Result<(), error::LogyxError> {
     let has_string =
         exports.iter().any(|e| e.ret == "string" || e.params.iter().any(|(_, t)| t == "string"));
     let mut wrappers = String::new();
-    if has_string {
+    if has_string || uses_dom {
         // Helper della ABI stringhe: allocatore condiviso con JS + ricostruzione/ritorno di String.
         wrappers += "\
 use std::alloc::{alloc as __ralloc, dealloc as __rdealloc, Layout};
@@ -136,6 +138,29 @@ fn __logyx_ret_str(s: String) -> i32 {
 
 ";
     }
+    if uses_dom {
+        // import dal lato JS (modulo \"env\") + ricezione di una stringa restituita da JS
+        wrappers += "\
+#[link(wasm_import_module = \"env\")]
+extern \"C\" {
+    fn __logyx_dom_set(sp: i32, sl: i32, vp: i32, vl: i32);
+    fn __logyx_dom_log(sp: i32, sl: i32);
+    fn __logyx_dom_get(sp: i32, sl: i32) -> i32;
+}
+
+unsafe fn __logyx_recv_str(ptr: i32) -> String {
+    let p = ptr as *const u8;
+    let len = (*p as u32
+        | ((*p.add(1) as u32) << 8)
+        | ((*p.add(2) as u32) << 16)
+        | ((*p.add(3) as u32) << 24)) as usize;
+    let v = std::slice::from_raw_parts(p.add(4), len).to_vec();
+    __rdealloc(ptr as *mut u8, Layout::from_size_align((4 + len).max(1), 1).unwrap());
+    String::from_utf8_lossy(&v).into_owned()
+}
+
+";
+    }
     for e in &exports {
         let mut params = Vec::new();
         let mut prologue = String::new();
@@ -166,14 +191,20 @@ fn __logyx_ret_str(s: String) -> i32 {
         let body = match e.ret.as_str() {
             "string" => format!("__logyx_ret_str({call})"),
             "int" | "bool" => format!("({call}) as i32"),
+            "void" => format!("{call};"),
             _ => call, // float
         };
+        let ret_decl = if e.ret == "void" {
+            String::new()
+        } else {
+            format!(" -> {}", wasm_ret_ty(&e.ret))
+        };
         wrappers += &format!(
-            "#[export_name = \"{}\"]\npub extern \"C\" fn __wasm_{}({}) -> {} {{\n{}    {}\n}}\n\n",
+            "#[export_name = \"{}\"]\npub extern \"C\" fn __wasm_{}({}){} {{\n{}    {}\n}}\n\n",
             e.name,
             e.name,
             params.join(", "),
-            wasm_ret_ty(&e.ret),
+            ret_decl,
             prologue,
             body
         );
@@ -219,7 +250,7 @@ fn __logyx_ret_str(s: String) -> i32 {
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or(wasm_out.clone());
-    std::fs::write(&html_out, wasm_demo_html(&wasm_name, &exports))
+    std::fs::write(&html_out, wasm_demo_html(&wasm_name, &exports, uses_dom))
         .map_err(|e| error::LogyxError::new(format!("{html_out}: {e}")))?;
     let fn_list: Vec<String> = exports
         .iter()
@@ -242,7 +273,41 @@ fn parent_dir(p: &str) -> String {
         .unwrap_or_else(|| ".".to_string())
 }
 
-fn wasm_demo_html(wasm_name: &str, exports: &[codegen::ExportSig]) -> String {
+fn wasm_demo_html(wasm_name: &str, exports: &[codegen::ExportSig], uses_dom: bool) -> String {
+    // Sandbox DOM + import host (solo se il programma usa i builtin dom_*).
+    let dom_sandbox = if uses_dom {
+        "<p>Sandbox DOM (bersagli per <code>dom_set</code>/<code>dom_get</code>): \
+         <input id=\"in\" type=\"text\" placeholder=\"#in\"> \
+         <span id=\"out\" style=\"font-weight:700;color:#5b4be1\">#out</span></p>"
+    } else {
+        ""
+    };
+    let dom_imports = if uses_dom {
+        r#"
+  function __readStr(ptr, len) { return dec.decode(new Uint8Array(ex.memory.buffer, ptr, len)); }
+  function __writeStr(s) {
+    const b = enc.encode(s), ptr = ex.__logyx_alloc(4 + b.length), m = new Uint8Array(ex.memory.buffer);
+    m[ptr] = b.length & 255; m[ptr+1] = (b.length>>8)&255; m[ptr+2] = (b.length>>16)&255; m[ptr+3] = (b.length>>24)&255;
+    new Uint8Array(ex.memory.buffer, ptr + 4, b.length).set(b);
+    return ptr;
+  }
+  imports.env = {
+    __logyx_dom_set: (sp, sl, vp, vl) => { const el = document.querySelector(__readStr(sp, sl)); if (el) el.textContent = __readStr(vp, vl); },
+    __logyx_dom_log: (sp, sl) => { console.log(__readStr(sp, sl)); },
+    __logyx_dom_get: (sp, sl) => { const el = document.querySelector(__readStr(sp, sl)); const s = el ? (el.value != null ? el.value : el.textContent) : ""; return __writeStr(s); },
+  };"#
+    } else {
+        ""
+    };
+    wasm_demo_html_impl(wasm_name, exports, dom_sandbox, dom_imports)
+}
+
+fn wasm_demo_html_impl(
+    wasm_name: &str,
+    exports: &[codegen::ExportSig],
+    dom_sandbox: &str,
+    dom_imports: &str,
+) -> String {
     // Descrittore JS delle firme: guida sia la UI sia il marshalling degli argomenti.
     let sigs = exports
         .iter()
@@ -280,6 +345,7 @@ fn wasm_demo_html(wasm_name: &str, exports: &[codegen::ExportSig]) -> String {
 <h1>Logyx → WebAssembly</h1>
 <p>Funzioni di Logyx compilate a WASM e invocate direttamente nel browser. Le stringhe passano il
 confine JS↔WASM tramite la memoria lineare del modulo (ABI minimale, nessun <code>wasm-bindgen</code>).</p>
+{dom_sandbox}
 <div id="app">caricamento…</div>
 <script>
 const SIGS = [
@@ -287,6 +353,7 @@ const SIGS = [
 ];
 const enc = new TextEncoder(), dec = new TextDecoder();
 let ex;
+let imports = {{}};{dom_imports}
 function callFn(sig, raw) {{
   const args = [];
   for (let i = 0; i < sig.params.length; i++) {{
@@ -303,6 +370,7 @@ function callFn(sig, raw) {{
     }}
   }}
   const r = ex[sig.name](...args);
+  if (sig.ret === "void") return "(fatto)";
   if (sig.ret === "string") {{
     const m = new Uint8Array(ex.memory.buffer);
     const len = m[r] | (m[r + 1] << 8) | (m[r + 2] << 16) | (m[r + 3] * 16777216);
@@ -317,7 +385,7 @@ function callFn(sig, raw) {{
   const app = document.getElementById("app");
   try {{
     const bytes = await (await fetch("{wasm}")).arrayBuffer();
-    const {{ instance }} = await WebAssembly.instantiate(bytes, {{}});
+    const {{ instance }} = await WebAssembly.instantiate(bytes, imports);
     ex = instance.exports;
     app.innerHTML = "";
     for (const sig of SIGS) {{
@@ -351,7 +419,9 @@ function callFn(sig, raw) {{
 </html>
 "#,
         wasm = wasm_name,
-        sigs = sigs
+        sigs = sigs,
+        dom_sandbox = dom_sandbox,
+        dom_imports = dom_imports
     )
 }
 

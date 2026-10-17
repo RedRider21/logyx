@@ -1,0 +1,32 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Web → WASM, DOM dal codice Logyx (nessun wasm-bindgen).
+//   logyxc build-wasm ../examples/native_wasmdom.logyx   (genera .wasm + pagina .html)
+//
+// I builtin dom_* esistono solo in WASM e chiamano funzioni importate dal lato JS
+// tramite la memoria lineare del modulo:
+//   dom_get(selettore)      -> string   legge .value (o .textContent) di un elemento
+//   dom_set(selettore, txt)             scrive il testo di un elemento
+//   dom_log(txt)                        console.log
+
+// Handler: legge l'input "#in", compone un saluto e lo scrive in "#out".
+fn saluta() {
+    nome = dom_get("#in")
+    if len(nome) == 0 {
+        dom_set("#out", "scrivi un nome nel campo")
+    } else {
+        dom_set("#out", "Ciao " + upper(nome) + "!")
+        dom_log("saluto generato dentro il WASM")
+    }
+}
+
+// Una normale funzione di calcolo convive con gli handler DOM.
+fn quadrato(n: int) -> int {
+    return n * n
+}
+
+fn main() {
+    // richiesto come punto d'ingresso; usato da interprete/nativo, ignorato dal WASM.
+    print(quadrato(9))
+}

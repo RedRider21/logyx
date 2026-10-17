@@ -11,7 +11,7 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 EXAMPLES="$ROOT/examples"
 LOGYXC="$ROOT/compiler/target/release/logyxc"
-CASES="native_wasm native_webstr"
+CASES="native_wasm native_webstr native_wasmdom"
 
 command -v node >/dev/null 2>&1 || { echo "salto: 'node' non installato"; exit 77; }
 command -v cargo >/dev/null 2>&1 || { echo "salto: 'cargo' non installato"; exit 77; }

@@ -560,9 +560,28 @@ Logyx che gira nel browser come WASM.
   `ptr, len`, i ritorni stringa come puntatore a un blocco con prefisso di lunghezza). Niente
   `wasm-bindgen`: solo il target `wasm32-unknown-unknown`. L'interattività (eventi) vive nel collante JS
   generato.
+- **Fase 2 — DOM dal codice Logyx**: tre builtin disponibili **solo in `build-wasm`** manipolano il DOM
+  dal WASM, chiamando funzioni **importate** dal lato JS (modulo `env`), sempre via memoria lineare:
 
-Vedi `design/web-wasm.md`, `design/web-wasm-fase1.md` e gli esempi `native_wasm`/`native_webstr`.
-DOM dal codice Logyx e server HTTP sono le fasi successive.
+  | Funzione | Effetto |
+  | --- | --- |
+  | `dom_get(selettore)` → string | Legge `.value` (o `.textContent`) dell'elemento |
+  | `dom_set(selettore, testo)` | Scrive il testo dell'elemento |
+  | `dom_log(testo)` | `console.log` |
+
+  Gli handler sono normali funzioni Logyx (anche **senza valore di ritorno**); la pagina generata le
+  espone con un pulsante "esegui" e include una piccola **sandbox DOM** (`#in`, `#out`) come bersaglio.
+  Chiamarli in `build`/interprete dà un errore chiaro (sono solo-WASM). Esempio `examples/native_wasmdom.logyx`.
+
+```
+fn saluta() {                 // handler void
+    nome = dom_get("#in")
+    dom_set("#out", "Ciao " + upper(nome) + "!")
+    dom_log("fatto dentro il WASM")
+}
+```
+
+Vedi `design/web-wasm.md`, `design/web-wasm-fase1.md` e gli esempi `native_wasm`/`native_webstr`/`native_wasmdom`.
 
 #### Pagine server-side: `route` e `render` (web → server, Fase 2a)
 
@@ -735,5 +754,6 @@ fn main() {
 ## 14. Cosa non c'è ancora ⏳
 
 - Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); accesso a tupla per posizione
-  (`t.0`); input nella DSL client (`value of ...`); target WASM del client.
-- Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; self-hosting del compilatore.
+  (`t.0`).
+- Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; eventi DOM dal WASM (oggi gli handler si
+  invocano dai pulsanti della pagina generata); self-hosting del compilatore.

@@ -264,6 +264,10 @@ pub struct Codegen {
     uses_html: bool,
     /// true = genera un server HTTP (`tiny_http`); false = un binario `render` (default).
     emit_server: bool,
+    /// true = destinazione WebAssembly: abilita i builtin DOM (`dom_set`/`dom_get`/`dom_log`).
+    wasm: bool,
+    /// impostato a true se il programma usa un builtin DOM (serve alla pagina/host WASM).
+    pub uses_dom: bool,
     pub deps: HashMap<String, String>,
 }
 
@@ -289,6 +293,8 @@ impl Codegen {
             uses_serde: false,
             uses_html: false,
             emit_server: false,
+            wasm: false,
+            uses_dom: false,
             deps: HashMap::new(),
         }
     }
@@ -297,6 +303,10 @@ impl Codegen {
     /// del binario `render`. Va impostato prima di `generate`.
     pub fn set_server_mode(&mut self, on: bool) {
         self.emit_server = on;
+    }
+
+    pub fn set_wasm_mode(&mut self, on: bool) {
+        self.wasm = on;
     }
 
     /// Funzioni fra `names` con firma interamente numerica (int/float/bool),
@@ -316,6 +326,7 @@ impl Codegen {
             };
             let ret = match self.rets.get(name) {
                 Some(Some(r)) if supported(r) => r.clone(),
+                Some(Some(r)) if r == "__void__" => "void".to_string(), // handler DOM senza ritorno
                 _ => continue,
             };
             let mut params = Vec::new();
@@ -846,6 +857,9 @@ impl Codegen {
                     }
                     if name == "db_query" {
                         return args.get(2).and_then(|e| self.json_arg_type(e));
+                    }
+                    if name == "dom_get" {
+                        return Some("string".into());
                     }
                     return self.rets.get(name).cloned().flatten();
                 }
@@ -2748,6 +2762,43 @@ impl Codegen {
                             rec,
                             inits.join(", "),
                             rec
+                        ));
+                    }
+                    if name == "dom_set" || name == "dom_log" || name == "dom_get" {
+                        if !self.wasm {
+                            return Err(LogyxError::new(format!(
+                                "'{name}' è disponibile solo con build-wasm (manipola il DOM dal WASM)"
+                            )));
+                        }
+                        self.uses_dom = true;
+                        if name == "dom_set" {
+                            if args.len() != 2 {
+                                return Err(LogyxError::new(
+                                    "dom_set accetta: dom_set(selettore, testo)",
+                                ));
+                            }
+                            return Ok(format!(
+                                "{{ let __s = {}; let __v = {}; unsafe {{ __logyx_dom_set(__s.as_ptr() as i32, __s.len() as i32, __v.as_ptr() as i32, __v.len() as i32) }} }}",
+                                self.expr(&args[0])?,
+                                self.expr(&args[1])?
+                            ));
+                        }
+                        if name == "dom_log" {
+                            if args.len() != 1 {
+                                return Err(LogyxError::new("dom_log accetta un solo argomento"));
+                            }
+                            return Ok(format!(
+                                "{{ let __s = {}; unsafe {{ __logyx_dom_log(__s.as_ptr() as i32, __s.len() as i32) }} }}",
+                                self.expr(&args[0])?
+                            ));
+                        }
+                        // dom_get(selettore) -> string
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("dom_get accetta un solo argomento"));
+                        }
+                        return Ok(format!(
+                            "{{ let __s = {}; let __p = unsafe {{ __logyx_dom_get(__s.as_ptr() as i32, __s.len() as i32) }}; unsafe {{ __logyx_recv_str(__p) }} }}",
+                            self.expr(&args[0])?
                         ));
                     }
                     if name == "sha256" {

@@ -77,6 +77,15 @@ regolare:** ora tipizza la variabile di ciclo dall'elemento (`list_elem`/`map_va
 `p.campo` e le concatenazioni di stringhe funzionano sulle liste di record (da `db_query`/`from_json`).
 Prossimi fronti grossi: DOM-da-Logyx in WASM, self-hosting.
 
+**DOM-da-Logyx in WASM FATTO (2026-10-17):** tre builtin **solo-WASM** `dom_get(sel)->string` /
+`dom_set(sel,txt)` / `dom_log(txt)` che chiamano funzioni **importate** dal lato JS (modulo `env`,
+`#[link(wasm_import_module="env")]`) via la memoria lineare esistente (stesso ABI len-prefix). Nel
+`Codegen`: flag `wasm`/`uses_dom` (setter `set_wasm_mode`); in `build`/interprete i `dom_*` danno errore
+chiaro. `main.rs`: blocco `extern` import + helper `__logyx_recv_str`, **funzioni void** ora esportabili
+(ret `"void"`), pagina generata con **sandbox DOM** (`#in`/`#out`) + oggetto `imports.env` (readStr/
+writeStr). Esempio `examples/native_wasmdom.logyx`; verificato dal **collante JS reale** della pagina in
+`tests/wasm_smoke.mjs` (DOM simulato, 18/18). **Resta solo il self-hosting** come fronte grosso.
+
 **`fetch` dal client + `respond` lato server FATTI (2026-10-17):** chiude il ciclo "un sorgente,
 server+client". Isola client: `fetch <url> [method <e>] [body <e>] [as <var>] { … } [else { … }]` →
 `fetch().then(r=>r.text()).then(var=>{…}).catch(…)`, identico nei due compilatori client (`client.py` e

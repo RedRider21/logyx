@@ -833,9 +833,41 @@ Logyx che gira nel browser come WASM.</p>
   <code>ptr, len</code>, i ritorni stringa come puntatore a un blocco con prefisso di lunghezza). Niente
   <code>wasm-bindgen</code>: solo il target <code>wasm32-unknown-unknown</code>. L'interattività (eventi) vive nel collante JS
   generato.</li>
+<li><strong>Fase 2 — DOM dal codice Logyx</strong>: tre builtin disponibili <strong>solo in <code>build-wasm</code></strong> manipolano il DOM
+  dal WASM, chiamando funzioni <strong>importate</strong> dal lato JS (modulo <code>env</code>), sempre via memoria lineare:</li>
 </ul>
-<p>Vedi <code>design/web-wasm.md</code>, <code>design/web-wasm-fase1.md</code> e gli esempi <code>native_wasm</code>/<code>native_webstr</code>.
-DOM dal codice Logyx e server HTTP sono le fasi successive.</p>
+<table>
+<thead>
+<tr>
+<th>Funzione</th>
+<th>Effetto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dom_get(selettore)</code> → string</td>
+<td>Legge <code>.value</code> (o <code>.textContent</code>) dell'elemento</td>
+</tr>
+<tr>
+<td><code>dom_set(selettore, testo)</code></td>
+<td>Scrive il testo dell'elemento</td>
+</tr>
+<tr>
+<td><code>dom_log(testo)</code></td>
+<td><code>console.log</code></td>
+</tr>
+</tbody>
+</table>
+<p>Gli handler sono normali funzioni Logyx (anche <strong>senza valore di ritorno</strong>); la pagina generata le
+  espone con un pulsante "esegui" e include una piccola <strong>sandbox DOM</strong> (<code>#in</code>, <code>#out</code>) come bersaglio.
+  Chiamarli in <code>build</code>/interprete dà un errore chiaro (sono solo-WASM). Esempio <code>examples/native_wasmdom.logyx</code>.</p>
+<pre><code>fn saluta() {                 // handler void
+    nome = dom_get(&quot;#in&quot;)
+    dom_set(&quot;#out&quot;, &quot;Ciao &quot; + upper(nome) + &quot;!&quot;)
+    dom_log(&quot;fatto dentro il WASM&quot;)
+}
+</code></pre>
+<p>Vedi <code>design/web-wasm.md</code>, <code>design/web-wasm-fase1.md</code> e gli esempi <code>native_wasm</code>/<code>native_webstr</code>/<code>native_wasmdom</code>.</p>
 <h4 id="pagine-server-side-route-e-render-web-server-fase-2a">Pagine server-side: <code>route</code> e <code>render</code> (web → server, Fase 2a)</h4>
 <p>Il lato <strong>server</strong> del web: una <code>route</code> definisce il gestore di un percorso; al suo interno si calcolano
 valori (codice che gira sul server, compilato a nativo) e si rende un template HTML con <code>render</code>. Nel
@@ -1017,8 +1049,9 @@ fn main() {
 <h2 id="14-cosa-non-ce-ancora">14. Cosa non c'è ancora ⏳</h2>
 <ul>
 <li>Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); accesso a tupla per posizione
-  (<code>t.0</code>); input nella DSL client (<code>value of ...</code>); target WASM del client.</li>
-<li>Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; self-hosting del compilatore.</li>
+  (<code>t.0</code>).</li>
+<li>Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; eventi DOM dal WASM (oggi gli handler si
+  invocano dai pulsanti della pagina generata); self-hosting del compilatore.</li>
 </ul>
 </main>
 <button id="toTop" class="to-top" aria-label="Torna su" title="Torna su">↑</button>

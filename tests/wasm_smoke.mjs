@@ -33,16 +33,29 @@ const SUITES = {
 };
 
 // DOM/fetch minimali: bastano a far girare l'IIFE della pagina senza un browser.
+// Per i builtin DOM (dom_get/dom_set) querySelector è backed da una mappa condivisa.
 function installShims() {
   const mkEl = () =>
     new Proxy(
       { children: [], appendChild() {}, },
       { get: (t, k) => (k in t ? t[k] : undefined), set: (t, k, v) => ((t[k] = v), true) }
     );
+  globalThis.__domStore = {};
+  globalThis.__logs = [];
+  const elementFor = (sel) => {
+    const store = globalThis.__domStore;
+    return {
+      get value() { return store[sel] !== undefined ? store[sel] : ""; },
+      set value(v) { store[sel] = v; },
+      get textContent() { return store[sel] !== undefined ? store[sel] : ""; },
+      set textContent(v) { store[sel] = v; },
+    };
+  };
   globalThis.document = {
     getElementById: () => mkEl(),
     createElement: () => mkEl(),
     createTextNode: () => ({}),
+    querySelector: (sel) => elementFor(sel),
   };
   globalThis.fetch = async (p) => ({
     arrayBuffer: async () => fs.readFileSync(EXAMPLES + p),
@@ -81,5 +94,40 @@ for (const [base, cases] of Object.entries(SUITES)) {
     );
   }
 }
+// --- DOM dal codice Logyx in WASM (dom_get/dom_set/dom_log) ---
+{
+  const bag = await loadPage("native_wasmdom");
+  const sig = (n) => bag.SIGS.find((s) => s.name === n);
+  console.log("== native_wasmdom (DOM in WASM) ==");
+
+  const check = (desc, cond) => {
+    tot++;
+    if (cond) ok++;
+    console.log(`  ${cond ? "OK  " : "FAIL"} ${desc}`);
+  };
+
+  // quadrato(9) = 81: una normale funzione di calcolo convive con gli handler DOM
+  check("quadrato(9) = 81", String(bag.callFn(sig("quadrato"), [9])) === "81");
+
+  // saluta(): legge #in, scrive #out, logga. Con input "ada" -> "Ciao ADA!"
+  globalThis.__domStore = { "#in": "ada" };
+  globalThis.__logs = [];
+  const realLog = console.log;
+  console.log = (...a) => globalThis.__logs.push(a.join(" "));
+  bag.callFn(sig("saluta"), []);
+  console.log = realLog;
+  check('saluta() con #in="ada" scrive #out="Ciao ADA!"', globalThis.__domStore["#out"] === "Ciao ADA!");
+  check("saluta() ha chiamato dom_log", globalThis.__logs.length === 1);
+
+  // input vuoto: messaggio di aiuto, nessun log
+  globalThis.__domStore = { "#in": "" };
+  globalThis.__logs = [];
+  console.log = (...a) => globalThis.__logs.push(a.join(" "));
+  bag.callFn(sig("saluta"), []);
+  console.log = realLog;
+  check("saluta() con #in vuoto scrive l'avviso", globalThis.__domStore["#out"] === "scrivi un nome nel campo");
+  check("saluta() con #in vuoto non logga", globalThis.__logs.length === 0);
+}
+
 console.log(`\n${ok}/${tot} chiamate dal collante reale delle pagine`);
 process.exit(ok === tot ? 0 : 1);

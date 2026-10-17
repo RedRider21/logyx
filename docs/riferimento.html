@@ -717,6 +717,11 @@
       en:"Brings <b>pure-computation functions</b> to the browser as WebAssembly. Numbers (<code>int</code>/<code>float</code>/<code>bool</code>) exported as \"C\" functions; strings cross the JS↔WASM boundary via <b>linear memory</b> (the module exports <code>__logyx_alloc</code>/<code>__logyx_free</code>; strings as a <code>ptr, len</code> pair). No <code>wasm-bindgen</code>: just the <code>wasm32-unknown-unknown</code> target.",
       lang:"sh", code:"logyxc build-wasm examples/native_webstr.logyx\n# → native_webstr.wasm + native_webstr.html"},
 
+    {cat:"wasm", name:"dom_get / dom_set / dom_log", sig:"dom_get(sel) -&gt; string\ndom_set(sel, testo)\ndom_log(testo)",
+      it:"Builtin disponibili <b>solo in <code>build-wasm</code></b>: manipolano il DOM dal WASM chiamando funzioni importate dal lato JS (modulo <code>env</code>), via la memoria lineare. <code>dom_get</code> legge <code>.value</code>/<code>.textContent</code>, <code>dom_set</code> scrive il testo, <code>dom_log</code> è <code>console.log</code>. Gli handler sono normali funzioni (anche void). In <code>build</code>/interprete danno un errore chiaro.",
+      en:"Builtins available <b>only in <code>build-wasm</code></b>: they manipulate the DOM from WASM by calling functions imported from the JS side (module <code>env</code>), via linear memory. <code>dom_get</code> reads <code>.value</code>/<code>.textContent</code>, <code>dom_set</code> writes the text, <code>dom_log</code> is <code>console.log</code>. Handlers are ordinary functions (void too). In <code>build</code>/interpreter they give a clear error.",
+      code:"fn saluta() {\n    nome = dom_get(\"#in\")\n    dom_set(\"#out\", \"Ciao \" + upper(nome) + \"!\")\n    dom_log(\"fatto dentro il WASM\")\n}"},
+
     // ======== FFI ========
     {cat:"ffi", name:"use rust", sig:"use rust \"&lt;crate&gt;\" = \"&lt;versione&gt;\"",
       it:"Dichiara una dipendenza da una crate di crates.io; finisce nel <code>Cargo.toml</code> del progetto generato. Attiva il build ibrido con <code>cargo</code>.",
