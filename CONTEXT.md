@@ -64,7 +64,13 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **58/58**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **59/59**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**Varargs FATTI (2026-10-17):** `fn f(a, resto: tipo...)`; l'ultimo parametro raccoglie gli argomenti
+in coda in una lista `[tipo]` (al call-site diventano `vec![…]` nei backend tipizzati; nell'interprete
+una `list`). Solo l'ultimo, niente default. `Param`/`FunctionDef` estesi con `variadic`/`param_variadic`;
+registro `variadic` in codegen/rustgen. Esempio `native_varargs`. **Chiude il Piano 1 "comodità" tranne le
+tuple.** Dipendeva dalle collezioni-come-parametro (fatte poco prima).
 
 **Collezioni come parametro/ritorno FATTE (2026-10-17):** liste `[T]` e mappe `{K: V}` ora si passano
 alle funzioni e si restituiscono anche nei backend tipizzati (`rust_type`/`ty` estesi a `Vec<T>`/

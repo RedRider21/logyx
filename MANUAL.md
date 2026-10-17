@@ -167,6 +167,20 @@ saluta("Ada", "Ehi")    // Ehi, Ada
 passo(10)               // 11
 ```
 
+**Numero variabile di argomenti (varargs).** L'ultimo parametro può essere un `varargs`, scritto
+`nome: tipo...` (tre punti): raccoglie gli argomenti in coda in una **lista** `[tipo]`. Può essere solo
+l'ultimo parametro e non può avere un default.
+
+```
+fn somma(nums: int...) -> int {
+    tot = 0
+    for n in nums { tot += n }
+    return tot
+}
+somma(1, 2, 3)   // 6
+somma()          // 0
+```
+
 ## 6b. Moduli e import ✅
 
 `import "file.logyx"` porta nel programma le definizioni (funzioni) di un altro file. Il percorso è

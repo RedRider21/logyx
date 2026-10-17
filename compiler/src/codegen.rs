@@ -219,6 +219,7 @@ pub struct Codegen {
     ptype: HashMap<String, HashMap<String, Option<String>>>,
     param_order: HashMap<String, Vec<String>>,
     defaults: HashMap<String, Vec<Option<Expr>>>,
+    variadic: HashMap<String, bool>, // la funzione ha l'ultimo parametro varargs?
     rets: HashMap<String, Option<String>>,
     fallible: HashMap<String, bool>,
     records: HashMap<String, Vec<(String, String)>>,
@@ -247,6 +248,7 @@ impl Codegen {
             ptype: HashMap::new(),
             param_order: HashMap::new(),
             defaults: HashMap::new(),
+            variadic: HashMap::new(),
             rets: HashMap::new(),
             fallible: HashMap::new(),
             records: HashMap::new(),
@@ -394,10 +396,15 @@ impl Codegen {
         for f in &funcs {
             let mut m = HashMap::new();
             for p in &f.params {
-                // parametro con default ma senza annotazione → tipo dedotto dal default
-                let ty = match (&p.ty, &p.default) {
-                    (None, Some(d)) => self.type_of(d, &HashMap::new()),
-                    _ => p.ty.clone(),
+                // varargs: il parametro è una lista [E] dell'elemento annotato
+                let ty = if p.variadic {
+                    p.ty.as_ref().map(|e| format!("[{e}]"))
+                } else {
+                    // parametro con default ma senza annotazione → tipo dedotto dal default
+                    match (&p.ty, &p.default) {
+                        (None, Some(d)) => self.type_of(d, &HashMap::new()),
+                        _ => p.ty.clone(),
+                    }
                 };
                 m.insert(p.name.clone(), ty);
             }
@@ -406,6 +413,8 @@ impl Codegen {
                 .insert(f.name.clone(), f.params.iter().map(|p| p.name.clone()).collect());
             self.defaults
                 .insert(f.name.clone(), f.params.iter().map(|p| p.default.clone()).collect());
+            self.variadic
+                .insert(f.name.clone(), f.params.last().map_or(false, |p| p.variadic));
             let (rt, mut fal) = match &f.ret {
                 Some(r) if r.ends_with("|error") => {
                     (Some(r[..r.len() - "|error".len()].to_string()), true)
@@ -2608,6 +2617,35 @@ impl Codegen {
                 if let Expr::Ident(name) = &**callee {
                     if let Some(order) = self.param_order.get(name).cloned() {
                         let ptypes = self.ptype.get(name).cloned().unwrap_or_default();
+                        // varargs: l'ultimo parametro raccoglie gli argomenti in coda in un vec![…]
+                        if *self.variadic.get(name).unwrap_or(&false) {
+                            let fixed = order.len() - 1;
+                            if args.len() < fixed {
+                                return Err(LogyxError::new(format!(
+                                    "la funzione '{}' attende almeno {} argomenti, ricevuti {}",
+                                    name,
+                                    fixed,
+                                    args.len()
+                                )));
+                            }
+                            let mut a = Vec::new();
+                            for (i, arg) in args.iter().take(fixed).enumerate() {
+                                let expected =
+                                    order.get(i).and_then(|pn| ptypes.get(pn)).cloned().flatten();
+                                match &expected {
+                                    Some(et) if parse_fn_type(et).is_some() => {
+                                        a.push(self.fn_value_arg(arg, et)?)
+                                    }
+                                    _ => a.push(self.arg(arg)?),
+                                }
+                            }
+                            let mut rest = Vec::new();
+                            for arg in &args[fixed..] {
+                                rest.push(self.arg(arg)?);
+                            }
+                            a.push(format!("vec![{}]", rest.join(", ")));
+                            return Ok(format!("{}({})", name, a.join(", ")));
+                        }
                         let defs = self.defaults.get(name).cloned().unwrap_or_default();
                         // argomenti mancanti in coda → riempiti con i valori di default
                         let mut all: Vec<Expr> = args.to_vec();

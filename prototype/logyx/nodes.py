@@ -89,6 +89,7 @@ class FunctionDef:
     param_types: Optional[List[Optional[str]]] = None
     ret_type: Optional[str] = None
     param_defaults: Optional[List[Any]] = None   # espressioni di default per i parametri (o None)
+    param_variadic: Optional[List[bool]] = None  # True per il parametro varargs (solo l'ultimo)
 
 
 @dataclass

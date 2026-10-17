@@ -137,14 +137,14 @@ class Parser:
         self.expect(T.LPAREN)
         params, ptypes = [], []
         if not self.at(T.RPAREN):
-            n, t, _d = self.param()
+            n, t, _d, _v = self.param()
             if t is None:
                 self.error("i parametri di una funzione extern richiedono un tipo")
             params.append(n)
             ptypes.append(t)
             while self.at(T.COMMA):
                 self.advance()
-                n, t, _d = self.param()
+                n, t, _d, _v = self.param()
                 if t is None:
                     self.error("i parametri di una funzione extern richiedono un tipo")
                 params.append(n)
@@ -182,14 +182,14 @@ class Parser:
         self.expect(T.FN)
         name = self.expect(T.IDENT, "nome di funzione").value
         self.expect(T.LPAREN)
-        params, ptypes, defaults = [], [], []
+        params, ptypes, defaults, variadics = [], [], [], []
         if not self.at(T.RPAREN):
-            n, t, d = self.param()
-            params.append(n); ptypes.append(t); defaults.append(d)
+            n, t, d, v = self.param()
+            params.append(n); ptypes.append(t); defaults.append(d); variadics.append(v)
             while self.at(T.COMMA):
                 self.advance()
-                n, t, d = self.param()
-                params.append(n); ptypes.append(t); defaults.append(d)
+                n, t, d, v = self.param()
+                params.append(n); ptypes.append(t); defaults.append(d); variadics.append(v)
         self.expect(T.RPAREN)
         # i parametri con valore di default devono stare in coda
         seen = False
@@ -198,12 +198,16 @@ class Parser:
                 seen = True
             elif seen:
                 self.error("un parametro senza valore di default non può seguirne uno con default")
+        # un parametro varargs può essere solo l'ultimo
+        for i, v in enumerate(variadics):
+            if v and i != len(variadics) - 1:
+                self.error("un parametro varargs può essere solo l'ultimo")
         ret = None
         if self.at(T.ARROW):
             self.advance()
             ret = self.type_ref()
         body = self.block()
-        return N.FunctionDef(name, params, body, ptypes, ret, defaults)
+        return N.FunctionDef(name, params, body, ptypes, ret, defaults, variadics)
 
     def param(self):
         name = self.expect(T.IDENT, "nome di parametro").value
@@ -211,11 +215,20 @@ class Parser:
         if self.at(T.COLON):
             self.advance()
             ptype = self.type_ref()
+        # varargs: 'nome: tipo...' (tre punti)
+        variadic = False
+        if self.at(T.DOT):
+            self.advance()
+            self.expect(T.DOT)
+            self.expect(T.DOT)
+            variadic = True
         default = None
         if self.at(T.ASSIGN):
             self.advance()
             default = self.expression()
-        return name, ptype, default
+        if variadic and default is not None:
+            self.error("un parametro varargs non può avere un valore di default")
+        return name, ptype, default, variadic
 
     def type_ref(self):
         # Un tipo, eventualmente fallibile:  T | error

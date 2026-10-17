@@ -302,6 +302,12 @@ impl Parser {
                 ));
             }
         }
+        // un parametro varargs può essere solo l'ultimo
+        if let Some(pos) = params.iter().position(|p| p.variadic) {
+            if pos != params.len() - 1 {
+                return Err(self.error("un parametro varargs può essere solo l'ultimo"));
+            }
+        }
         let mut ret = None;
         if self.is(&TokenKind::Arrow) {
             self.advance();
@@ -318,12 +324,23 @@ impl Parser {
             self.advance();
             ty = Some(self.type_ref()?);
         }
+        // varargs: `nome: tipo...` (tre punti) — raccoglie gli argomenti in coda in una lista
+        let mut variadic = false;
+        if self.is(&TokenKind::Dot) {
+            self.advance();
+            self.expect(&TokenKind::Dot, ".")?;
+            self.expect(&TokenKind::Dot, ".")?;
+            variadic = true;
+        }
         let mut default = None;
         if self.is(&TokenKind::Assign) {
             self.advance();
             default = Some(self.expression()?);
         }
-        Ok(Param { name, ty, default })
+        if variadic && default.is_some() {
+            return Err(self.error("un parametro varargs non può avere un valore di default"));
+        }
+        Ok(Param { name, ty, default, variadic })
     }
 
     fn type_ref(&mut self) -> Result<TypeRef, LogyxError> {

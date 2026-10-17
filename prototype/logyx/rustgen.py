@@ -133,9 +133,19 @@ class RustTranspiler:
         self.param_defaults = {
             f.name: list(f.param_defaults or [None] * len(f.params)) for f in funcs
         }
-        # se un parametro ha un default ma nessuna annotazione, deduci il tipo dal default
+        # registro varargs: la funzione ha l'ultimo parametro varargs?
+        self.variadic = {
+            f.name: bool((f.param_variadic or [False] * len(f.params))[-1]) if f.params else False
+            for f in funcs
+        }
         for f in funcs:
             pt = self.param_types[f.name]
+            vfl = f.param_variadic or [False] * len(f.params)
+            for i, name in enumerate(f.params):
+                # varargs: il parametro è una lista [E] dell'elemento annotato
+                if vfl[i] and pt.get(name) is not None:
+                    pt[name] = f"[{pt[name]}]"
+            # se un parametro ha un default ma nessuna annotazione, deduci il tipo dal default
             for name, d in zip(f.params, self.param_defaults[f.name]):
                 if pt.get(name) is None and d is not None:
                     dt = self._type_of(d, {})
@@ -1415,6 +1425,24 @@ class RustTranspiler:
                 ptypes = getattr(self, "param_types", {}).get(e.callee.name)
                 if ptypes is not None:
                     order = list(ptypes.keys())
+                    # varargs: l'ultimo parametro raccoglie gli argomenti in coda in un vec![…]
+                    if getattr(self, "variadic", {}).get(e.callee.name):
+                        fixed = len(order) - 1
+                        if len(e.args) < fixed:
+                            raise LogyxError(
+                                f"la funzione '{e.callee.name}' attende almeno {fixed} "
+                                f"argomenti, ricevuti {len(e.args)}"
+                            )
+                        parts = []
+                        for i in range(fixed):
+                            expected = ptypes.get(order[i])
+                            if expected and _parse_fn_type(expected) is not None:
+                                parts.append(self._fn_value_arg(e.args[i], expected))
+                            else:
+                                parts.append(self._arg(e.args[i]))
+                        rest = ", ".join(self._arg(a) for a in e.args[fixed:])
+                        parts.append(f"vec![{rest}]")
+                        return f"{e.callee.name}({', '.join(parts)})"
                     # argomenti mancanti in coda -> riempiti con i valori di default
                     full = list(e.args)
                     defs = getattr(self, "param_defaults", {}).get(e.callee.name, [])

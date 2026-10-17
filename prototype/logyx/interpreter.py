@@ -847,18 +847,31 @@ class Interpreter:
         if isinstance(callee, LogyxFunction):
             params = callee.decl.params
             defaults = callee.decl.param_defaults or [None] * len(params)
-            required = sum(1 for d in defaults if d is None)
-            if len(args) < required or len(args) > len(params):
-                attesi = f"{required}" if required == len(params) else f"{required}-{len(params)}"
-                raise LogyxError(
-                    f"la funzione '{callee.decl.name}' attende {attesi} "
-                    f"argomenti, ricevuti {len(args)}"
-                )
+            variadics = callee.decl.param_variadic or [False] * len(params)
             env = Environment(callee.closure)
-            for i, name in enumerate(params):
-                # argomento fornito, oppure valore di default (valutato ora)
-                value = args[i] if i < len(args) else self.eval(defaults[i], env)
-                env.define(name, value)
+            if variadics and variadics[-1]:
+                # varargs: l'ultimo parametro raccoglie gli argomenti in coda in una lista
+                fixed = len(params) - 1
+                if len(args) < fixed:
+                    raise LogyxError(
+                        f"la funzione '{callee.decl.name}' attende almeno {fixed} "
+                        f"argomenti, ricevuti {len(args)}"
+                    )
+                for i in range(fixed):
+                    env.define(params[i], args[i])
+                env.define(params[-1], list(args[fixed:]))
+            else:
+                required = sum(1 for d in defaults if d is None)
+                if len(args) < required or len(args) > len(params):
+                    attesi = f"{required}" if required == len(params) else f"{required}-{len(params)}"
+                    raise LogyxError(
+                        f"la funzione '{callee.decl.name}' attende {attesi} "
+                        f"argomenti, ricevuti {len(args)}"
+                    )
+                for i, name in enumerate(params):
+                    # argomento fornito, oppure valore di default (valutato ora)
+                    value = args[i] if i < len(args) else self.eval(defaults[i], env)
+                    env.define(name, value)
             try:
                 self._exec_all(callee.decl.body, env)
             except _Return as r:

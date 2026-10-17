@@ -31,7 +31,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | **`break` / `continue`** nei cicli | ✅ | — |
 | **Operatori composti** (`+=`, `-=`, `*=`, …) | ✅ | — |
 | **Funzioni come valori / closure / lambda** | ✅ lambda `|a,b| expr`; **valori funzione** (`Rc<dyn Fn>`) passabili, chiamabili, **restituiti** (closure che catturano l'ambiente) e **assegnabili a variabile** con tipo annotato (`f: fn(int)->int = |x| x+1`) | — |
-| Parametri con default; numero variabile di argomenti | 🟡 **default** `p = valore` ✅ (in coda, tipo dedotto dal default); varargs ⏳ | 3 |
+| Parametri con default; numero variabile di argomenti | ✅ **default** `p = valore` (in coda); **varargs** `p: tipo...` (ultimo, raccoglie in lista) | — |
 | **Record/struct** (tipi con campi, anche in liste/mappe) | ✅ | — |
 | `match` generale (sui valori, con `else`) | ✅ | — |
 | `enum` (tipi somma) | ✅ varianti con/senza **payload**, costruzione `Nome.Var(args)`, `==` e `match` con binding | 3 |

@@ -102,8 +102,9 @@ pub struct EnumCase {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Param {
     pub name: String,
-    pub ty: Option<TypeRef>,
+    pub ty: Option<TypeRef>,       // per un varargs è il tipo ELEMENTO
     pub default: Option<Expr>,
+    pub variadic: bool,            // parametro varargs `nome: tipo...` (raccoglie gli argomenti in coda)
 }
 
 #[derive(Debug, Clone, PartialEq)]

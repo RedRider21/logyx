@@ -1,0 +1,25 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Varargs: un parametro "nome: tipo..." (tre punti) raccoglie gli argomenti
+// in coda in una lista. Può essere solo l'ultimo parametro.
+
+fn somma(nums: int...) -> int {
+    tot = 0
+    for n in nums { tot += n }
+    return tot
+}
+
+fn percorso(radice: string, parti: string...) -> string {
+    out = radice
+    for p in parti { out += "/" + p }
+    return out
+}
+
+fn main() {
+    print(somma(1, 2, 3, 4))            // 10
+    print(somma(5))                     // 5
+    print(somma())                      // 0  (nessun argomento in coda)
+    print(percorso("root", "a", "b"))   // root/a/b
+    print(percorso("solo"))             // solo
+}

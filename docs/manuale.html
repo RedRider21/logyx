@@ -303,6 +303,17 @@ saluta(&quot;Ada&quot;)           // Ciao, Ada
 saluta(&quot;Ada&quot;, &quot;Ehi&quot;)    // Ehi, Ada
 passo(10)               // 11
 </code></pre>
+<p><strong>Numero variabile di argomenti (varargs).</strong> L'ultimo parametro può essere un <code>varargs</code>, scritto
+<code>nome: tipo...</code> (tre punti): raccoglie gli argomenti in coda in una <strong>lista</strong> <code>[tipo]</code>. Può essere solo
+l'ultimo parametro e non può avere un default.</p>
+<pre><code>fn somma(nums: int...) -&gt; int {
+    tot = 0
+    for n in nums { tot += n }
+    return tot
+}
+somma(1, 2, 3)   // 6
+somma()          // 0
+</code></pre>
 <h2 id="6b-moduli-e-import">6b. Moduli e import ✅</h2>
 <p><code>import "file.logyx"</code> porta nel programma le definizioni (funzioni) di un altro file. Il percorso è
 relativo al file che importa; l'estensione <code>.logyx</code> può essere omessa.</p>
