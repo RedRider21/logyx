@@ -38,6 +38,13 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | Tuple; `for` con indice | ✅ **tuple** `(a, b)` con tipo `(T1, T2)`, ritorni multipli e destructuring `x, y = f()`; **`for` con indice** `for i, x in …` | — |
 | **Variabili e costanti globali** (a primo livello, fuori dalle funzioni) | ⏳ — oggi `const`/variabili globali funzionano **solo nell'interprete**; nel backend tipizzato il codice a primo livello dà errore. **Fondamentali:** da avere (ogni linguaggio le ha) | **2** |
 | Conversioni esplicite (`int()`, `float()`) | ✅ | — |
+| **Operatore condizionale (ternario)** `cond ? a : b` (o `a if cond else b`) | ⏳ — oggi un valore condizionale richiede un `if` statement; tutti i linguaggi hanno l'espressione condizionale | **2** |
+| **`in` come operatore booleano** (`x in lista`, `k in mappa`) | ⏳ — oggi `in` esiste solo nel `for`; per il test servono `contains()`/`has()` | **3** |
+| **Operatore di esponente** (`**` o `^`) | ⏳ — oggi solo il builtin `pow()` | 4 |
+| **Operatori bit a bit** `& \| ^ << >> ~` | ⏳ — assenti; utili per basso livello/cybersecurity (attenzione a `\|` già usato per lambda/Result) | 4 |
+| **Indicizzazione di stringhe / tipo carattere** (`s[i]`), bytes | ⏳ — oggi solo `substring`/`index_of` | 5 |
+| **Tipo `set`** (insieme, elementi unici) | ⏳ — oggi ci sono list e map; manca l'insieme | 5 |
+| **List/dict comprehension** (`[x*2 for x in xs if …]`) | ⏳ — comodità; oggi si fa con `map`/`filter` | 5 |
 
 ## Piano 2 — Libreria standard (funzioni, a strati)
 
@@ -49,7 +56,7 @@ Da costruire preferibilmente **in Logyx**, non come builtin infiniti nel compila
 | Collezioni di stringhe | liste e mappe di `String` ✅ (vedi `design/collezioni-stringhe.md`) | ✅ |
 | Liste | `len`, `push`, `remove`, `contains`, `sum`, `sort`, `map`, `filter`, `reduce`, `slice`, assegnazione `xs[i]=v` ✅ | ✅ |
 | Mappe | letterale, accesso, `len`, `has`, `keys`, `values`, iterazione `for k in mappa` (chiavi ordinate) ✅ | 🟢 |
-| Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil`, `sqrt`, `round`, `random`, conversioni `int`/`float` ✅ | ✅ |
+| Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil`, `sqrt`, `round`, `random`, conversioni `int`/`float` ✅ · **libreria matematica** (`sin`/`cos`/`tan`, `log`/`exp`, costanti `pi`/`e`) ⏳ | 🟡 |
 | I/O e sistema | `print`, **file** (`read_file`/`write_file`/`file_exists`), **stdin** (`read_line`/`read_all`), **ambiente** (`env`), **argomenti CLI** (`args`), **processi esterni** (`run`/`run_code`) ✅ | ✅ |
 | Dati | **JSON**: `to_json` + `from_json` (scalari/record/liste/mappe) ✅ · **date/tempo**: `now`, `format_date` (crate `chrono`) ✅ | ✅ |
 
@@ -80,14 +87,27 @@ Oggi esistono solo come abbozzi nel vecchio motore Python; **non** ancora nel co
 
 ---
 
+## Scelte di design da valutare (non "buchi": decisioni di paradigma)
+
+Elementi che **alcuni** linguaggi famosi hanno e Logyx no — ma che sono scelte di stile, non lacune del
+nucleo. Da decidere se e quando adottarli (dopo il nucleo e, in parte, dopo il self-hosting).
+
+| Elemento | Note / direzione possibile |
+| --- | --- |
+| **OOP classica**: classi, ereditarietà, **metodi** `x.metodo()`, interfacce | Oggi Logyx è **funzionale + record/enum** (stile Rust/Go). Possibile: aggiungere i **metodi** sui record (sintassi `x.metodo()`), e/o un sistema a **trait/interfacce** invece dell'ereditarietà. |
+| **Generici / polimorfismo parametrico** (`fn<T>`) | Utile per contenitori e librerie riusabili; impatta forte l'inferenza dei tipi. Tipicamente roba da v1+. |
+| **Concorrenza**: thread, `async`/`await`, canali | Grande capitolo; eredita molto da Rust. Da valutare dopo il self-hosting. |
+| **Argomenti con nome** al call-site (`f(x=1)`) e **spread** `*args` in chiamata | Comodità ergonomiche, non essenziali al nucleo. |
+
 ## Ordine consigliato (le prossime tappe)
 
-1. **Chiudere il nucleo** (Piano 1, priorità 1–2): `break`/`continue`, operatori composti, **closure**,
-   record/struct. Sono il collo di bottiglia: abilitano tutto il resto.
-2. **Libreria standard in Logyx** (Piano 2): iniziare da stringhe e liste (`split`, `join`, `map`,
-   `filter`, `sort`), scritte in Logyx e verificate dalla suite di conformità.
-3. **Dati**: JSON e date/tempo (servono a quasi ogni app reale).
-4. **Capacità web** (Piano 3) portate nel compilatore nativo, poi **WASM** per il client.
+1. **Completare il nucleo con gli elementi "da ogni linguaggio"** (Piano 1, priorità 2–3):
+   **variabili/costanti globali**, **operatore ternario**, **`in` come operatore**. Poi esponente,
+   bitwise, `set`, indicizzazione stringhe, comprehension.
+2. **Libreria matematica** (Piano 2): `sin`/`cos`/`log`/`exp`, costanti.
+3. **Self-hosting** (orizzonte): lexer di Logyx scritto in Logyx + test a specchio contro
+   `logyxc tokens`, poi parser → AST → backend, a fasi.
+4. **Scelte di design** (sopra) da discutere quando il nucleo è completo.
 
-Ogni tappa segue il ciclo già rodato: implementare nei backend (o in Logyx, per le librerie), aggiungere
-un esempio, mantenere verde `tests/conformance.sh`.
+Ogni tappa segue il ciclo già rodato: implementare nei tre backend, aggiungere un esempio, mantenere
+verde `tests/conformance.sh`.

@@ -68,6 +68,13 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 > di funzione". Da implementare nei tre backend (globali tipizzate: `static`/`const` o `Lazy` in Rust;
 > ambiente globale nel transpiler). Ogni linguaggio serio le ha. Vedi ROADMAP, Piano 1.
 >
+> **Analisi di copertura (2026-10-17) — buchi del nucleo da colmare, in ordine:** globali → **operatore
+> ternario** (`cond ? a : b`) → **`in` come operatore** (`x in lista`) → esponente (`**`) → bitwise
+> (`& | ^ << >> ~`) → indicizzazione stringhe/char (`s[i]`) → tipo **`set`** → comprehension → libreria
+> **matematica** (`sin`/`cos`/`log`/`exp`). **Scelte di design (non buchi):** OOP/metodi, generici,
+> concorrenza, argomenti con nome, spread. Tutto dettagliato in `ROADMAP.md` (Piano 1/2 + sezione
+> "Scelte di design da valutare").
+>
 > **Prossimo fronte grosso concordato:** self-hosting — prima pietra = lexer di Logyx scritto in Logyx
 > + test a specchio contro `logyxc tokens` (vedi fondo sezione / proposta in chat).
 
