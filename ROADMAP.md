@@ -36,7 +36,8 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | `match` generale (sui valori, con `else`) | ✅ | — |
 | `enum` (tipi somma) | ✅ varianti con/senza **payload**, costruzione `Nome.Var(args)`, `==` e `match` con binding | 3 |
 | Tuple; `for` con indice | ✅ **tuple** `(a, b)` con tipo `(T1, T2)`, ritorni multipli e destructuring `x, y = f()`; **`for` con indice** `for i, x in …` | — |
-| Costanti globali a primo livello; conversioni esplicite (`int()`, `float()`) | 🟡 | 3 |
+| **Variabili e costanti globali** (a primo livello, fuori dalle funzioni) | ⏳ — oggi `const`/variabili globali funzionano **solo nell'interprete**; nel backend tipizzato il codice a primo livello dà errore. **Fondamentali:** da avere (ogni linguaggio le ha) | **2** |
+| Conversioni esplicite (`int()`, `float()`) | ✅ | — |
 
 ## Piano 2 — Libreria standard (funzioni, a strati)
 
@@ -72,7 +73,7 @@ Oggi esistono solo come abbozzi nel vecchio motore Python; **non** ancora nel co
 
 | Capacità | Esempi | Stato |
 | --- | --- | --- |
-| Web server | routing, HTTP, `render` (HTML) e **`respond`** (stringa/JSON, Content-Type dedicato): **nel compilatore nativo** — `logyxc render`/`serve`/`build-server` (crate `tiny_http`); sessioni/DB ⏳ | 🟢 (nativo, base) |
+| Web server | routing, HTTP, `render` (HTML) e **`respond`** (stringa/JSON, Content-Type dedicato): **nel compilatore nativo** — `logyxc render`/`serve`/`build-server` (crate `tiny_http`); **database SQLite** già integrato (riga sotto); sessioni ⏳ | 🟢 (nativo) |
 | Database | **SQLite**: `db_open`/`db_exec`/`db_query(…, [Record])` (righe tipizzate via record) ✅; altri DB/ORM ⏳ | 🟢 (SQLite) |
 | Client | isole `@start-client`→JS **nel compilatore nativo** (eventi, stato, DOM), servite con la pagina; **`fetch`** (chiamate HTTP dall'isola, aggiornamento DOM con la risposta) ✅ | 🟢 (nativo) |
 | Target | **WebAssembly (client): Fasi 0+1+2 fatte** — `logyxc build-wasm` compila a WASM funzioni `int`/`float`/`bool`/`string` (stringhe via memoria lineare, senza `wasm-bindgen`), pagina HTML interattiva, e **DOM dal codice Logyx** (`dom_get`/`dom_set`/`dom_log` via import JS del modulo `env`) — `examples/native_wasm`/`native_webstr`/`native_wasmdom`; eventi DOM dal WASM ⏳ | 🟢 |

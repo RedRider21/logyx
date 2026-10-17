@@ -333,7 +333,7 @@ fn main() {
 - v0: l'accesso per posizione `t.0` non c'è ancora; si usa il destructuring. Vedi
   `examples/native_tuple.logyx`.
 
-## 7. Collezioni 🟡
+## 7. Collezioni ✅
 
 Liste e mappe: letterali, indicizzazione, `len`, iterazione con `for`.
 
@@ -357,7 +357,9 @@ Mutazioni: `push(lista, x)` aggiunge `x` in coda, `remove(lista, i)` toglie l'el
 `sort(lista)` ordina in place. Altre operazioni: `sum(lista)`, `contains(lista, x)`, `has(mappa, chiave)`,
 `map`/`filter`/`reduce` (con una funzione nominata **o** una lambda inline). Le chiavi di mappa si
 iterano **ordinate** (`for k in m`, `keys(m)`): l'ordine è deterministico, quindi prototipo e compilatore
-nativo danno lo stesso risultato. Non ancora: slicing. ⏳
+nativo danno lo stesso risultato. Porzioni di lista con `slice(lista, a, b)`. Liste e mappe si passano
+alle funzioni e si restituiscono (anche nel compilatore nativo). Unico limite: la lista/mappa **vuota**
+senza elementi, da cui il backend non deduce il tipo.
 
 ## 8. Stringhe e interpolazione ✅
 
@@ -380,6 +382,13 @@ print("Ciao da {nome}!")     // Ciao da Logyx!
 | `remove(lista, i)` | Toglie l'elemento all'indice `i` (muta la lista); usala come istruzione |
 | `abs(x)` | Valore assoluto di `x` (int o float) |
 | `min(a, b)` / `max(a, b)` | Il minore / il maggiore fra due numeri dello stesso tipo |
+| `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
+| `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
+| `round(x)` | Arrotonda all'intero più vicino, metà lontano dallo zero (`2.5`→`3`, `-2.5`→`-3`) |
+| `sqrt(x)` | Radice quadrata (ritorna un float) |
+| `random()` | Float casuale in `[0, 1)` (crate `rand`); non deterministico, come `now()` |
+| `sum(lista)` | Somma degli elementi (lista di interi) |
+| `sort(lista)` | Ordina la lista in ordine crescente (la muta); usala come istruzione |
 | `upper(s)` / `lower(s)` | La stringa `s` in maiuscolo / minuscolo |
 | `contains(lista, x)` | `true` se la lista contiene il valore `x` |
 | `slice(lista, a, b)` | Nuova lista con gli elementi da `a` incluso a `b` escluso (non muta l'originale) |
@@ -632,13 +641,6 @@ Le **isole client** `@start-client … @end-client` dentro il template sono supp
 compila a **JavaScript** (eventi, stato, aggiornamento del DOM — `on "click" of "#btn" { … }`,
 `set text of "#out" to …`) e viene iniettato come `<script>` nella pagina resa. Esempio:
 `examples/hello_web.logyx`. L'output coincide con quello del prototipo (`python3 main.py render`).
-| `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
-| `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
-| `round(x)` | Arrotonda all'intero più vicino, metà lontano dallo zero (`2.5`→`3`, `-2.5`→`-3`) |
-| `sqrt(x)` | Radice quadrata (ritorna un float) |
-| `random()` | Float casuale in `[0, 1)` (crate `rand`); non deterministico, come `now()` |
-| `sum(lista)` | Somma degli elementi (lista di interi) |
-| `sort(lista)` | Ordina la lista in ordine crescente (la muta); usala come istruzione |
 
 ## 10. Web lato server ✅
 
@@ -691,15 +693,22 @@ on "click" of "#carica" {
 }
 ```
 
-Esempio completo (pagina + route API): `examples/web_fetch.logyx`. Target WASM del client: previsto. ⏳
+Esempio completo (pagina + route API): `examples/web_fetch.logyx`. Il DOM si può manipolare anche dal
+**WASM** (builtin `dom_*`, vedi "Compilare a WebAssembly"); compilare le isole stesse a WASM (anziché a
+JavaScript) resta previsto. ⏳
 
 ## 12. Compilazione nativa (transpiler Rust) 🟡
 
 `build` traduce un **sottoinsieme tipizzato** in Rust, che `rustc` compila a eseguibile nativo.
 
-- Supporta: funzioni con tipi (`int`/`float`/`bool`/`string`), aritmetica, confronti, logica,
-  concatenazione di stringhe con `+`, `if`/`else`, `while`, `for x in range(n)` o `range(a, b)`, `return`,
-  `print`, ricorsione. Gli interi sono `i64`; `/` è divisione intera.
+- Supporta: funzioni con tipi (`int`/`float`/`bool`/`string`) ed **inferenza**, aritmetica, confronti,
+  logica, concatenazione di stringhe con `+`, `if`/`else`, `while`, `for` (anche con indice), `break`/
+  `continue`, `match`, `return`, ricorsione; **record**, **enum** (con payload), **tuple** e destructuring;
+  **lambda/closure** e valori funzione; **errori** come `Result`; **parametri con default** e **varargs**;
+  tutta la **libreria builtin** (numeri, stringhe+regex, liste+`slice`, mappe, JSON, date, I/O file,
+  stdin/ambiente, processi esterni); **database SQLite**; **web** (`route`/`render`/`respond`, server HTTP,
+  isole client→JS) e **WebAssembly** (`build-wasm`, DOM via `dom_*`). Gli interi sono `i64`; `/` è
+  divisione intera.
 - **Tipi di ritorno e dei parametri possono essere omessi**: vengono dedotti dall'uso —
   aritmetica → `int`/`float`, concatenazione con `+` → `string`, `not`/`and`/`or` o uso come condizione
   → `bool`, confronti e chiamate propagano il tipo dell'altro lato. L'annotazione resta possibile e serve
@@ -710,8 +719,9 @@ Esempio completo (pagina + route API): `examples/web_fetch.logyx`. Target WASM d
   `for k in m` (chiavi ordinate). Chiavi e valori scalari **o stringhe**. Vedi `examples/native_map.logyx`.
 - **Liste e mappe come parametro e tipo di ritorno** di funzione: `fn somma(xs: [int]) -> int`,
   `fn chiavi(m: {string: int}) -> [string]`. Vedi `examples/native_collparams.logyx`.
-- Non ancora: lista vuota `[]` senza elementi (il backend non ne deduce il tipo), codice dinamico senza
-  tipi. In quei casi dà un errore chiaro.
+- Non ancora nel backend tipizzato: lista/mappa **vuota** senza elementi (tipo non deducibile),
+  **costanti globali a primo livello** (`const` fuori da una funzione — funziona nell'interprete),
+  codice dinamico senza tipi. In quei casi dà un errore chiaro.
 
 ```
 fn fib(n) {                       // nessuna annotazione

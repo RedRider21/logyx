@@ -89,9 +89,10 @@ for n in numeri {
 `route` definisce un indirizzo a cui risponde il **server**. `render` produce HTML con interpolazione
 `{espressione}` e blocchi di controllo `{ for x in xs { <li>{x}</li> } }`.
 
-Il codice dentro `@start-client ... @end-client` viene compilato per il **client** (WASM nel browser).
-Fuori da quei blocchi è tutto server. API client v0 (provvisoria): `on "<evento>" of "<selettore>" { ... }`
-e `set text of "<selettore>" to <espressione>`.
+Il codice dentro `@start-client ... @end-client` viene compilato a **JavaScript** e servito con la pagina.
+Fuori da quei blocchi è tutto server. API client: `on "<evento>" of "<selettore>" { ... }`,
+`set (text|html) of "<selettore>" to <espressione>` e `fetch <url> [...] [as <var>] { ... } [else { ... }]`.
+(Nota: il DOM si manipola anche dal **WASM** di `build-wasm` con i builtin `dom_*`.)
 
 ```
 route "/" {
@@ -164,7 +165,7 @@ for          := "for" IDENT ("," IDENT)? "in" espressione blocco   // "for indic
 render       := "render" template
 espressione  := ... (letterali, chiamate, operatori aritmetici/confronto/logici, postfisso "?", lambda)
                 // e? propaga l'errore: se e è un errore, esce dalla funzione; altrimenti dà il valore
-lambda       := "|" (IDENT ("," IDENT)*)? "|" espressione    // v0: argomento di map/filter/reduce
+lambda       := "|" (IDENT ("," IDENT)*)? "|" espressione    // passabile, ritornabile, assegnabile a variabile (con tipo fn(...)->...)
 tipo         := tipoBase ("|" "error")?          // "T | error" = fallibile (Result in Rust)
 tipoBase     := "int" | "float" | "bool" | "string" | "nil"
               | "[" tipoBase "]" | "{" tipoBase ":" tipoBase "}"

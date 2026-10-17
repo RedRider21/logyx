@@ -9,7 +9,7 @@ Il nome unisce la radice greca **λόγος** (parola, ragione, linguaggio) al s
 - **Estensione dei file:** `.logyx` (breve: `.lgx`)
 - **Autore:** Daniele Deplano (RedRider21)
 - **Licenza:** AGPL-3.0 (vedi `LICENSE`)
-- **Stato:** **versione 0** — prototipo funzionante in Python (interprete + render web + transpiler Rust su sottoinsieme tipizzato)
+- **Stato:** **versione 0** — tre backend conformi: interprete Python, transpiler Python→Rust e **compilatore nativo `logyxc`** (Rust). Prossimo orizzonte: self-hosting
 - **Sito:** https://redrider21.github.io/logyx/ · **Manuale online:** https://redrider21.github.io/logyx/manuale.html
 - **Documento di design online:** https://claude.ai/code/artifact/0aa46f19-cef5-4728-8e26-4b83867259cd
 
@@ -47,28 +47,37 @@ impalcature temporanee per far nascere il linguaggio e sperimetrarne la semantic
 Logyx **self-hosted** — un compilatore scritto in Logyx stesso, che genera direttamente codice
 macchina — in cui **né Python né Rust resteranno una dipendenza**. Sono i ponteggi, non l'edificio.
 
-## Cosa funziona già (prototipo)
+## Cosa funziona già
 
-- **Nucleo**: variabili, funzioni, `if`/`while`/`for`, liste e mappe, stringhe con
-  interpolazione, builtin (`print`, `len`, `str`, `range`).
-- **Moduli**: `import "file.logyx"` per riusare funzioni fra file (dedup e cicli gestiti).
-- **Gestione errori** come valori (modello Result): `fail`, propagazione con `?`,
-  `match { ok v { } err e { } }`.
-- **Web lato server**: `route` + `render` con interpolazione, escaping automatico e blocchi
-  di controllo `{ for }` / `{ if }`.
-- **Isole client** `@start-client … @end-client` compilate a **JavaScript**.
-- **Transpiler Rust** (comando `build`) su un sottoinsieme tipizzato: aritmetica, confronti,
-  logica, stringhe, `if`/`while`/`for`, ricorsione, **liste** e **mappe** di scalari, **moduli**
-  e **gestione errori** (`-> T | error` → `Result<T, String>`). I tipi di **ritorno e dei parametri**
-  sono **dedotti** dall'uso. `rustc` compila il `.rs` prodotto a eseguibile nativo.
-- **Compilatore vero in Rust** (`compiler/`, binario `logyxc`): lexer, parser, inferenza dei tipi e
-  backend scritti in Rust — la **Fase 1 del bootstrap**. Oltre al nucleo nativo (verificato **conforme**
-  al prototipo su tutti gli esempi) compila a **WebAssembly** (`build-wasm`), rende l'HTML lato server
-  (`render`), serve via **HTTP** (`serve`/`build-server`, crate `tiny_http`) e compila le **isole client**
-  `@start-client` a JavaScript, servite con la pagina.
+Tutto quanto segue è implementato e **conforme nei tre backend** (interprete, transpiler, compilatore
+nativo `logyxc`), salvo dove indicato. Il dettaglio con esempi è nel `MANUAL.md` e nel
+[Riferimento del sito](https://redrider21.github.io/logyx/riferimento.html); la legenda ✅/🟡/⏳ e le
+priorità sono in `ROADMAP.md`.
 
-Il dettaglio aggiornato di ciò che il prototipo esegue è nel `MANUAL.md`; il punto di ripresa
-dello sviluppo è in `CONTEXT.md`.
+- **Nucleo**: variabili, `if`/`while`/`for` (anche con **indice** `for i, x in …`), `break`/`continue`,
+  operatori composti, `match`, interpolazione di stringhe, inferenza dei tipi.
+- **Funzioni**: tipi opzionali e dedotti, **parametri con default**, **varargs** (`resto: tipo...`),
+  **lambda/closure** e valori funzione (passabili, ritornabili, assegnabili a variabile).
+- **Tipi dati**: **record**, **enum** (con payload e `match` con binding), **tuple** con ritorni multipli
+  e destructuring (`a, b = f()`), liste e mappe (anche come parametro/ritorno di funzione).
+- **Errori** come valori (Result): `fail`, `?`, `match { ok v { } err e { } }`.
+- **Moduli**: `import "file.logyx"` (dedup e cicli gestiti).
+- **Libreria builtin**: numeri (`abs`/`min`/`max`/`pow`/`floor`/`ceil`/`round`/`sqrt`/`random`), stringhe
+  (`upper`/`lower`/`trim`/`split`/`join`/`replace`/`matches` regex…), liste (`push`/`remove`/`sort`/`sum`/
+  `slice`/`map`/`filter`/`reduce`), mappe (`has`/`keys`/`values`), **JSON** (`to_json`/`from_json`),
+  **date** (`now`/`format_date`), **I/O file**, **stdin/ambiente/CLI**, **processi esterni** (`run`).
+- **Database SQLite**: `db_open`/`db_exec`/`db_query(…, [Record])` (righe tipizzate via record).
+- **Web lato server**: `route` + `render` (interpolazione, escaping, blocchi `{for}`/`{if}`) e `respond`
+  (risposta stringa/JSON); server HTTP con `serve`/`build-server` (crate `tiny_http`).
+- **Client**: isole `@start-client … @end-client` compilate a **JavaScript** (eventi, DOM, stato) con
+  **`fetch`** verso il server; servite con la pagina.
+- **WebAssembly**: `build-wasm` compila funzioni a WASM (numeri e stringhe via memoria lineare, senza
+  `wasm-bindgen`) e permette di manipolare il **DOM dal codice Logyx** (`dom_get`/`dom_set`/`dom_log`).
+- **Librerie esterne**: `use rust` / `extern rust` per agganciare qualunque crate di crates.io.
+
+Non ancora (vedi `ROADMAP.md`): **variabili/costanti globali a primo livello** nel backend tipizzato
+(oggi solo nell'interprete), lista/mappa vuota senza elementi, accesso a tupla per posizione (`t.0`),
+database oltre SQLite, e il **self-hosting** del compilatore. Il punto di ripresa è in `CONTEXT.md`.
 
 ## Librerie esterne
 

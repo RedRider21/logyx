@@ -227,8 +227,13 @@ dalla stessa toolchain.
 
 ## Prossimi passi
 
-1. Definire la grammatica di un programma minimo: parole chiave, forma dei blocchi, regole del `;` automatico.
-2. Scrivere il primo "ciao mondo" multi-target: stesso sorgente che risponde a una route sul server e mostra
-   qualcosa di interattivo nel client.
-3. Prototipo del frontend (lexer + parser + interprete) in Python o TypeScript, per "sentire" il linguaggio
-   prima di scrivere il compilatore Rust.
+I primi passi di questo documento sono **fatti**: grammatica definita (`GRAMMAR.md`), prototipo Python
+(lexer + parser + interprete + render web), compilatore nativo `logyxc` in Rust (nucleo, web, WASM), e un
+"ciao mondo" multi-target (route sul server + isola client, con `fetch` e route `respond`). Sono arrivati
+anche record/enum/tuple, closure, default+varargs, libreria builtin completa, JSON/date, **database
+SQLite**, e **DOM dal WASM**.
+
+Lo stato aggiornato e il quadro vivo sono in `ROADMAP.md` (gap-analysis con legenda ✅/🟡/⏳) e in
+`CONTEXT.md` (punto di ripresa). **Prossimo grande fronte:** il **self-hosting** — riscrivere il
+compilatore in Logyx stesso, a fasi (lexer → parser → backend), finché né Python né Rust restano una
+dipendenza.

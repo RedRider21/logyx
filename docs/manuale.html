@@ -465,7 +465,7 @@ fn main() {
 <li>v0: l'accesso per posizione <code>t.0</code> non c'è ancora; si usa il destructuring. Vedi
   <code>examples/native_tuple.logyx</code>.</li>
 </ul>
-<h2 id="7-collezioni">7. Collezioni 🟡</h2>
+<h2 id="7-collezioni">7. Collezioni ✅</h2>
 <p>Liste e mappe: letterali, indicizzazione, <code>len</code>, iterazione con <code>for</code>.</p>
 <pre><code>xs = [3, 1, 2]
 xs[0]            // 3  (lettura)
@@ -485,7 +485,9 @@ for k in m { ... }     // itera le chiavi della mappa, ordinate
 <code>sort(lista)</code> ordina in place. Altre operazioni: <code>sum(lista)</code>, <code>contains(lista, x)</code>, <code>has(mappa, chiave)</code>,
 <code>map</code>/<code>filter</code>/<code>reduce</code> (con una funzione nominata <strong>o</strong> una lambda inline). Le chiavi di mappa si
 iterano <strong>ordinate</strong> (<code>for k in m</code>, <code>keys(m)</code>): l'ordine è deterministico, quindi prototipo e compilatore
-nativo danno lo stesso risultato. Non ancora: slicing. ⏳</p>
+nativo danno lo stesso risultato. Porzioni di lista con <code>slice(lista, a, b)</code>. Liste e mappe si passano
+alle funzioni e si restituiscono (anche nel compilatore nativo). Unico limite: la lista/mappa <strong>vuota</strong>
+senza elementi, da cui il backend non deduce il tipo.</p>
 <h2 id="8-stringhe-e-interpolazione">8. Stringhe e interpolazione ✅</h2>
 <pre><code>nome = &quot;Logyx&quot;
 print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
@@ -538,6 +540,34 @@ print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 <tr>
 <td><code>min(a, b)</code> / <code>max(a, b)</code></td>
 <td>Il minore / il maggiore fra due numeri dello stesso tipo</td>
+</tr>
+<tr>
+<td><code>pow(base, esp)</code></td>
+<td><code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>)</td>
+</tr>
+<tr>
+<td><code>floor(x)</code> / <code>ceil(x)</code></td>
+<td>Arrotonda verso il basso / verso l'alto (ritorna un intero)</td>
+</tr>
+<tr>
+<td><code>round(x)</code></td>
+<td>Arrotonda all'intero più vicino, metà lontano dallo zero (<code>2.5</code>→<code>3</code>, <code>-2.5</code>→<code>-3</code>)</td>
+</tr>
+<tr>
+<td><code>sqrt(x)</code></td>
+<td>Radice quadrata (ritorna un float)</td>
+</tr>
+<tr>
+<td><code>random()</code></td>
+<td>Float casuale in <code>[0, 1)</code> (crate <code>rand</code>); non deterministico, come <code>now()</code></td>
+</tr>
+<tr>
+<td><code>sum(lista)</code></td>
+<td>Somma degli elementi (lista di interi)</td>
+</tr>
+<tr>
+<td><code>sort(lista)</code></td>
+<td>Ordina la lista in ordine crescente (la muta); usala come istruzione</td>
 </tr>
 <tr>
 <td><code>upper(s)</code> / <code>lower(s)</code></td>
@@ -903,14 +933,7 @@ annidate incluse). Esempio: <code>examples/web_loop.logyx</code>.</p>
 <p>Le <strong>isole client</strong> <code>@start-client … @end-client</code> dentro il template sono supportate: il loro corpo si
 compila a <strong>JavaScript</strong> (eventi, stato, aggiornamento del DOM — <code>on "click" of "#btn" { … }</code>,
 <code>set text of "#out" to …</code>) e viene iniettato come <code>&lt;script&gt;</code> nella pagina resa. Esempio:
-<code>examples/hello_web.logyx</code>. L'output coincide con quello del prototipo (<code>python3 main.py render</code>).
-| <code>pow(base, esp)</code> | <code>base</code> elevato a <code>esp</code> (interi, <code>esp &gt;= 0</code>) |
-| <code>floor(x)</code> / <code>ceil(x)</code> | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
-| <code>round(x)</code> | Arrotonda all'intero più vicino, metà lontano dallo zero (<code>2.5</code>→<code>3</code>, <code>-2.5</code>→<code>-3</code>) |
-| <code>sqrt(x)</code> | Radice quadrata (ritorna un float) |
-| <code>random()</code> | Float casuale in <code>[0, 1)</code> (crate <code>rand</code>); non deterministico, come <code>now()</code> |
-| <code>sum(lista)</code> | Somma degli elementi (lista di interi) |
-| <code>sort(lista)</code> | Ordina la lista in ordine crescente (la muta); usala come istruzione |</p>
+<code>examples/hello_web.logyx</code>. L'output coincide con quello del prototipo (<code>python3 main.py render</code>).</p>
 <h2 id="10-web-lato-server">10. Web lato server ✅</h2>
 <ul>
 <li><code>route "/percorso" { ... }</code> definisce un endpoint; il corpo gira sul server.</li>
@@ -977,13 +1000,20 @@ route <code>respond</code>, §10) e aggiorna il DOM con il risultato.</p>
     }
 }
 </code></pre>
-<p>Esempio completo (pagina + route API): <code>examples/web_fetch.logyx</code>. Target WASM del client: previsto. ⏳</p>
+<p>Esempio completo (pagina + route API): <code>examples/web_fetch.logyx</code>. Il DOM si può manipolare anche dal
+<strong>WASM</strong> (builtin <code>dom_*</code>, vedi "Compilare a WebAssembly"); compilare le isole stesse a WASM (anziché a
+JavaScript) resta previsto. ⏳</p>
 <h2 id="12-compilazione-nativa-transpiler-rust">12. Compilazione nativa (transpiler Rust) 🟡</h2>
 <p><code>build</code> traduce un <strong>sottoinsieme tipizzato</strong> in Rust, che <code>rustc</code> compila a eseguibile nativo.</p>
 <ul>
-<li>Supporta: funzioni con tipi (<code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code>), aritmetica, confronti, logica,
-  concatenazione di stringhe con <code>+</code>, <code>if</code>/<code>else</code>, <code>while</code>, <code>for x in range(n)</code> o <code>range(a, b)</code>, <code>return</code>,
-  <code>print</code>, ricorsione. Gli interi sono <code>i64</code>; <code>/</code> è divisione intera.</li>
+<li>Supporta: funzioni con tipi (<code>int</code>/<code>float</code>/<code>bool</code>/<code>string</code>) ed <strong>inferenza</strong>, aritmetica, confronti,
+  logica, concatenazione di stringhe con <code>+</code>, <code>if</code>/<code>else</code>, <code>while</code>, <code>for</code> (anche con indice), <code>break</code>/
+  <code>continue</code>, <code>match</code>, <code>return</code>, ricorsione; <strong>record</strong>, <strong>enum</strong> (con payload), <strong>tuple</strong> e destructuring;
+  <strong>lambda/closure</strong> e valori funzione; <strong>errori</strong> come <code>Result</code>; <strong>parametri con default</strong> e <strong>varargs</strong>;
+  tutta la <strong>libreria builtin</strong> (numeri, stringhe+regex, liste+<code>slice</code>, mappe, JSON, date, I/O file,
+  stdin/ambiente, processi esterni); <strong>database SQLite</strong>; <strong>web</strong> (<code>route</code>/<code>render</code>/<code>respond</code>, server HTTP,
+  isole client→JS) e <strong>WebAssembly</strong> (<code>build-wasm</code>, DOM via <code>dom_*</code>). Gli interi sono <code>i64</code>; <code>/</code> è
+  divisione intera.</li>
 <li><strong>Tipi di ritorno e dei parametri possono essere omessi</strong>: vengono dedotti dall'uso —
   aritmetica → <code>int</code>/<code>float</code>, concatenazione con <code>+</code> → <code>string</code>, <code>not</code>/<code>and</code>/<code>or</code> o uso come condizione
   → <code>bool</code>, confronti e chiamate propagano il tipo dell'altro lato. L'annotazione resta possibile e serve
@@ -994,8 +1024,9 @@ route <code>respond</code>, §10) e aggiorna il DOM con il risultato.</p>
   <code>for k in m</code> (chiavi ordinate). Chiavi e valori scalari <strong>o stringhe</strong>. Vedi <code>examples/native_map.logyx</code>.</li>
 <li><strong>Liste e mappe come parametro e tipo di ritorno</strong> di funzione: <code>fn somma(xs: [int]) -&gt; int</code>,
   <code>fn chiavi(m: {string: int}) -&gt; [string]</code>. Vedi <code>examples/native_collparams.logyx</code>.</li>
-<li>Non ancora: lista vuota <code>[]</code> senza elementi (il backend non ne deduce il tipo), codice dinamico senza
-  tipi. In quei casi dà un errore chiaro.</li>
+<li>Non ancora nel backend tipizzato: lista/mappa <strong>vuota</strong> senza elementi (tipo non deducibile),
+  <strong>costanti globali a primo livello</strong> (<code>const</code> fuori da una funzione — funziona nell'interprete),
+  codice dinamico senza tipi. In quei casi dà un errore chiaro.</li>
 </ul>
 <pre><code>fn fib(n) {                       // nessuna annotazione
     if n &lt; 2 { return n }

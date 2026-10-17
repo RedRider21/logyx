@@ -62,6 +62,15 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 ## RIPRENDI DA QUI — cose da fare
 
+> ⭐ **PRIORITARIO (richiesta utente): variabili e costanti GLOBALI a primo livello.** Oggi `const`/
+> variabili fuori dalle funzioni funzionano **solo nell'interprete**; nel backend tipizzato
+> (compilatore `logyxc` + transpiler) il codice a primo livello dà "il backend supporta solo definizioni
+> di funzione". Da implementare nei tre backend (globali tipizzate: `static`/`const` o `Lazy` in Rust;
+> ambiente globale nel transpiler). Ogni linguaggio serio le ha. Vedi ROADMAP, Piano 1.
+>
+> **Prossimo fronte grosso concordato:** self-hosting — prima pietra = lexer di Logyx scritto in Logyx
+> + test a specchio contro `logyxc tokens` (vedi fondo sezione / proposta in chat).
+
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
 (ora **62/62**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
