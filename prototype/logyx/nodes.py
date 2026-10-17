@@ -230,3 +230,8 @@ class RouteDef:
 @dataclass
 class Render:
     raw: str
+
+
+@dataclass
+class Respond:
+    value: Any

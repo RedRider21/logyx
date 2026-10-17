@@ -24,8 +24,9 @@ class _Return(Exception):
 
 
 class _Response(Exception):
-    def __init__(self, html):
-        self.html = html
+    def __init__(self, body, content_type="text/html; charset=utf-8"):
+        self.body = body
+        self.content_type = content_type
 
 
 class _Break(Exception):
@@ -449,8 +450,8 @@ class Interpreter:
         try:
             self._exec_all(route.body, env)
         except _Response as r:
-            return r.html
-        return ""
+            return r.body, r.content_type
+        return "", "text/html; charset=utf-8"
 
     def eval_source(self, src, env):
         from .lexer import Lexer
@@ -664,7 +665,10 @@ class Interpreter:
             self.exec_block(s.else_block, env)
 
     def st_Render(self, s, env):
-        raise _Response(self.render_template(s.raw, env))
+        raise _Response(self.render_template(s.raw, env), "text/html; charset=utf-8")
+
+    def st_Respond(self, s, env):
+        raise _Response(logyx_str(self.eval(s.value, env)), "application/json; charset=utf-8")
 
     # --- espressioni ---
 

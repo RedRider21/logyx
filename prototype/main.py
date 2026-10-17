@@ -42,7 +42,8 @@ def cmd_run(path, prog_args=None):
 def cmd_render(path, route_path):
     interp, items = _load(path)
     interp.load(items)
-    print(interp.render_route(route_path))
+    body, _ct = interp.render_route(route_path)
+    print(body)
     return 0
 
 
@@ -56,10 +57,10 @@ def cmd_serve(path, port):
         def do_GET(self):
             route_path = self.path.split("?", 1)[0]
             try:
-                html = interp.render_route(route_path)
-                body = html.encode("utf-8")
+                text, content_type = interp.render_route(route_path)
+                body = text.encode("utf-8")
                 self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Type", content_type)
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)

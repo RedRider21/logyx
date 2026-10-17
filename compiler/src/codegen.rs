@@ -119,7 +119,7 @@ const RENDER_MAIN: &str = r#"fn main() {
     let args: Vec<String> = std::env::args().collect();
     let path = args.get(1).map(|s| s.as_str()).unwrap_or("/");
     match __render_path(path) {
-        Some(html) => println!("{}", html),
+        Some((body, _ct)) => println!("{}", body),
         None => { eprintln!("nessuna route per '{}'", path); std::process::exit(1); }
     }
 }"#;
@@ -134,9 +134,9 @@ const SERVER_MAIN: &str = r#"fn main() {
     for req in server.incoming_requests() {
         let path = req.url().split('?').next().unwrap_or("/").to_string();
         match __render_path(&path) {
-            Some(html) => {
-                let h = tiny_http::Header::from_bytes(&b"Content-Type"[..], &b"text/html; charset=utf-8"[..]).unwrap();
-                let _ = req.respond(tiny_http::Response::from_string(html).with_header(h));
+            Some((body, ct)) => {
+                let h = tiny_http::Header::from_bytes(&b"Content-Type"[..], ct.as_bytes()).unwrap();
+                let _ = req.respond(tiny_http::Response::from_string(body).with_header(h));
             }
             None => {
                 let _ = req.respond(tiny_http::Response::from_string("not found").with_status_code(404));
@@ -473,7 +473,7 @@ impl Codegen {
                 arms.push(format!("        {:?} => Some(__route_{}()),", path, idx));
             }
             route_defs.push(format!(
-                "fn __render_path(path: &str) -> Option<String> {{\n    match path {{\n{}\n        _ => None,\n    }}\n}}",
+                "fn __render_path(path: &str) -> Option<(String, &'static str)> {{\n    match path {{\n{}\n        _ => None,\n    }}\n}}",
                 arms.join("\n")
             ));
             if self.emit_server {
@@ -907,6 +907,7 @@ impl Codegen {
             | Stmt::Destructure { value, .. } => self.scan_expr(value, pt, ev),
             Stmt::Expr(e) => self.scan_expr(e, pt, ev),
             Stmt::Fail(e) => self.scan_expr(e, pt, ev),
+            Stmt::Respond(e) => self.scan_expr(e, pt, ev),
             Stmt::Match { subject, ok_block, err_block, .. } => {
                 self.scan_expr(subject, pt, ev);
                 self.scan_stmts(ok_block, pt, ev, fname);
@@ -1247,8 +1248,11 @@ impl Codegen {
 
     /// Genera la funzione di una route: nessun parametro, ritorna l'HTML (`String`).
     fn route_fn(&mut self, idx: usize, body: &[Stmt]) -> R<String> {
-        if !body.iter().any(|s| matches!(s, Stmt::Render { .. })) {
-            return Err(LogyxError::new("una route deve contenere un 'render'"));
+        if !body
+            .iter()
+            .any(|s| matches!(s, Stmt::Render { .. } | Stmt::Respond(_)))
+        {
+            return Err(LogyxError::new("una route deve contenere un 'render' o un 'respond'"));
         }
         self.cur_fallible = false;
         self.kinds.clear();
@@ -1257,7 +1261,8 @@ impl Codegen {
         self.cur_types = HashMap::new();
         let mut declared: HashSet<String> = HashSet::new();
         let bod = self.block(body, &mut declared, 1)?;
-        Ok(format!("fn __route_{}() -> String {{\n{}\n}}", idx, bod))
+        // la route ritorna (corpo, content-type)
+        Ok(format!("fn __route_{}() -> (String, &'static str) {{\n{}\n}}", idx, bod))
     }
 
     /// Dal template HTML grezzo costruisce un'espressione Rust `String`: testo
@@ -1481,7 +1486,14 @@ impl Codegen {
             }
             Stmt::Render { template } => {
                 let html = self.render_template(template)?;
-                Ok(format!("{pad}return {};", html))
+                Ok(format!("{pad}return ({}, \"text/html; charset=utf-8\");", html))
+            }
+            Stmt::Respond(e) => {
+                // risponde con la stringa data e Content-Type JSON
+                Ok(format!(
+                    "{pad}return (format!(\"{{}}\", {}), \"application/json; charset=utf-8\");",
+                    self.expr(e)?
+                ))
             }
             Stmt::Break => Ok(format!("{pad}break;")),
             Stmt::Continue => Ok(format!("{pad}continue;")),

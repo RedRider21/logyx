@@ -856,8 +856,15 @@ deve definire <code>fn main</code> (il main è il server). Esempio: <code>exampl
 <pre><code>logyxc serve &lt;file&gt; [porta]       # compila e avvia il server (default porta 8080)
 logyxc build-server &lt;file&gt;        # compila soltanto, stampa il path del binario
 </code></pre>
-<p>Il server risponde a ogni percorso con l'HTML della route corrispondente (<code>text/html; charset=utf-8</code>),
-o <code>404</code> se la route non esiste. Il binario accetta la porta come argomento.</p>
+<p>Il server risponde a ogni percorso con il corpo della route corrispondente, o <code>404</code> se la route non
+esiste. Il binario accetta la porta come argomento.</p>
+<p><strong>Route "API" con <code>respond</code>.</strong> Oltre a <code>render</code> (HTML), una route può rispondere con una <strong>stringa</strong>
+tramite <code>respond &lt;espressione&gt;</code>: il corpo è la stringa data e il <code>Content-Type</code> è
+<code>application/json; charset=utf-8</code> (comodo per le API consumate via <code>fetch</code>, vedi §11).</p>
+<pre><code>route &quot;/api/saluto&quot; {
+    respond to_json(Saluto(&quot;ciao dal server&quot;, 2026))   // {&quot;messaggio&quot;:&quot;...&quot;,&quot;anno&quot;:2026}
+}
+</code></pre>
 <p>Nel template si usano anche i <strong>costrutti di controllo</strong> <code>{for &lt;var&gt; in &lt;lista o range&gt; { … }}</code> e
 <code>{if &lt;cond&gt; { … } else { … }}</code> (anche <code>else if</code>); il corpo è a sua volta un template (interpolazioni
 annidate incluse). Esempio: <code>examples/web_loop.logyx</code>.</p>
@@ -915,13 +922,30 @@ compila a <strong>JavaScript</strong> (eventi, stato, aggiornamento del DOM — 
 <td>aggiorna <code>innerHTML</code></td>
 </tr>
 <tr>
+<td><code>fetch &lt;url&gt; [method &lt;e&gt;] [body &lt;e&gt;] [as &lt;var&gt;] { ... } [else { ... }]</code></td>
+<td>chiamata HTTP al server</td>
+</tr>
+<tr>
 <td><code>if</code> / <code>for</code> / <code>while</code></td>
 <td>controllo di flusso (tradotto in JS)</td>
 </tr>
 </tbody>
 </table>
-<p>Un piccolo runtime rende disponibili anche nel client <code>range</code>, <code>len</code>, <code>str</code>, <code>print</code>.
-Target WASM: previsto. ⏳</p>
+<p>Un piccolo runtime rende disponibili anche nel client <code>range</code>, <code>len</code>, <code>str</code>, <code>print</code>.</p>
+<p><strong><code>fetch</code> — chiamare il server dall'isola.</strong> Compila a <code>fetch(...)</code> del browser: fa la richiesta HTTP,
+e al completamento esegue il blocco con la <strong>risposta (testo)</strong> legata a <code>&lt;var&gt;</code> (<code>as &lt;var&gt;</code>, opzionale).
+Di default è una GET; <code>method "POST"</code>/<code>body &lt;espr&gt;</code> per inviare dati; <code>else { ... }</code> gestisce l'errore
+di rete. Chiude il ciclo <strong>un sorgente, server + client</strong>: l'isola chiama una <code>route</code> (tipicamente una
+route <code>respond</code>, §10) e aggiorna il DOM con il risultato.</p>
+<pre><code>on &quot;click&quot; of &quot;#carica&quot; {
+    fetch &quot;/api/saluto&quot; as risposta {
+        set text of &quot;#out&quot; to risposta
+    } else {
+        set text of &quot;#out&quot; to &quot;errore di rete&quot;
+    }
+}
+</code></pre>
+<p>Esempio completo (pagina + route API): <code>examples/web_fetch.logyx</code>. Target WASM del client: previsto. ⏳</p>
 <h2 id="12-compilazione-nativa-transpiler-rust">12. Compilazione nativa (transpiler Rust) 🟡</h2>
 <p><code>build</code> traduce un <strong>sottoinsieme tipizzato</strong> in Rust, che <code>rustc</code> compila a eseguibile nativo.</p>
 <ul>

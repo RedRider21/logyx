@@ -317,6 +317,10 @@ class Parser:
             return self.const_decl()
         if t.type == T.RENDER:
             return self.render_stmt()
+        # respond <espr>: risposta "API" (Content-Type JSON)
+        if t.type == T.IDENT and t.value == "respond" and self.peek(1).type != T.ASSIGN:
+            self.advance()  # 'respond'
+            return N.Respond(self.expression())
         # destructuring di tupla:  IDENT ',' IDENT (',' IDENT)* '=' espressione
         if t.type == T.IDENT and self.peek(1).type == T.COMMA:
             k = 0

@@ -439,6 +439,11 @@ impl Parser {
             TokenKind::Fail => self.fail_stmt(),
             TokenKind::Match => self.match_stmt(),
             TokenKind::Render => self.render_stmt(),
+            TokenKind::Ident(s) if s == "respond" && !matches!(self.kind_at(1), TokenKind::Assign) => {
+                self.advance(); // 'respond'
+                let e = self.expression()?;
+                Ok(Stmt::Respond(e))
+            }
             TokenKind::Break => {
                 self.advance();
                 Ok(Stmt::Break)
@@ -990,6 +995,7 @@ impl ClientCompiler {
         match self.p.kind() {
             TokenKind::Ident(s) if s == "on" => self.on_handler(),
             TokenKind::Ident(s) if s == "set" => self.set_stmt(),
+            TokenKind::Ident(s) if s == "fetch" => self.client_fetch(),
             TokenKind::If => self.client_if(),
             TokenKind::For => self.client_for(),
             TokenKind::While => self.client_while(),
@@ -1040,6 +1046,63 @@ impl ClientCompiler {
         let js = self.js_expr(&e)?;
         let attr = if prop_name == "text" { "textContent" } else { "innerHTML" };
         Ok(format!("document.querySelector({}).{} = {};", js_string(&selector), attr, js))
+    }
+
+    fn client_fetch(&mut self) -> Result<String, LogyxError> {
+        // fetch <url> [method <espr>] [body <espr>] [as <var>] { ... } [else { ... }]
+        self.p.advance(); // 'fetch'
+        let ue = self.p.expression()?;
+        let url = self.js_expr(&ue)?;
+        let mut method: Option<String> = None;
+        let mut body: Option<String> = None;
+        loop {
+            let w = match self.p.kind() {
+                TokenKind::Ident(s) if s == "method" || s == "body" => s.clone(),
+                _ => break,
+            };
+            self.p.advance();
+            let e = self.p.expression()?;
+            let js = self.js_expr(&e)?;
+            if w == "method" {
+                method = Some(js);
+            } else {
+                body = Some(js);
+            }
+        }
+        let mut var = "_resp".to_string();
+        if matches!(self.p.kind(), TokenKind::Ident(s) if s == "as") {
+            self.p.advance();
+            var = self.p.ident_name("nome di variabile dopo 'as'")?;
+        }
+        let success = self.client_block()?;
+        let mut els: Option<String> = None;
+        if self.p.is(&TokenKind::Else) {
+            self.p.advance();
+            els = Some(self.client_block()?);
+        }
+        let mut opts: Vec<String> = Vec::new();
+        if let Some(m) = &method {
+            opts.push(format!("method: {}", m));
+        }
+        if let Some(b) = &body {
+            if method.is_none() {
+                opts.push("method: \"POST\"".to_string());
+            }
+            opts.push(format!("body: {}", b));
+        }
+        let call = if opts.is_empty() {
+            format!("fetch({})", url)
+        } else {
+            format!("fetch({}, {{{}}})", url, opts.join(", "))
+        };
+        let catch = match &els {
+            Some(e) => format!(".catch(function() {{\n{}\n}})", e),
+            None => String::new(),
+        };
+        Ok(format!(
+            "{}.then(function(r) {{ return r.text(); }}).then(function({}) {{\n{}\n}}){};",
+            call, var, success, catch
+        ))
     }
 
     fn client_if(&mut self) -> Result<String, LogyxError> {

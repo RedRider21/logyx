@@ -1,0 +1,30 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Un solo sorgente, server + client: la pagina ha un'isola client che,
+// al clic, chiama una route "API" del server con `fetch` e aggiorna il DOM.
+
+record Saluto { messaggio: string, anno: int }
+
+// Route API: risponde con una stringa (Content-Type JSON) via `respond`.
+route "/api/saluto" {
+    respond to_json(Saluto("ciao dal server", 2026))
+}
+
+// Pagina: bottone + area di output + isola client che fa il fetch.
+route "/" {
+    render <html><head><meta charset="utf-8"/></head><body>
+      <h1>Logyx fetch</h1>
+      <button id="carica">Carica dal server</button>
+      <pre id="out">(premi il bottone)</pre>
+      @start-client
+        on "click" of "#carica" {
+          fetch "/api/saluto" as risposta {
+            set text of "#out" to risposta
+          } else {
+            set text of "#out" to "errore di rete"
+          }
+        }
+      @end-client
+    </body></html>
+}

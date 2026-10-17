@@ -64,7 +64,17 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **60/60**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **62/62**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**`fetch` dal client + `respond` lato server FATTI (2026-10-17):** chiude il ciclo "un sorgente,
+server+client". Isola client: `fetch <url> [method <e>] [body <e>] [as <var>] { … } [else { … }]` →
+`fetch().then(r=>r.text()).then(var=>{…}).catch(…)`, identico nei due compilatori client (`client.py` e
+sezione client di `parser.rs`). Server: `respond <espr>` risponde con una stringa e `Content-Type:
+application/json` (per le API); le route ora ritornano `(String, content_type)` — `__render_path` e i due
+main aggiornati (nel prototipo `_Response`+`render_route` ritornano `(body, ct)`, `main.py` usa il ct).
+`Stmt::Respond`/`N.Respond`. Esempio `examples/web_fetch.logyx` (pagina + route API), in suite come render
+di 2 route; **verificato dal vivo** con `serve`+curl (content-type JSON vs HTML, 404). Prossimi fronti
+grossi: database, DOM-da-Logyx in WASM, self-hosting.
 
 **Tuple FATTE (2026-10-17):** letterale `(a, b, …)` (≥2), tipo `(T1, T2, …)` → tupla Rust, ritorni
 multipli e **destructuring** `x, y = f()` (`Stmt::Destructure`/`N.Destructure`, `let (a,b)=…` nei backend

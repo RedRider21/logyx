@@ -92,6 +92,8 @@ pub enum Stmt {
     Func(Function),
     /// `render <template>`: template HTML grezzo (interpolazione risolta in codegen).
     Render { template: String },
+    /// `respond <espr>`: risponde con la stringa data (Content-Type JSON). Per le API.
+    Respond(Expr),
     /// `match x { Variante(bind…) { … } … else { … } }` su un enum con payload.
     MatchEnum { subject: Expr, cases: Vec<EnumCase>, else_block: Option<Vec<Stmt>> },
 }

@@ -592,8 +592,18 @@ logyxc serve <file> [porta]       # compila e avvia il server (default porta 808
 logyxc build-server <file>        # compila soltanto, stampa il path del binario
 ```
 
-Il server risponde a ogni percorso con l'HTML della route corrispondente (`text/html; charset=utf-8`),
-o `404` se la route non esiste. Il binario accetta la porta come argomento.
+Il server risponde a ogni percorso con il corpo della route corrispondente, o `404` se la route non
+esiste. Il binario accetta la porta come argomento.
+
+**Route "API" con `respond`.** Oltre a `render` (HTML), una route può rispondere con una **stringa**
+tramite `respond <espressione>`: il corpo è la stringa data e il `Content-Type` è
+`application/json; charset=utf-8` (comodo per le API consumate via `fetch`, vedi §11).
+
+```
+route "/api/saluto" {
+    respond to_json(Saluto("ciao dal server", 2026))   // {"messaggio":"...","anno":2026}
+}
+```
 
 Nel template si usano anche i **costrutti di controllo** `{for <var> in <lista o range> { … }}` e
 `{if <cond> { … } else { … }}` (anche `else if`); il corpo è a sua volta un template (interpolazioni
@@ -641,10 +651,28 @@ DSL client v0:
 | `on "<evento>" of "<sel>" { ... }` | gestore di evento (`addEventListener`) |
 | `set text of "<sel>" to <espr>` | aggiorna `textContent` |
 | `set html of "<sel>" to <espr>` | aggiorna `innerHTML` |
+| `fetch <url> [method <e>] [body <e>] [as <var>] { ... } [else { ... }]` | chiamata HTTP al server |
 | `if` / `for` / `while` | controllo di flusso (tradotto in JS) |
 
 Un piccolo runtime rende disponibili anche nel client `range`, `len`, `str`, `print`.
-Target WASM: previsto. ⏳
+
+**`fetch` — chiamare il server dall'isola.** Compila a `fetch(...)` del browser: fa la richiesta HTTP,
+e al completamento esegue il blocco con la **risposta (testo)** legata a `<var>` (`as <var>`, opzionale).
+Di default è una GET; `method "POST"`/`body <espr>` per inviare dati; `else { ... }` gestisce l'errore
+di rete. Chiude il ciclo **un sorgente, server + client**: l'isola chiama una `route` (tipicamente una
+route `respond`, §10) e aggiorna il DOM con il risultato.
+
+```
+on "click" of "#carica" {
+    fetch "/api/saluto" as risposta {
+        set text of "#out" to risposta
+    } else {
+        set text of "#out" to "errore di rete"
+    }
+}
+```
+
+Esempio completo (pagina + route API): `examples/web_fetch.logyx`. Target WASM del client: previsto. ⏳
 
 ## 12. Compilazione nativa (transpiler Rust) 🟡
 

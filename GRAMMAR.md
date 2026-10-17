@@ -143,8 +143,12 @@ blocco       := "{" istruzione* "}"
 istruzione   := dichiarazione | assegnazione | destructuring | if | while | for
               | "return" espressione? | "fail" espressione | match
               | "break" | "continue"
-              | espressione | render | isolaClient
+              | espressione | render | "respond" espressione | isolaClient
 destructuring:= IDENT ("," IDENT)+ "=" espressione        // da una tupla: a, b = f()
+// DSL dell'isola client (compilata a JavaScript):
+//   on "<evento>" of "<sel>" { ... }      gestore di evento
+//   set (text|html) of "<sel>" to <espr>  aggiorna il DOM
+//   fetch <url> [method <e>] [body <e>] [as <var>] { ... } [else { ... }]   chiamata HTTP
 isolaClient  := "@start-client" istruzione* "@end-client"
 
 match        := matchValore | matchErrori | matchEnum

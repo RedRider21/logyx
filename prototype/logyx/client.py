@@ -42,6 +42,8 @@ class ClientCompiler:
             return self.on_handler()
         if t.type == T.IDENT and t.value == "set":
             return self.set_stmt()
+        if t.type == T.IDENT and t.value == "fetch":
+            return self.fetch_stmt()
         if t.type == T.IF:
             return self.client_if()
         if t.type == T.FOR:
@@ -67,6 +69,41 @@ class ClientCompiler:
         return (
             f"document.querySelector({json.dumps(selector)})"
             f".addEventListener({json.dumps(event)}, function() {{\n{body}\n}});"
+        )
+
+    def fetch_stmt(self):
+        # fetch <url> [method <espr>] [body <espr>] [as <var>] { ... } [else { ... }]
+        self.p.advance()  # 'fetch'
+        url = self.js_expr(self.p.expression())
+        method = None
+        body = None
+        while self.p.at(T.IDENT) and self.p.peek().value in ("method", "body"):
+            kw = self.p.advance().value
+            if kw == "method":
+                method = self.js_expr(self.p.expression())
+            else:
+                body = self.js_expr(self.p.expression())
+        var = "_resp"
+        if self.p.at(T.IDENT) and self.p.peek().value == "as":
+            self.p.advance()
+            var = self.p.expect(T.IDENT, "nome di variabile dopo 'as'").value
+        success = self.block()
+        els = None
+        if self.p.at(T.ELSE):
+            self.p.advance()
+            els = self.block()
+        opts = []
+        if method is not None:
+            opts.append(f"method: {method}")
+        if body is not None:
+            if method is None:
+                opts.append('method: "POST"')
+            opts.append(f"body: {body}")
+        call = f"fetch({url}, {{{', '.join(opts)}}})" if opts else f"fetch({url})"
+        catch = f".catch(function() {{\n{els}\n}})" if els is not None else ""
+        return (
+            f"{call}.then(function(r) {{ return r.text(); }})"
+            f".then(function({var}) {{\n{success}\n}}){catch};"
         )
 
     def set_stmt(self):
