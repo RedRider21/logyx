@@ -1,0 +1,33 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Tuple: valori multipli raggruppati `(a, b, …)`, tipo `(T1, T2, …)`.
+// Servono soprattutto per i ritorni multipli, letti con il destructuring `x, y = ...`.
+
+fn minmax(a: int, b: int) -> (int, int) {
+    if a < b { return (a, b) }
+    return (b, a)
+}
+
+fn divmod(a: int, b: int) -> (int, int) {
+    return (a / b, a % b)
+}
+
+fn main() {
+    lo, hi = minmax(8, 3)
+    print(lo)                  // 3
+    print(hi)                  // 8
+
+    q, r = divmod(17, 5)
+    print(q)                   // 3
+    print(r)                   // 2
+
+    // tupla eterogenea costruita al volo e destrutturata
+    nome, eta = ("Ada", 36)
+    print(nome)                // Ada
+    print(eta)                 // 36
+
+    // tripla
+    a, b, c = (1, 2, 3)
+    print(a + b + c)           // 6
+}

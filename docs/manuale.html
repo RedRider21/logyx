@@ -442,6 +442,29 @@ a = area(Forma.Cerchio(2.0))                       // costruzione: Nome.Variante
 <li>Passabile/ritornabile dalle funzioni (annota il tipo: <code>fn f(c: Colore)</code>).
   Vedi <code>examples/native_enum.logyx</code> e <code>examples/native_enumpayload.logyx</code>.</li>
 </ul>
+<h3 id="tuple">Tuple ✅</h3>
+<p>Una <strong>tupla</strong> raggruppa più valori, anche di tipo diverso: letterale <code>(a, b, …)</code>, tipo <code>(T1, T2, …)</code>.
+Servono soprattutto per <strong>restituire più valori</strong> da una funzione, letti con il <strong>destructuring</strong>
+<code>x, y = …</code> (dichiara <code>x</code> e <code>y</code> dai componenti).</p>
+<pre><code>fn minmax(a: int, b: int) -&gt; (int, int) {
+    if a &lt; b { return (a, b) }
+    return (b, a)
+}
+
+fn main() {
+    lo, hi = minmax(8, 3)        // destructuring
+    print(lo)                    // 3
+    nome, eta = (&quot;Ada&quot;, 36)      // tupla eterogenea
+    print(eta)                   // 36
+}
+</code></pre>
+<ul>
+<li><strong>Letterale:</strong> <code>(a, b, …)</code> (almeno 2 elementi; <code>(x)</code> è solo un raggruppamento).</li>
+<li><strong>Tipo:</strong> <code>(T1, T2, …)</code> → in Rust una tupla <code>(R1, R2, …)</code>.</li>
+<li><strong>Destructuring:</strong> <code>a, b = espressione</code> lega i nomi ai componenti della tupla (binding immutabili).</li>
+<li>v0: l'accesso per posizione <code>t.0</code> non c'è ancora; si usa il destructuring. Vedi
+  <code>examples/native_tuple.logyx</code>.</li>
+</ul>
 <h2 id="7-collezioni">7. Collezioni 🟡</h2>
 <p>Liste e mappe: letterali, indicizzazione, <code>len</code>, iterazione con <code>for</code>.</p>
 <pre><code>xs = [3, 1, 2]

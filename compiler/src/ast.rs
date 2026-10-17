@@ -56,6 +56,8 @@ pub enum Expr {
     Field { target: Box<Expr>, name: String },
     List(Vec<Expr>),
     Map(Vec<(Expr, Expr)>),
+    /// Tupla `(a, b, …)` (almeno 2 elementi).
+    Tuple(Vec<Expr>),
     Try(Box<Expr>),
     /// Lambda inline `|p1, p2| espressione` (v0: argomento di map/filter/reduce).
     Lambda { params: Vec<String>, body: Box<Expr> },
@@ -65,6 +67,8 @@ pub enum Expr {
 pub enum Stmt {
     Decl { name: String, value: Expr, is_const: bool, ty: Option<String> },
     Assign { target: Expr, value: Expr },
+    /// Destructuring di una tupla: `a, b = espressione`.
+    Destructure { names: Vec<String>, value: Expr },
     Expr(Expr),
     If { cond: Expr, then_block: Vec<Stmt>, else_block: Option<Vec<Stmt>> },
     While { cond: Expr, body: Vec<Stmt> },

@@ -64,7 +64,14 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **59/59**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **60/60**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+
+**Tuple FATTE (2026-10-17):** letterale `(a, b, …)` (≥2), tipo `(T1, T2, …)` → tupla Rust, ritorni
+multipli e **destructuring** `x, y = f()` (`Stmt::Destructure`/`N.Destructure`, `let (a,b)=…` nei backend
+tipizzati, unpack nell'interprete). Nuovi `Expr::Tuple`/`N.TupleLit`; helper `tuple_parts`/`_tuple_parts`.
+v0: niente accesso `t.0` (si usa il destructuring). Esempio `native_tuple`. **Con questo il Piano 1
+"comodità sintattiche" è completo** (default+varargs+for-indice+lambda-var+tuple). Restano solo i fronti
+grossi: database, `fetch` dal client, DOM-da-Logyx in WASM, self-hosting.
 
 **Varargs FATTI (2026-10-17):** `fn f(a, resto: tipo...)`; l'ultimo parametro raccoglie gli argomenti
 in coda in una lista `[tipo]` (al call-site diventano `vec![…]` nei backend tipizzati; nell'interprete

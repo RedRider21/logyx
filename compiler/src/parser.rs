@@ -378,6 +378,22 @@ impl Parser {
             self.advance();
             return Ok("nil".to_string());
         }
+        if self.is(&TokenKind::LParen) {
+            // tipo tupla: (T1, T2, …); con un solo tipo è un raggruppamento
+            self.advance();
+            let mut ts = Vec::new();
+            ts.push(self.type_base()?);
+            while self.is(&TokenKind::Comma) {
+                self.advance();
+                ts.push(self.type_base()?);
+            }
+            self.expect(&TokenKind::RParen, ")")?;
+            return Ok(if ts.len() == 1 {
+                ts.pop().unwrap()
+            } else {
+                format!("({})", ts.join(","))
+            });
+        }
         if self.is(&TokenKind::Fn) {
             // tipo funzione: fn(T1, T2) -> R
             self.advance();
@@ -437,6 +453,32 @@ impl Parser {
     }
 
     fn decl_or_expr(&mut self) -> Result<Stmt, LogyxError> {
+        // destructuring di tupla:  IDENT ',' IDENT (',' IDENT)* '=' espressione
+        if matches!(self.kind(), TokenKind::Ident(_))
+            && matches!(self.kind_at(1), TokenKind::Comma)
+        {
+            let mut k = 0;
+            let is_destructure = loop {
+                if !matches!(self.kind_at(k), TokenKind::Ident(_)) {
+                    break false;
+                }
+                match self.kind_at(k + 1) {
+                    TokenKind::Comma => k += 2,
+                    TokenKind::Assign => break true,
+                    _ => break false,
+                }
+            };
+            if is_destructure {
+                let mut names = vec![self.ident_name("nome")?];
+                while self.is(&TokenKind::Comma) {
+                    self.advance();
+                    names.push(self.ident_name("nome")?);
+                }
+                self.expect(&TokenKind::Assign, "=")?;
+                let value = self.expression()?;
+                return Ok(Stmt::Destructure { names, value });
+            }
+        }
         // dichiarazione tipizzata:  IDENT ':' tipo '=' espressione
         if matches!(self.kind(), TokenKind::Ident(_))
             && matches!(self.kind_at(1), TokenKind::Colon)
@@ -825,6 +867,19 @@ impl Parser {
             TokenKind::LParen => {
                 self.advance();
                 let e = self.expression()?;
+                // tupla `(a, b, …)` se c'è una virgola; altrimenti raggruppamento
+                if self.is(&TokenKind::Comma) {
+                    let mut els = vec![e];
+                    while self.is(&TokenKind::Comma) {
+                        self.advance();
+                        if self.is(&TokenKind::RParen) {
+                            break;
+                        }
+                        els.push(self.expression()?);
+                    }
+                    self.expect(&TokenKind::RParen, ")")?;
+                    return Ok(Expr::Tuple(els));
+                }
                 self.expect(&TokenKind::RParen, ")")?;
                 Ok(e)
             }
@@ -1092,7 +1147,7 @@ impl ClientCompiler {
             Expr::Index { target, index } => {
                 Ok(format!("{}[{}]", self.js_expr(target)?, self.js_expr(index)?))
             }
-            Expr::List(els) => {
+            Expr::List(els) | Expr::Tuple(els) => {
                 let a: Result<Vec<_>, _> = els.iter().map(|x| self.js_expr(x)).collect();
                 Ok(format!("[{}]", a?.join(", ")))
             }

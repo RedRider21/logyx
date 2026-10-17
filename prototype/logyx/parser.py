@@ -255,6 +255,15 @@ class Parser:
             v = self._type_base()
             self.expect(T.RBRACE)
             return "{" + k + ": " + v + "}"
+        if self.at(T.LPAREN):
+            # tipo tupla (T1, T2, …); con un solo tipo è un raggruppamento
+            self.advance()
+            ts = [self._type_base()]
+            while self.at(T.COMMA):
+                self.advance()
+                ts.append(self._type_base())
+            self.expect(T.RPAREN)
+            return ts[0] if len(ts) == 1 else "(" + ",".join(ts) + ")"
         if self.at(T.NIL):
             self.advance()
             return "nil"
@@ -308,6 +317,29 @@ class Parser:
             return self.const_decl()
         if t.type == T.RENDER:
             return self.render_stmt()
+        # destructuring di tupla:  IDENT ',' IDENT (',' IDENT)* '=' espressione
+        if t.type == T.IDENT and self.peek(1).type == T.COMMA:
+            k = 0
+            is_destr = True
+            while True:
+                if self.peek(k).type != T.IDENT:
+                    is_destr = False
+                    break
+                nxt = self.peek(k + 1).type
+                if nxt == T.COMMA:
+                    k += 2
+                elif nxt == T.ASSIGN:
+                    break
+                else:
+                    is_destr = False
+                    break
+            if is_destr:
+                names = [self.advance().value]
+                while self.at(T.COMMA):
+                    self.advance()
+                    names.append(self.expect(T.IDENT, "nome").value)
+                self.expect(T.ASSIGN)
+                return N.Destructure(names, self.expression())
         # dichiarazione tipizzata:  IDENT ':' tipo '=' espressione
         if t.type == T.IDENT and self.peek(1).type == T.COLON:
             name = self.advance().value
@@ -554,6 +586,16 @@ class Parser:
         if t.type == T.LPAREN:
             self.advance()
             e = self.expression()
+            # tupla (a, b, …) se c'è una virgola; altrimenti raggruppamento
+            if self.at(T.COMMA):
+                elements = [e]
+                while self.at(T.COMMA):
+                    self.advance()
+                    if self.at(T.RPAREN):
+                        break
+                    elements.append(self.expression())
+                self.expect(T.RPAREN)
+                return N.TupleLit(elements)
             self.expect(T.RPAREN)
             return e
         if t.type == T.LBRACK:

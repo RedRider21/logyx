@@ -29,6 +29,23 @@ def _map_inner(t):
             return inner[:ci].strip(), inner[ci + 1:].strip()
     return None
 
+def _tuple_parts(t):
+    """Se t è un tipo tupla '(T1,T2,…)' (≥2) ritorna la lista dei tipi (split sui ',' esterni)."""
+    if not (isinstance(t, str) and t.startswith("(") and t.endswith(")")):
+        return None
+    inner = t[1:-1]
+    parts, depth, start = [], 0, 0
+    for i, c in enumerate(inner):
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == "," and depth == 0:
+            parts.append(inner[start:i].strip())
+            start = i + 1
+    parts.append(inner[start:].strip())
+    return parts if len(parts) >= 2 else None
+
 def _parse_fn_type(t):
     """Da 'fn(T1,T2)->R' ritorna (['T1','T2'], 'R'); None se non è un tipo funzione."""
     if not isinstance(t, str) or not t.startswith("fn("):
@@ -209,7 +226,7 @@ class RustTranspiler:
             if t == "Return":
                 if s.value is not None and self._expr_has_try(s.value):
                     return True
-            elif t in ("Decl", "Assign"):
+            elif t in ("Decl", "Assign", "Destructure"):
                 if self._expr_has_try(s.value):
                     return True
             elif t == "ExprStmt":
@@ -255,7 +272,7 @@ class RustTranspiler:
             return self._expr_has_try(e.target)
         if t == "StringLit":
             return any(self._expr_has_try(v) for k, v in e.parts if k != "lit")
-        if t == "ListLit":
+        if t == "ListLit" or t == "TupleLit":
             return any(self._expr_has_try(x) for x in e.elements)
         if t == "MapLit":
             return any(self._expr_has_try(k) or self._expr_has_try(v) for k, v in e.pairs)
@@ -559,6 +576,12 @@ class RustTranspiler:
                     vt = self._type_of(s.value, types)
                     if vt:
                         types[s.target.name] = vt
+            elif t == "Destructure":
+                vt = self._type_of(s.value, types)
+                parts = _tuple_parts(vt) if vt else None
+                if parts:
+                    for n, pt in zip(s.names, parts):
+                        types[n] = pt
             elif t == "If":
                 self._collect_local_types(s.then_block, types)
                 if s.else_block:
@@ -608,6 +631,11 @@ class RustTranspiler:
         t = type(e).__name__
         if t == "Try":
             return self._type_of(e.operand, ptypes)
+        if t == "TupleLit":
+            parts = [self._type_of(x, ptypes) for x in e.elements]
+            if all(parts):
+                return "(" + ",".join(parts) + ")"
+            return None
         if t == "Call":
             # costruzione di variante enum con payload: E.Var(args) -> tipo E
             if (isinstance(e.callee, N.Field) and isinstance(e.callee.target, N.Identifier)
@@ -716,6 +744,9 @@ class RustTranspiler:
         kv = _map_inner(t)
         if kv is not None:
             return f"std::collections::HashMap<{self.ty(kv[0])}, {self.ty(kv[1])}>"
+        parts = _tuple_parts(t)
+        if parts is not None:
+            return "(" + ", ".join(self.ty(p) for p in parts) + ")"
         raise LogyxError(f"tipo non supportato dal transpiler v0: '{t}'")
 
     # --- istruzioni ---
@@ -833,6 +864,29 @@ class RustTranspiler:
             if vt:
                 self.cur_types[s.name] = vt
             return pad + f"{kw} {s.name} = {self.expr(s.value)};"
+        if t == "Destructure":
+            # destructuring di tupla: let (a, b) = valore;
+            vt = self._type_of(s.value, self.cur_types)
+            parts = _tuple_parts(vt) if vt else None
+            if parts and len(parts) != len(s.names):
+                raise LogyxError(
+                    f"destructuring: {len(s.names)} nomi ma la tupla ha {len(parts)} elementi"
+                )
+            for i, n in enumerate(s.names):
+                declared.add(n)
+                if parts:
+                    pt = parts[i]
+                    self.cur_types[n] = pt
+                    inner = _list_inner(pt)
+                    if inner is not None:
+                        self.kinds[n] = "list"
+                        self.list_elem[n] = inner
+                    else:
+                        kv = _map_inner(pt)
+                        if kv is not None:
+                            self.kinds[n] = "map"
+                            self.map_val[n] = kv
+            return pad + f"let ({', '.join(s.names)}) = {self.expr(s.value)};"
         if t == "Assign":
             # assegnazione a un elemento: xs[i] = v (lista) oppure m[k] = v (mappa)
             if type(s.target).__name__ == "Index":
@@ -1153,6 +1207,8 @@ class RustTranspiler:
                     "usa una lista con almeno un elemento"
                 )
             return "vec![" + ", ".join(self.expr(x) for x in e.elements) + "]"
+        if t == "TupleLit":
+            return "(" + ", ".join(self._arg(x) for x in e.elements) + ")"
         if t == "MapLit":
             if not e.pairs:
                 raise LogyxError(

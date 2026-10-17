@@ -140,10 +140,11 @@ assegnazione := bersaglio ("=" | "+=" | "-=" | "*=" | "/=" | "%=") espressione
 bersaglio    := IDENT | IDENT "[" espressione "]"
 
 blocco       := "{" istruzione* "}"
-istruzione   := dichiarazione | assegnazione | if | while | for
+istruzione   := dichiarazione | assegnazione | destructuring | if | while | for
               | "return" espressione? | "fail" espressione | match
               | "break" | "continue"
               | espressione | render | isolaClient
+destructuring:= IDENT ("," IDENT)+ "=" espressione        // da una tupla: a, b = f()
 isolaClient  := "@start-client" istruzione* "@end-client"
 
 match        := matchValore | matchErrori | matchEnum
@@ -163,6 +164,7 @@ lambda       := "|" (IDENT ("," IDENT)*)? "|" espressione    // v0: argomento di
 tipo         := tipoBase ("|" "error")?          // "T | error" = fallibile (Result in Rust)
 tipoBase     := "int" | "float" | "bool" | "string" | "nil"
               | "[" tipoBase "]" | "{" tipoBase ":" tipoBase "}"
+              | "(" tipoBase ("," tipoBase)+ ")"           // tipo tupla (T1, T2, …)
               | "fn" "(" (tipoBase ("," tipoBase)*)? ")" "->" tipoBase   // tipo funzione (valore funzione)
 ```
 

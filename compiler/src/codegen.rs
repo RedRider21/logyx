@@ -46,6 +46,31 @@ fn map_inner(t: &str) -> Option<(&str, &str)> {
     Some((inner[..ci].trim(), inner[ci + 1..].trim()))
 }
 
+/// Se `t` è un tipo tupla `(T1, T2, …)` (≥2 elementi), ritorna i tipi componenti,
+/// dividendo sui soli ',' al livello più esterno. `None` altrimenti.
+fn tuple_parts(t: &str) -> Option<Vec<String>> {
+    let inner = t.strip_prefix('(').and_then(|s| s.strip_suffix(')'))?;
+    let mut parts = Vec::new();
+    let mut depth = 0i32;
+    let mut start = 0usize;
+    for (i, c) in inner.char_indices() {
+        match c {
+            '(' | '[' | '{' => depth += 1,
+            ')' | ']' | '}' => depth -= 1,
+            ',' if depth == 0 => {
+                parts.push(inner[start..i].trim().to_string());
+                start = i + 1;
+            }
+            _ => {}
+        }
+    }
+    parts.push(inner[start..].trim().to_string());
+    if parts.len() < 2 {
+        return None;
+    }
+    Some(parts)
+}
+
 fn rust_str_lit(s: &str) -> String {
     // {:?} produce una stringa Rust valida (virgolette ed escape corretti).
     format!("{:?}", s)
@@ -327,6 +352,10 @@ impl Codegen {
                 self.rust_type(v)?
             ));
         }
+        if let Some(parts) = tuple_parts(t) {
+            let rs: Result<Vec<String>, _> = parts.iter().map(|p| self.rust_type(p)).collect();
+            return Ok(format!("({})", rs?.join(", ")));
+        }
         if let Some((params, ret)) = parse_fn_type(t) {
             // valore funzione: Rc<dyn Fn(...)> (clonabile → compatibile col clone uniforme)
             let mut rp = Vec::new();
@@ -532,7 +561,9 @@ impl Codegen {
         stmts.iter().any(|s| match s {
             Stmt::Fail(_) => true,
             Stmt::Return(Some(e)) => self.expr_has_try(e),
-            Stmt::Decl { value, .. } | Stmt::Assign { value, .. } => self.expr_has_try(value),
+            Stmt::Decl { value, .. }
+            | Stmt::Assign { value, .. }
+            | Stmt::Destructure { value, .. } => self.expr_has_try(value),
             Stmt::Expr(e) => self.expr_has_try(e),
             Stmt::If { then_block, else_block, .. } => {
                 self.body_has_fail_or_try(then_block)
@@ -568,6 +599,7 @@ impl Codegen {
                 _ => false,
             }),
             Expr::List(xs) => xs.iter().any(|x| self.expr_has_try(x)),
+            Expr::Tuple(xs) => xs.iter().any(|x| self.expr_has_try(x)),
             Expr::Map(ps) => ps.iter().any(|(k, v)| self.expr_has_try(k) || self.expr_has_try(v)),
             _ => false,
         }
@@ -665,6 +697,13 @@ impl Codegen {
                         types.insert(n.clone(), Some(vt));
                     }
                 }
+                Stmt::Destructure { names, value } => {
+                    if let Some(parts) = self.type_of(value, types).as_deref().and_then(tuple_parts) {
+                        for (n, t) in names.iter().zip(parts.iter()) {
+                            types.insert(n.clone(), Some(t.clone()));
+                        }
+                    }
+                }
                 Stmt::If { then_block, else_block, .. } => {
                     self.collect_local_types(then_block, types);
                     if let Some(eb) = else_block {
@@ -694,6 +733,11 @@ impl Codegen {
     fn type_of(&self, e: &Expr, ptypes: &HashMap<String, Option<String>>) -> Option<String> {
         match e {
             Expr::Try(inner) => self.type_of(inner, ptypes),
+            Expr::Tuple(xs) => {
+                let parts: Option<Vec<String>> =
+                    xs.iter().map(|x| self.type_of(x, ptypes)).collect();
+                parts.map(|p| format!("({})", p.join(",")))
+            }
             Expr::Str(_) => Some("string".into()),
             Expr::Int(_) => Some("int".into()),
             Expr::Float(_) => Some("float".into()),
@@ -858,7 +902,9 @@ impl Codegen {
                 self.scan_expr(e, pt, ev);
             }
             Stmt::Return(None) => {}
-            Stmt::Decl { value, .. } | Stmt::Assign { value, .. } => self.scan_expr(value, pt, ev),
+            Stmt::Decl { value, .. }
+            | Stmt::Assign { value, .. }
+            | Stmt::Destructure { value, .. } => self.scan_expr(value, pt, ev),
             Stmt::Expr(e) => self.scan_expr(e, pt, ev),
             Stmt::Fail(e) => self.scan_expr(e, pt, ev),
             Stmt::Match { subject, ok_block, err_block, .. } => {
@@ -931,6 +977,11 @@ impl Codegen {
                 self.scan_expr(operand, pt, ev);
             }
             Expr::Try(inner) => self.scan_expr(inner, pt, ev),
+            Expr::Tuple(xs) => {
+                for x in xs {
+                    self.scan_expr(x, pt, ev);
+                }
+            }
             Expr::Call { callee, args } => {
                 self.call_ev(callee, args, ev);
                 for a in args {
@@ -1564,6 +1615,37 @@ impl Codegen {
                 }
                 Ok(format!("{pad}{kw} {name} = {};", self.expr(value)?))
             }
+            Stmt::Destructure { names, value } => {
+                // destructuring di tupla: `let (a, b) = valore;`
+                let vt = self.type_of(value, &self.cur_types.clone());
+                let parts = vt.as_deref().and_then(tuple_parts);
+                if let Some(ref ps) = parts {
+                    if ps.len() != names.len() {
+                        return Err(LogyxError::new(format!(
+                            "destructuring: {} nomi ma la tupla ha {} elementi",
+                            names.len(),
+                            ps.len()
+                        )));
+                    }
+                }
+                for (i, n) in names.iter().enumerate() {
+                    declared.insert(n.clone());
+                    if let Some(ref ps) = parts {
+                        let t = ps[i].clone();
+                        if list_inner(&t).is_some() {
+                            self.kinds.insert(n.clone(), "list".to_string());
+                            if let Some(inner) = list_inner(&t) {
+                                self.list_elem.insert(n.clone(), inner.to_string());
+                            }
+                        } else if let Some((k, v)) = map_inner(&t) {
+                            self.kinds.insert(n.clone(), "map".to_string());
+                            self.map_val.insert(n.clone(), (k.to_string(), v.to_string()));
+                        }
+                        self.cur_types.insert(n.clone(), Some(t));
+                    }
+                }
+                Ok(format!("{pad}let ({}) = {};", names.join(", "), self.expr(value)?))
+            }
             Stmt::Assign { target, value } => {
                 // assegnazione a un elemento: xs[i] = v (lista) oppure m[k] = v (mappa)
                 if let Expr::Index { target: inner, index } = target {
@@ -2066,6 +2148,13 @@ impl Codegen {
                     parts.push(self.expr(x)?);
                 }
                 Ok(format!("vec![{}]", parts.join(", ")))
+            }
+            Expr::Tuple(els) => {
+                let mut parts = Vec::new();
+                for x in els {
+                    parts.push(self.arg(x)?);
+                }
+                Ok(format!("({})", parts.join(", ")))
             }
             Expr::Map(ps) => {
                 if ps.is_empty() {

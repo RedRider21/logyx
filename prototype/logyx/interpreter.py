@@ -577,6 +577,15 @@ class Interpreter:
         else:
             raise LogyxError("bersaglio di assegnazione non valido")
 
+    def st_Destructure(self, s, env):
+        value = self.eval(s.value, env)
+        if not isinstance(value, (tuple, list)) or len(value) != len(s.names):
+            raise LogyxError(
+                f"destructuring: attesi {len(s.names)} valori da una tupla"
+            )
+        for name, v in zip(s.names, value):
+            env.define(name, v)
+
     def st_ExprStmt(self, s, env):
         self.eval(s.expr, env)
 
@@ -679,6 +688,9 @@ class Interpreter:
 
     def ex_ListLit(self, n, env):
         return [self.eval(e, env) for e in n.elements]
+
+    def ex_TupleLit(self, n, env):
+        return tuple(self.eval(e, env) for e in n.elements)
 
     def ex_MapLit(self, n, env):
         return {self.eval(k, env): self.eval(v, env) for k, v in n.pairs}

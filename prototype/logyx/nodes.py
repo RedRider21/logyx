@@ -65,11 +65,22 @@ class MapLit:
     pairs: List[Tuple[Any, Any]]
 
 
+@dataclass
+class TupleLit:
+    elements: List[Any]
+
+
 # --- istruzioni ---
 
 @dataclass
 class Assign:
     target: Any
+    value: Any
+
+
+@dataclass
+class Destructure:
+    names: List[str]
     value: Any
 
 

@@ -452,6 +452,12 @@
       en:"A type with a closed set of variants, with optional positional <b>payload</b>. Construction <code>Nome.Variante</code> or <code>Nome.Variante(args)</code>. In <code>match</code>, branches <code>Variante(bind, …)</code> bind the payload fields.",
       code:"enum Forma { Cerchio(float), Rettangolo(float, float), Punto }\nfn area(f: Forma) {\n    match f {\n        Cerchio(r)       { return 3.14 * r * r }\n        Rettangolo(b, h) { return b * h }\n        Punto            { return 0.0 }\n    }\n}\nprint(area(Forma.Cerchio(2.0)))   // 12.56"},
 
+    {cat:"data", name:"Tuple", sig:"(a, b, …)   tipo (T1, T2, …)   x, y = …",
+      it:"Raggruppa più valori, anche eterogenei. Servono soprattutto per i <b>ritorni multipli</b>, letti con il <b>destructuring</b> <code>x, y = …</code> (dichiara le variabili dai componenti). v0: niente accesso per posizione <code>t.0</code>, si usa il destructuring.",
+      en:"Groups several values, even heterogeneous. Mainly for <b>multiple returns</b>, read with <b>destructuring</b> <code>x, y = …</code> (declares the variables from the components). v0: no positional access <code>t.0</code>, use destructuring.",
+      code:"fn minmax(a: int, b: int) -&gt; (int, int) {\n    if a &lt; b { return (a, b) }\n    return (b, a)\n}\nlo, hi = minmax(8, 3)\nprint(lo)   // 3\nprint(hi)   // 8",
+      out:"3\n8"},
+
     // ======== MODULES ========
     {cat:"mod", name:"import", sig:"import \"file.logyx\"",
       it:"Porta nel programma le funzioni di un altro file. Percorso relativo al file che importa; l'estensione <code>.logyx</code> è opzionale. Ogni file è caricato una sola volta (import ciclici gestiti); i nomi duplicati danno errore chiaro. L'inferenza dei tipi funziona anche fra moduli.",

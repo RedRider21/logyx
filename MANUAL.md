@@ -307,6 +307,32 @@ a = area(Forma.Cerchio(2.0))                       // costruzione: Nome.Variante
 - Passabile/ritornabile dalle funzioni (annota il tipo: `fn f(c: Colore)`).
   Vedi `examples/native_enum.logyx` e `examples/native_enumpayload.logyx`.
 
+### Tuple ✅
+
+Una **tupla** raggruppa più valori, anche di tipo diverso: letterale `(a, b, …)`, tipo `(T1, T2, …)`.
+Servono soprattutto per **restituire più valori** da una funzione, letti con il **destructuring**
+`x, y = …` (dichiara `x` e `y` dai componenti).
+
+```
+fn minmax(a: int, b: int) -> (int, int) {
+    if a < b { return (a, b) }
+    return (b, a)
+}
+
+fn main() {
+    lo, hi = minmax(8, 3)        // destructuring
+    print(lo)                    // 3
+    nome, eta = ("Ada", 36)      // tupla eterogenea
+    print(eta)                   // 36
+}
+```
+
+- **Letterale:** `(a, b, …)` (almeno 2 elementi; `(x)` è solo un raggruppamento).
+- **Tipo:** `(T1, T2, …)` → in Rust una tupla `(R1, R2, …)`.
+- **Destructuring:** `a, b = espressione` lega i nomi ai componenti della tupla (binding immutabili).
+- v0: l'accesso per posizione `t.0` non c'è ancora; si usa il destructuring. Vedi
+  `examples/native_tuple.logyx`.
+
 ## 7. Collezioni 🟡
 
 Liste e mappe: letterali, indicizzazione, `len`, iterazione con `for`.
