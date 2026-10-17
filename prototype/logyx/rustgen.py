@@ -722,6 +722,12 @@ class RustTranspiler:
                 return name
             if name == "from_json" and len(e.args) == 2:
                 return self._json_arg_type(e.args[1])
+            if name == "db_open":
+                return "DB"
+            if name == "db_exec":
+                return "int"
+            if name == "db_query" and len(e.args) == 3:
+                return self._json_arg_type(e.args[2])
             return self.func_rets.get(name)
         return None
 
@@ -747,6 +753,8 @@ class RustTranspiler:
         parts = _tuple_parts(t)
         if parts is not None:
             return "(" + ", ".join(self.ty(p) for p in parts) + ")"
+        if t == "DB":
+            return "std::rc::Rc<rusqlite::Connection>"
         raise LogyxError(f"tipo non supportato dal transpiler v0: '{t}'")
 
     # --- istruzioni ---
@@ -1075,6 +1083,13 @@ class RustTranspiler:
                 kt, vt = self._json_arg_type(k), self._json_arg_type(v)
                 if kt and vt:
                     self.map_val[name] = (kt, vt)
+        elif (type(value).__name__ == "Call" and isinstance(value.callee, N.Identifier)
+              and value.callee.name == "db_query" and len(value.args) == 3):
+            spec = value.args[2]
+            if type(spec).__name__ == "ListLit" and spec.elements:
+                elem = self._json_arg_type(spec.elements[0])
+                if elem:
+                    self.list_elem[name] = elem
 
     def _json_arg_type(self, e):
         if isinstance(e, N.Identifier):
@@ -1443,6 +1458,37 @@ class RustTranspiler:
                     self.deps["serde"] = '{ version = "1", features = ["derive"] }'
                     self.deps["serde_json"] = '"1"'
                     return f"serde_json::from_str::<{target}>(&({self.expr(e.args[0])})).unwrap()"
+                if nm == "db_open":
+                    if len(e.args) != 1:
+                        raise LogyxError("db_open accetta un solo argomento: db_open(percorso)")
+                    self.deps["rusqlite"] = '{ version = "0.31", features = ["bundled"] }'
+                    return (f"std::rc::Rc::new(rusqlite::Connection::open"
+                            f"(({self.expr(e.args[0])}).as_str()).unwrap())")
+                if nm == "db_exec":
+                    if len(e.args) != 2:
+                        raise LogyxError("db_exec accetta: db_exec(db, sql)")
+                    self.deps["rusqlite"] = '{ version = "0.31", features = ["bundled"] }'
+                    return (f"(({self.expr(e.args[0])}).execute"
+                            f"(({self.expr(e.args[1])}).as_str(), []).unwrap() as i64)")
+                if nm == "db_query":
+                    if len(e.args) != 3:
+                        raise LogyxError("db_query richiede: db_query(db, sql, [Record])")
+                    logyx = self._json_arg_type(e.args[2])
+                    rec = None
+                    if logyx and logyx.startswith("list<") and logyx.endswith(">"):
+                        inner = logyx[5:-1]
+                        if inner in self.records:
+                            rec = inner
+                    if rec is None:
+                        raise LogyxError("db_query: il 3º argomento dev'essere [NomeRecord]")
+                    inits = ", ".join(
+                        f"{fname}: row.get({i})?" for i, (fname, _ft) in enumerate(self.records[rec])
+                    )
+                    self.deps["rusqlite"] = '{ version = "0.31", features = ["bundled"] }'
+                    return (f"{{ let __conn = ({self.expr(e.args[0])}).clone(); "
+                            f"let mut __st = __conn.prepare(({self.expr(e.args[1])}).as_str()).unwrap(); "
+                            f"let __rows = __st.query_map([], |row| Ok({rec} {{ {inits} }})).unwrap(); "
+                            f"__rows.map(|__r| __r.unwrap()).collect::<Vec<{rec}>>() }}")
                 if nm == "sha256":
                     if len(e.args) != 1:
                         raise LogyxError("sha256 accetta un solo argomento")

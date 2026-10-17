@@ -73,7 +73,7 @@ Oggi esistono solo come abbozzi nel vecchio motore Python; **non** ancora nel co
 | Capacità | Esempi | Stato |
 | --- | --- | --- |
 | Web server | routing, HTTP, `render` (HTML) e **`respond`** (stringa/JSON, Content-Type dedicato): **nel compilatore nativo** — `logyxc render`/`serve`/`build-server` (crate `tiny_http`); sessioni/DB ⏳ | 🟢 (nativo, base) |
-| Database | query, connessioni, ORM leggero | ⏳ |
+| Database | **SQLite**: `db_open`/`db_exec`/`db_query(…, [Record])` (righe tipizzate via record) ✅; altri DB/ORM ⏳ | 🟢 (SQLite) |
 | Client | isole `@start-client`→JS **nel compilatore nativo** (eventi, stato, DOM), servite con la pagina; **`fetch`** (chiamate HTTP dall'isola, aggiornamento DOM con la risposta) ✅ | 🟢 (nativo) |
 | Target | **WebAssembly (client): Fasi 0+1 fatte** — `logyxc build-wasm` compila a WASM funzioni con firma `int`/`float`/`bool`/`string` (le stringhe via memoria lineare, senza `wasm-bindgen`), con pagina HTML interattiva (`design/web-wasm.md`, `design/web-wasm-fase1.md`, `examples/native_wasm.logyx`, `examples/native_webstr.logyx`); DOM dal codice Logyx + server HTTP ⏳ | 🟡 |
 

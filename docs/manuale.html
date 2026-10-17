@@ -972,12 +972,53 @@ route <code>respond</code>, §10) e aggiorna il DOM con il risultato.</p>
 </code></pre>
 <p>→ genera <code>fn fib(n: i64) -&gt; i64 { ... }</code> in Rust: <code>n</code> è dedotto <code>int</code> dall'uso (<code>n &lt; 2</code>, <code>n - 1</code>),
 il ritorno <code>int</code> dal corpo. Vedi <code>examples/native_infer.logyx</code>.</p>
-<h2 id="13-cosa-non-ce-ancora">13. Cosa non c'è ancora ⏳</h2>
+<h2 id="13-database-sqlite">13. Database (SQLite) ✅</h2>
+<p>Accesso a un database <strong>SQLite</strong> con tre builtin. Nativo via la crate <code>rusqlite</code> (opzione <code>bundled</code>:
+compila SQLite da sorgente, nessuna dipendenza di sistema); nell'interprete via il modulo <code>sqlite3</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Funzione</th>
+<th>Descrizione</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db_open(percorso)</code></td>
+<td>Apre (o crea) il database e ne restituisce la connessione. Usa <code>":memory:"</code> per un DB in memoria</td>
+</tr>
+<tr>
+<td><code>db_exec(db, sql)</code></td>
+<td>Esegue un comando (CREATE/INSERT/UPDATE/DELETE) e restituisce il numero di righe modificate (<code>int</code>)</td>
+</tr>
+<tr>
+<td><code>db_query(db, sql, [Record])</code></td>
+<td>Esegue una SELECT e restituisce una <strong>lista di record</strong>: le colonne vanno nei campi del record <strong>per posizione</strong> (come <code>from_json</code>)</td>
+</tr>
+</tbody>
+</table>
+<pre><code>record Persona { nome: string, eta: int }
+
+fn main() {
+    db = db_open(&quot;:memory:&quot;)
+    db_exec(db, &quot;CREATE TABLE persone (nome TEXT, eta INTEGER)&quot;)
+    db_exec(db, &quot;INSERT INTO persone VALUES ('Ada', 36), ('Bob', 29)&quot;)
+
+    gente = db_query(db, &quot;SELECT nome, eta FROM persone ORDER BY nome&quot;, [Persona])
+    for p in gente { print(p.nome + &quot; ha &quot; + str(p.eta)) }
+}
+</code></pre>
 <ul>
-<li>Mutazioni/metodi su liste, mappe e stringhe; libreria standard.</li>
-<li>Moduli / import; gestione degli errori nel linguaggio.</li>
-<li>Lettura input nella DSL client (<code>value of ...</code>); target WASM del client.</li>
-<li>Transpiler Rust completo (oltre il sottoinsieme tipizzato).</li>
+<li>I tipi dei campi del record guidano la lettura delle colonne (<code>string</code>→TEXT, <code>int</code>→INTEGER,
+  <code>float</code>→REAL, <code>bool</code>→0/1). L'ordine delle colonne nella SELECT deve corrispondere ai campi del record.</li>
+<li>La connessione è un <strong>handle opaco</strong> (<code>DB</code>), clonabile: in Rust è <code>Rc&lt;rusqlite::Connection&gt;</code>.</li>
+<li>Esempio completo: <code>examples/native_db.logyx</code> (verificato nei tre backend da <code>tests/db_smoke.sh</code>).</li>
+</ul>
+<h2 id="14-cosa-non-ce-ancora">14. Cosa non c'è ancora ⏳</h2>
+<ul>
+<li>Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); accesso a tupla per posizione
+  (<code>t.0</code>); input nella DSL client (<code>value of ...</code>); target WASM del client.</li>
+<li>Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; self-hosting del compilatore.</li>
 </ul>
 </main>
 <button id="toTop" class="to-top" aria-label="Torna su" title="Torna su">↑</button>

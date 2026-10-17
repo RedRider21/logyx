@@ -64,7 +64,18 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **62/62**). Ciclo: implementa → esempio `examples/native_*` → `./tests/conformance.sh`.
+(ora **62/62**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+`./tests/conformance.sh`.
+
+**Database SQLite FATTO (2026-10-17):** tre builtin — `db_open(path)` (anche `":memory:"`) → handle
+opaco `DB` (`Rc<rusqlite::Connection>` in Rust, oggetto `sqlite3` nell'interprete), `db_exec(db, sql)` →
+righe modificate (int), `db_query(db, sql, [Record])` → lista di record (colonne→campi per posizione,
+come `from_json`; il 3° arg è un tipo, gestito come in `from_json`/`_db_query`). Nativo via crate
+`rusqlite` (bundled, ~31s la prima build) → tenuto FUORI dalla suite veloce, verificato da
+`tests/db_smoke.sh` (3 backend identici). Esempio `examples/native_db.logyx`. **Migliorato anche il `for`
+regolare:** ora tipizza la variabile di ciclo dall'elemento (`list_elem`/`map_val`/range), così
+`p.campo` e le concatenazioni di stringhe funzionano sulle liste di record (da `db_query`/`from_json`).
+Prossimi fronti grossi: DOM-da-Logyx in WASM, self-hosting.
 
 **`fetch` dal client + `respond` lato server FATTI (2026-10-17):** chiude il ciclo "un sorgente,
 server+client". Isola client: `fetch <url> [method <e>] [body <e>] [as <var>] { … } [else { … }]` →

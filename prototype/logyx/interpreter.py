@@ -8,6 +8,7 @@ import math
 import os
 import random as _random
 import re as _re
+import sqlite3 as _sqlite3
 import subprocess as _subprocess
 import sys
 import time
@@ -314,6 +315,20 @@ class Interpreter:
                 c, shell=True, capture_output=True, text=True
             ).stdout,
         )
+        # database SQLite: db_open(path) -> connessione; db_exec(db, sql) -> righe modificate
+        # (db_query è gestito in ex_Call perché il 3° argomento è un tipo [Record])
+
+        def _db_open(path):
+            conn = _sqlite3.connect(path)
+            return conn
+
+        def _db_exec(db, sql):
+            cur = db.execute(sql)
+            db.commit()
+            return max(cur.rowcount, 0)
+
+        g.define("db_open", _db_open)
+        g.define("db_exec", _db_exec)
         g.define(
             "run_code",
             lambda c: _subprocess.run(c, shell=True, capture_output=True).returncode,
@@ -777,9 +792,26 @@ class Interpreter:
                 return self._make_record(cname, [self.eval(a, env) for a in n.args])
             if cname == "from_json":
                 return self._from_json(n, env)
+            if cname == "db_query":
+                return self._db_query(n, env)
         callee = self.eval(n.callee, env)
         args = [self.eval(a, env) for a in n.args]
         return self.call(callee, args)
+
+    def _db_query(self, n, env):
+        # db_query(db, sql, [Record]) -> lista di record (colonne -> campi, per posizione)
+        if len(n.args) != 3:
+            raise LogyxError("db_query richiede: db_query(db, sql, [Record])")
+        spec = n.args[2]
+        if not (type(spec).__name__ == "ListLit" and len(spec.elements) == 1
+                and isinstance(spec.elements[0], N.Identifier)
+                and spec.elements[0].name in self.records):
+            raise LogyxError("db_query: il 3° argomento dev'essere [NomeRecord]")
+        recname = spec.elements[0].name
+        db = self.eval(n.args[0], env)
+        sql = self.eval(n.args[1], env)
+        rows = db.execute(sql).fetchall()
+        return [self._make_record(recname, list(row)) for row in rows]
 
     def _from_json(self, n, env):
         if len(n.args) != 2:

@@ -703,9 +703,37 @@ fn fib(n) {                       // nessuna annotazione
 → genera `fn fib(n: i64) -> i64 { ... }` in Rust: `n` è dedotto `int` dall'uso (`n < 2`, `n - 1`),
 il ritorno `int` dal corpo. Vedi `examples/native_infer.logyx`.
 
-## 13. Cosa non c'è ancora ⏳
+## 13. Database (SQLite) ✅
 
-- Mutazioni/metodi su liste, mappe e stringhe; libreria standard.
-- Moduli / import; gestione degli errori nel linguaggio.
-- Lettura input nella DSL client (`value of ...`); target WASM del client.
-- Transpiler Rust completo (oltre il sottoinsieme tipizzato).
+Accesso a un database **SQLite** con tre builtin. Nativo via la crate `rusqlite` (opzione `bundled`:
+compila SQLite da sorgente, nessuna dipendenza di sistema); nell'interprete via il modulo `sqlite3`.
+
+| Funzione | Descrizione |
+| --- | --- |
+| `db_open(percorso)` | Apre (o crea) il database e ne restituisce la connessione. Usa `":memory:"` per un DB in memoria |
+| `db_exec(db, sql)` | Esegue un comando (CREATE/INSERT/UPDATE/DELETE) e restituisce il numero di righe modificate (`int`) |
+| `db_query(db, sql, [Record])` | Esegue una SELECT e restituisce una **lista di record**: le colonne vanno nei campi del record **per posizione** (come `from_json`) |
+
+```
+record Persona { nome: string, eta: int }
+
+fn main() {
+    db = db_open(":memory:")
+    db_exec(db, "CREATE TABLE persone (nome TEXT, eta INTEGER)")
+    db_exec(db, "INSERT INTO persone VALUES ('Ada', 36), ('Bob', 29)")
+
+    gente = db_query(db, "SELECT nome, eta FROM persone ORDER BY nome", [Persona])
+    for p in gente { print(p.nome + " ha " + str(p.eta)) }
+}
+```
+
+- I tipi dei campi del record guidano la lettura delle colonne (`string`→TEXT, `int`→INTEGER,
+  `float`→REAL, `bool`→0/1). L'ordine delle colonne nella SELECT deve corrispondere ai campi del record.
+- La connessione è un **handle opaco** (`DB`), clonabile: in Rust è `Rc<rusqlite::Connection>`.
+- Esempio completo: `examples/native_db.logyx` (verificato nei tre backend da `tests/db_smoke.sh`).
+
+## 14. Cosa non c'è ancora ⏳
+
+- Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); accesso a tupla per posizione
+  (`t.0`); input nella DSL client (`value of ...`); target WASM del client.
+- Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; self-hosting del compilatore.

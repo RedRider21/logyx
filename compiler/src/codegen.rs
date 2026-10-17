@@ -356,6 +356,10 @@ impl Codegen {
             let rs: Result<Vec<String>, _> = parts.iter().map(|p| self.rust_type(p)).collect();
             return Ok(format!("({})", rs?.join(", ")));
         }
+        if t == "DB" {
+            // handle opaco a una connessione SQLite, clonabile (condivide la connessione)
+            return Ok("std::rc::Rc<rusqlite::Connection>".to_string());
+        }
         if let Some((params, ret)) = parse_fn_type(t) {
             // valore funzione: Rc<dyn Fn(...)> (clonabile → compatibile col clone uniforme)
             let mut rp = Vec::new();
@@ -833,6 +837,15 @@ impl Codegen {
                     }
                     if name == "from_json" {
                         return args.get(1).and_then(|e| self.json_arg_type(e));
+                    }
+                    if name == "db_open" {
+                        return Some("DB".into());
+                    }
+                    if name == "db_exec" {
+                        return Some("int".into());
+                    }
+                    if name == "db_query" {
+                        return args.get(2).and_then(|e| self.json_arg_type(e));
                     }
                     return self.rets.get(name).cloned().flatten();
                 }
@@ -1743,6 +1756,21 @@ impl Codegen {
             (var.to_string(), String::new())
         };
         let en = if index.is_some() { ".enumerate()" } else { "" };
+        // tipo dell'elemento (per tipizzare la variabile di ciclo nel corpo: p.campo, concat…)
+        let elem_ty: Option<String> = match iterable {
+            Expr::Call { callee, args }
+                if matches!(&**callee, Expr::Ident(n) if n == "range")
+                    && (args.len() == 1 || args.len() == 2) =>
+            {
+                Some("int".to_string())
+            }
+            Expr::Ident(n) if self.kinds.get(n).map(|s| s.as_str()) == Some("map") => {
+                self.map_val.get(n).map(|(k, _)| k.clone())
+            }
+            Expr::Ident(n) => self.list_elem.get(n).cloned(),
+            Expr::List(els) => els.first().and_then(|e| self.json_type_of(e)),
+            _ => None,
+        };
         // range(n) oppure range(a, b)?
         if let Expr::Call { callee, args } = iterable {
             if let Expr::Ident(name) = &**callee {
@@ -1752,7 +1780,7 @@ impl Codegen {
                     } else {
                         (self.expr(&args[0])?, self.expr(&args[1])?)
                     };
-                    let b = self.block(body, declared, indent + 1)?;
+                    let b = self.block_typed_var(var, elem_ty, body, declared, indent + 1)?;
                     return Ok(format!("{pad}for {pat} in (({lo})..({hi})){en} {{\n{pre}{b}\n{pad}}}"));
                 }
             }
@@ -1760,7 +1788,7 @@ impl Codegen {
         // iterazione su mappa: sulle chiavi ordinate (HashMap non ha ordine → deterministico)
         if let Expr::Ident(n) = iterable {
             if self.kinds.get(n).map(|s| s.as_str()) == Some("map") {
-                let b = self.block(body, declared, indent + 1)?;
+                let b = self.block_typed_var(var, elem_ty, body, declared, indent + 1)?;
                 let src = format!(
                     "{{ let mut __k: Vec<_> = ({n}).keys().cloned().collect(); __k.sort(); __k }}.into_iter(){en}"
                 );
@@ -1769,8 +1797,34 @@ impl Codegen {
         }
         // iterazione su lista (per valore; cloned() vale per scalari e per String)
         let it = self.expr(iterable)?;
-        let b = self.block(body, declared, indent + 1)?;
+        let b = self.block_typed_var(var, elem_ty, body, declared, indent + 1)?;
         Ok(format!("{pad}for {pat} in ({it}).iter().cloned(){en} {{\n{pre}{b}\n{pad}}}"))
+    }
+
+    /// Genera un blocco con la variabile di ciclo `var` tipizzata a `ty` (se noto),
+    /// ripristinando l'ambiente dei tipi dopo.
+    fn block_typed_var(
+        &mut self,
+        var: &str,
+        ty: Option<String>,
+        body: &[Stmt],
+        declared: &mut HashSet<String>,
+        indent: usize,
+    ) -> R<String> {
+        let prev = self.cur_types.get(var).cloned();
+        if let Some(t) = ty {
+            self.cur_types.insert(var.to_string(), Some(t));
+        }
+        let b = self.block(body, declared, indent);
+        match prev {
+            Some(p) => {
+                self.cur_types.insert(var.to_string(), p);
+            }
+            None => {
+                self.cur_types.remove(var);
+            }
+        }
+        b
     }
 
     fn push_call(&mut self, args: &[Expr]) -> R<String> {
@@ -2003,6 +2057,14 @@ impl Codegen {
                                 }
                             }
                             _ => {}
+                        }
+                    }
+                    // db_query(db, sql, [Record]) -> lista di record
+                    if f == "db_query" {
+                        if let Some(Expr::List(els)) = args.get(2) {
+                            if let Some(elem) = els.first().and_then(|e| self.json_arg_type(e)) {
+                                self.list_elem.insert(name.to_string(), elem);
+                            }
                         }
                     }
                 }
@@ -2622,6 +2684,70 @@ impl Codegen {
                             "serde_json::from_str::<{}>(&({})).unwrap()",
                             target,
                             self.expr(&args[0])?
+                        ));
+                    }
+                    if name == "db_open" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(
+                                "db_open accetta un solo argomento: db_open(percorso)",
+                            ));
+                        }
+                        self.deps.insert(
+                            "rusqlite".to_string(),
+                            "{ version = \"0.31\", features = [\"bundled\"] }".to_string(),
+                        );
+                        return Ok(format!(
+                            "std::rc::Rc::new(rusqlite::Connection::open(({}).as_str()).unwrap())",
+                            self.expr(&args[0])?
+                        ));
+                    }
+                    if name == "db_exec" {
+                        if args.len() != 2 {
+                            return Err(LogyxError::new("db_exec accetta: db_exec(db, sql)"));
+                        }
+                        self.deps.insert(
+                            "rusqlite".to_string(),
+                            "{ version = \"0.31\", features = [\"bundled\"] }".to_string(),
+                        );
+                        return Ok(format!(
+                            "(({}).execute(({}).as_str(), []).unwrap() as i64)",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?
+                        ));
+                    }
+                    if name == "db_query" {
+                        if args.len() != 3 {
+                            return Err(LogyxError::new(
+                                "db_query richiede: db_query(db, sql, [Record])",
+                            ));
+                        }
+                        let logyx = self.json_arg_type(&args[2]);
+                        let rec = logyx
+                            .as_deref()
+                            .and_then(|t| t.strip_prefix("list<").and_then(|s| s.strip_suffix('>')))
+                            .filter(|r| self.records.contains_key(*r))
+                            .map(|r| r.to_string())
+                            .ok_or_else(|| {
+                                LogyxError::new("db_query: il 3º argomento dev'essere [NomeRecord]")
+                            })?;
+                        let fields = self.records[&rec].clone();
+                        let mut inits = Vec::new();
+                        for (i, (fname, _ft)) in fields.iter().enumerate() {
+                            inits.push(format!("{}: row.get({})?", fname, i));
+                        }
+                        self.deps.insert(
+                            "rusqlite".to_string(),
+                            "{ version = \"0.31\", features = [\"bundled\"] }".to_string(),
+                        );
+                        return Ok(format!(
+                            "{{ let __conn = ({}).clone(); let mut __st = __conn.prepare(({}).as_str()).unwrap(); \
+                             let __rows = __st.query_map([], |row| Ok({} {{ {} }})).unwrap(); \
+                             __rows.map(|__r| __r.unwrap()).collect::<Vec<{}>>() }}",
+                            self.expr(&args[0])?,
+                            self.expr(&args[1])?,
+                            rec,
+                            inits.join(", "),
+                            rec
                         ));
                     }
                     if name == "sha256" {

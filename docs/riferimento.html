@@ -240,6 +240,9 @@
       nen:"Lists <code>[T]</code> and maps <code>{K: V}</code>. Map keys are iterated <b>sorted</b>: the output is deterministic."},
     {id:"io", it:"I/O e sistema", en:"I/O & system", nit:"", nen:""},
     {id:"json", it:"Dati: JSON, date, hash", en:"Data: JSON, dates, hash", nit:"", nen:""},
+    {id:"db", it:"Database (SQLite)", en:"Database (SQLite)",
+      nit:"Accesso a SQLite con tre builtin. Nativo via crate <code>rusqlite</code> (bundled), interprete via <code>sqlite3</code>. La connessione è un handle opaco <code>DB</code>.",
+      nen:"SQLite access with three builtins. Native via the <code>rusqlite</code> crate (bundled), interpreter via <code>sqlite3</code>. The connection is an opaque <code>DB</code> handle."},
     {id:"web", it:"Web (server e client)", en:"Web (server & client)",
       nit:"Un solo sorgente: il codice server (<code>route</code>/<code>render</code>) diventa un binario; le isole client diventano JavaScript servito con la pagina.",
       nen:"A single source: server code (<code>route</code>/<code>render</code>) becomes a binary; client islands become JavaScript served with the page."},
@@ -665,6 +668,21 @@
       it:"Hash SHA-256 di <code>s</code> in esadecimale. Nativo via crate <code>sha2</code>.",
       en:"SHA-256 hash of <code>s</code> in hexadecimal. Native via the <code>sha2</code> crate.",
       code:"print(sha256(\"ciao\"))"},
+
+    // ======== DATABASE ========
+    {cat:"db", name:"db_open", sig:"db_open(percorso) -&gt; DB",
+      it:"Apre (o crea) un database SQLite e ne restituisce la connessione. Usa <code>\":memory:\"</code> per un DB in memoria.",
+      en:"Opens (or creates) a SQLite database and returns the connection. Use <code>\":memory:\"</code> for an in-memory DB.",
+      code:"db = db_open(\":memory:\")"},
+    {cat:"db", name:"db_exec", sig:"db_exec(db, sql) -&gt; int",
+      it:"Esegue un comando (CREATE/INSERT/UPDATE/DELETE) e restituisce il numero di righe modificate.",
+      en:"Runs a statement (CREATE/INSERT/UPDATE/DELETE) and returns the number of affected rows.",
+      code:"db_exec(db, \"CREATE TABLE persone (nome TEXT, eta INTEGER)\")\nn = db_exec(db, \"INSERT INTO persone VALUES ('Ada', 36)\")\nprint(n)   // 1",
+      out:"1"},
+    {cat:"db", name:"db_query", sig:"db_query(db, sql, [Record]) -&gt; [Record]",
+      it:"Esegue una SELECT e restituisce una <b>lista di record</b>: le colonne vanno nei campi del record <b>per posizione</b> (come <code>from_json</code>). I tipi dei campi guidano la lettura.",
+      en:"Runs a SELECT and returns a <b>list of records</b>: columns map to record fields <b>by position</b> (like <code>from_json</code>). Field types drive the reading.",
+      code:"record Persona { nome: string, eta: int }\ngente = db_query(db, \"SELECT nome, eta FROM persone ORDER BY nome\", [Persona])\nfor p in gente { print(p.nome + \" ha \" + str(p.eta)) }"},
 
     // ======== WEB ========
     {cat:"web", name:"route", sig:"route \"/percorso\" { … }",

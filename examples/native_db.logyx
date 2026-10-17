@@ -1,0 +1,32 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Database SQLite. Tre builtin:
+//   db_open(percorso)        -> connessione (usa ":memory:" per un DB in memoria)
+//   db_exec(db, sql)         -> numero di righe modificate (int)
+//   db_query(db, sql, [Rec]) -> lista di record (colonne -> campi, per posizione)
+//
+// Nativo via crate `rusqlite` (bundled), interprete via il modulo `sqlite3`.
+
+record Persona { nome: string, eta: int }
+
+fn main() {
+    db = db_open(":memory:")
+    db_exec(db, "CREATE TABLE persone (nome TEXT, eta INTEGER)")
+
+    n = db_exec(db, "INSERT INTO persone VALUES ('Ada', 36), ('Bob', 29), ('Carla', 41)")
+    print("inserite: {n}")                 // inserite: 3
+
+    maggiorenni = db_query(db,
+        "SELECT nome, eta FROM persone WHERE eta >= 30 ORDER BY nome", [Persona])
+    print("trovate: {len(maggiorenni)}")   // trovate: 2
+    for p in maggiorenni {
+        print(p.nome + " (" + str(p.eta) + ")")
+    }
+
+    db_exec(db, "UPDATE persone SET eta = 30 WHERE nome = 'Bob'")
+    tutte = db_query(db, "SELECT nome, eta FROM persone ORDER BY eta", [Persona])
+    for p in tutte {
+        print(str(p.eta) + ": " + p.nome)
+    }
+}
