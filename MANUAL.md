@@ -393,6 +393,16 @@ nome = "Logyx"
 print("Ciao da {nome}!")     // Ciao da Logyx!
 ```
 
+**Indicizzazione**: `s[i]` restituisce il carattere in posizione `i` come **stringa di 1** (non c'è un
+tipo carattere a sé). Si concatena e si confronta come una normale stringa. Per sottostringhe più lunghe
+c'è `substring(s, a, b)`.
+
+```
+s = "logyx"
+print(s[0])        // l
+print(s[0] + s[1]) // lo
+```
+
 ## 9. Funzioni builtin ✅
 
 | Funzione | Descrizione |

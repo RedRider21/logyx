@@ -513,6 +513,13 @@ senza elementi, da cui il backend non deduce il tipo.</p>
 <pre><code>nome = &quot;Logyx&quot;
 print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
 </code></pre>
+<p><strong>Indicizzazione</strong>: <code>s[i]</code> restituisce il carattere in posizione <code>i</code> come <strong>stringa di 1</strong> (non c'è un
+tipo carattere a sé). Si concatena e si confronta come una normale stringa. Per sottostringhe più lunghe
+c'è <code>substring(s, a, b)</code>.</p>
+<pre><code>s = &quot;logyx&quot;
+print(s[0])        // l
+print(s[0] + s[1]) // lo
+</code></pre>
 <h2 id="9-funzioni-builtin">9. Funzioni builtin ✅</h2>
 <table>
 <thead>

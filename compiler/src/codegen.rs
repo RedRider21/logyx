@@ -958,6 +958,21 @@ impl Codegen {
                     .get(&tt)
                     .and_then(|fields| fields.iter().find(|(f, _)| f == name).map(|(_, t)| t.clone()))
             }
+            Expr::Index { target, .. } => {
+                // stringa → carattere (stringa); lista → tipo elemento; mappa → tipo valore
+                if self.type_of(target, ptypes).as_deref() == Some("string") {
+                    return Some("string".into());
+                }
+                if let Expr::Ident(n) = &**target {
+                    if let Some(elem) = self.list_elem.get(n) {
+                        return Some(elem.clone());
+                    }
+                    if let Some((_, v)) = self.map_val.get(n) {
+                        return Some(v.clone());
+                    }
+                }
+                None
+            }
             _ => None,
         }
     }
@@ -2436,6 +2451,14 @@ impl Codegen {
                             self.expr(index)?
                         ));
                     }
+                }
+                // indicizzazione di stringa: `s[i]` → il carattere come stringa di 1
+                if self.type_of(target, &self.cur_types.clone()).as_deref() == Some("string") {
+                    return Ok(format!(
+                        "({}).chars().nth(({}) as usize).map(|__c| __c.to_string()).unwrap_or_default()",
+                        self.expr(target)?,
+                        self.expr(index)?
+                    ));
                 }
                 Ok(format!(
                     "{}[({}) as usize].clone()",

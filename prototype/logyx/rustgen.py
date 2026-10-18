@@ -720,6 +720,18 @@ class RustTranspiler:
                 if fn == e.name:
                     return ft
             return None
+        if t == "Index":
+            # stringa -> carattere (stringa); lista -> tipo elemento; mappa -> tipo valore
+            if self._type_of(e.target, ptypes) == "string":
+                return "string"
+            if isinstance(e.target, N.Identifier):
+                el = getattr(self, "list_elem", {}).get(e.target.name)
+                if el:
+                    return el
+                mv = getattr(self, "map_val", {}).get(e.target.name)
+                if mv:
+                    return mv[1]
+            return None
         if t == "StringLit":
             return "string"
         if t == "Literal":
@@ -1345,6 +1357,10 @@ class RustTranspiler:
         if t == "Index":
             if isinstance(e.target, N.Identifier) and getattr(self, "kinds", {}).get(e.target.name) == "map":
                 return f"{self.expr(e.target)}.get(&({self.expr(e.index)})).unwrap().clone()"
+            # indicizzazione di stringa: s[i] → il carattere come stringa di 1
+            if self._type_of(e.target, self.cur_types) == "string":
+                return (f"({self.expr(e.target)}).chars().nth(({self.expr(e.index)}) as usize)"
+                        ".map(|__c| __c.to_string()).unwrap_or_default()")
             return f"{self.expr(e.target)}[({self.expr(e.index)}) as usize].clone()"
         if t == "Field":
             # variante di enum senza payload: Nome.Variante -> Nome::Variante

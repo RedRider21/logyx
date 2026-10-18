@@ -1,0 +1,27 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Indicizzazione di stringa: `s[i]` → il carattere in posizione i come stringa di 1.
+// (Convive con l'indicizzazione di liste e mappe, che resta invariata.)
+
+fn iniziale(s: string) -> string {
+    return s[0]
+}
+
+fn main() {
+    s = "logyx"
+    print(s[0])                 // l
+    print(s[4])                 // x
+    print(iniziale("Ada"))      // A
+
+    // il carattere è una stringa: si concatena e si confronta
+    print(s[0] + s[1] + s[2])   // log
+    if s[0] == "l" { print("inizia con l") }
+
+    // scorrere i caratteri per indice
+    i = 0
+    while i < len(s) {
+        print(s[i])
+        i = i + 1
+    }
+}

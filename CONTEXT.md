@@ -79,8 +79,14 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **67/67**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **68/68**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**Indicizzazione stringhe FATTA (2026-10-18):** `s[i]` → carattere come stringa di 1 (nativo
+`.chars().nth(i).map(to_string)`, interprete `s[i]` Python). Gen in `Expr::Index` quando `type_of(target)
+== string`; `type_of(Index)` ora ritorna il tipo (string→string, lista→elem, mappa→valore). Un parametro
+indicizzato (`s[0]`) resta ambiguo lista/stringa → serve annotazione. Esempio `native_strindex`.
+**Prossimi del nucleo:** tipo `set`, comprehension, libreria matematica.
 
 **Bitwise FATTI (2026-10-18):** `& | ^ << >> ~` su interi, precedenza come in C (nuovi livelli parser
 `bitor→bitxor→bitand` sotto `and`, `shift` fra confronto e additivo; `~` in unary). Token `Amp/Caret/
