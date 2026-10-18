@@ -52,6 +52,7 @@ class T:
     PLUS = "PLUS"
     MINUS = "MINUS"
     STAR = "STAR"
+    STARSTAR = "STARSTAR"
     SLASH = "SLASH"
     PERCENT = "PERCENT"
     PLUSEQ = "PLUSEQ"

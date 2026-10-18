@@ -157,6 +157,7 @@ class Lexer:
         two_map = {
             "->": T.ARROW, "==": T.EQ, "!=": T.NE, "<=": T.LE, ">=": T.GE,
             "+=": T.PLUSEQ, "-=": T.MINUSEQ, "*=": T.STAREQ, "/=": T.SLASHEQ, "%=": T.PERCENTEQ,
+            "**": T.STARSTAR,
         }
         if two in two_map:
             self.advance()

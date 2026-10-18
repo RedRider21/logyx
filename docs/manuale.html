@@ -262,6 +262,7 @@ riassegnano. Un parametro o un locale con lo stesso nome <strong>oscura</strong>
 tipo collezione/tupla nel backend tipizzato. Esempio <code>examples/native_globals.logyx</code>.</p>
 <ul>
 <li>Aritmetici: <code>+  -  *  /  %</code> — fra interi <code>/</code> è divisione intera troncata verso zero (come Rust)</li>
+<li><strong>Esponente</strong>: <code>**</code> (es. <code>2 ** 10</code>) — più stretto di <code>*</code>/<code>/</code>, associativo a destra (<code>2 ** 3 ** 2</code> = <code>2 ** 9</code>)</li>
 <li>Confronto: <code>==  !=  &lt;  &lt;=  &gt;  &gt;=</code></li>
 <li><strong>Appartenenza</strong>: <code>elemento in collezione</code> → <code>bool</code> (lista: contiene il valore; mappa: ha la chiave;
   stringa: contiene la sottostringa). È distinto dal ciclo <code>for x in …</code>.</li>

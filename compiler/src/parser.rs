@@ -781,7 +781,7 @@ impl Parser {
     }
 
     fn factor(&mut self) -> Result<Expr, LogyxError> {
-        let mut left = self.unary()?;
+        let mut left = self.power()?;
         loop {
             let op = match self.kind() {
                 TokenKind::Star => BinOp::Mul,
@@ -790,10 +790,25 @@ impl Parser {
                 _ => break,
             };
             self.advance();
-            let right = self.unary()?;
+            let right = self.power()?;
             left = Expr::Binary { op, left: Box::new(left), right: Box::new(right) };
         }
         Ok(left)
+    }
+
+    // esponente `**`, più stretto di `*`/`/`, associativo a destra (2 ** 3 ** 2 = 2 ** 9)
+    fn power(&mut self) -> Result<Expr, LogyxError> {
+        let base = self.unary()?;
+        if self.is(&TokenKind::StarStar) {
+            self.advance();
+            let exp = self.power()?;
+            return Ok(Expr::Binary {
+                op: BinOp::Pow,
+                left: Box::new(base),
+                right: Box::new(exp),
+            });
+        }
+        Ok(base)
     }
 
     fn unary(&mut self) -> Result<Expr, LogyxError> {
@@ -1298,6 +1313,7 @@ fn js_binop(op: &BinOp) -> &'static str {
         BinOp::Mul => "*",
         BinOp::Div => "/",
         BinOp::Mod => "%",
+        BinOp::Pow => "**",
     }
 }
 

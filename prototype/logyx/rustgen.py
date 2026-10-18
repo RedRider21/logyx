@@ -534,7 +534,7 @@ class RustTranspiler:
         if op in ("==", "!=", "<", "<=", ">", ">="):
             self._compare_ev(L, R, pt, ev)
             self._compare_ev(R, L, pt, ev)
-        elif op in ("-", "*", "/", "%"):
+        elif op in ("-", "*", "/", "%", "**"):
             self._arith_ev(L, R, pt, ev)
             self._arith_ev(R, L, pt, ev)
         elif op == "+":
@@ -1286,6 +1286,12 @@ class RustTranspiler:
         if t == "Unary":
             return ("!" if e.op == "not" else "-") + self.expr(e.operand)
         if t == "Binary":
+            if e.op == "**":
+                # esponente: float → powf, interi → pow(exp as u32)
+                lt = self._type_of(e.left, self.cur_types)
+                if lt == "float":
+                    return f"(({self.expr(e.left)}) as f64).powf(({self.expr(e.right)}) as f64)"
+                return f"({self.expr(e.left)}).pow(({self.expr(e.right)}) as u32)"
             if e.op == "+" and (self._is_string_expr(e.left) or self._is_string_expr(e.right)):
                 return f'format!("{{}}{{}}", {self.expr(e.left)}, {self.expr(e.right)})'
             return f"({self.expr(e.left)} {e.op} {self.expr(e.right)})"

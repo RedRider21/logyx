@@ -746,6 +746,8 @@ class Interpreter:
             return a - b
         if op == "*":
             return a * b
+        if op == "**":
+            return a ** b
         if op == "/":
             if b == 0:
                 raise LogyxError("divisione per zero")

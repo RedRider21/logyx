@@ -1,0 +1,21 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Operatore di esponente `**`: più stretto di `*`/`/`, associativo a destra.
+//   interi → elevamento a potenza intero; float → powf.
+// (Equivale a pow(base, esp) per gli interi, ma è un operatore.)
+
+fn quadrato(n) {
+    return n ** 2
+}
+
+fn main() {
+    print(2 ** 10)         // 1024
+    print(3 ** 2 ** 2)     // 3 ** (2 ** 2) = 3 ** 4 = 81  (destra-associativo)
+    print(2 * 3 ** 2)      // 2 * (3 ** 2) = 18  (** più stretto di *)
+    print(quadrato(7))     // 49
+    print(5 ** 0)          // 1
+
+    base = 2.0
+    print(base ** 3.0)     // 8  (float, via powf)
+}

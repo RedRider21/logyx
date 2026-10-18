@@ -323,6 +323,7 @@ impl Lexer {
             ['+', '='] => Some(TokenKind::PlusEq),
             ['-', '='] => Some(TokenKind::MinusEq),
             ['*', '='] => Some(TokenKind::StarEq),
+            ['*', '*'] => Some(TokenKind::StarStar),
             ['/', '='] => Some(TokenKind::SlashEq),
             ['%', '='] => Some(TokenKind::PercentEq),
             _ => None,

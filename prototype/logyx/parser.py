@@ -541,11 +541,19 @@ class Parser:
         return left
 
     def factor(self):
-        left = self.unary()
+        left = self.power()
         while self.peek().type in (T.STAR, T.SLASH, T.PERCENT):
             op = self.advance().value
-            left = N.Binary(op, left, self.unary())
+            left = N.Binary(op, left, self.power())
         return left
+
+    def power(self):
+        # esponente `**`: più stretto di `*`/`/`, associativo a destra
+        base = self.unary()
+        if self.at(T.STARSTAR):
+            self.advance()
+            return N.Binary("**", base, self.power())
+        return base
 
     def unary(self):
         if self.at(T.NOT):

@@ -109,6 +109,7 @@ riassegnano. Un parametro o un locale con lo stesso nome **oscura** il globale. 
 tipo collezione/tupla nel backend tipizzato. Esempio `examples/native_globals.logyx`.
 
 - Aritmetici: `+  -  *  /  %` — fra interi `/` è divisione intera troncata verso zero (come Rust)
+- **Esponente**: `**` (es. `2 ** 10`) — più stretto di `*`/`/`, associativo a destra (`2 ** 3 ** 2` = `2 ** 9`)
 - Confronto: `==  !=  <  <=  >  >=`
 - **Appartenenza**: `elemento in collezione` → `bool` (lista: contiene il valore; mappa: ha la chiave;
   stringa: contiene la sottostringa). È distinto dal ciclo `for x in …`.

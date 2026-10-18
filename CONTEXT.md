@@ -79,8 +79,14 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **65/65**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **66/66**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**Esponente `**` FATTO (2026-10-18):** token `StarStar`/`STARSTAR`; livello `power` nel parser (fra
+`factor` e `unary`, destra-assoc); `BinOp::Pow`; gen int→`.pow(exp as u32)`, float→`.powf`; JS `**`;
+interprete `**`; inferenza via `binary_ev`/`_binary_ev` (set aritmetico). Esempio `native_power`.
+**Prossimo del nucleo:** operatori **bitwise** (attenzione: `|` è già lambda/`T|error` → valutare `or`/
+sintassi dedicata), poi `set`, indicizzazione stringhe, comprehension.
 
 **`in` come operatore FATTO (2026-10-17 sera):** `item in coll` → bool (lista→`.iter().any`, mappa→
 `.contains_key`, stringa→`.contains`; JS `includes`/`in`; interprete `in` di Python). Aggiunto al livello

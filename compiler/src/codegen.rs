@@ -175,6 +175,7 @@ fn binop_sym(op: &BinOp) -> &'static str {
         BinOp::Mul => "*",
         BinOp::Div => "/",
         BinOp::Mod => "%",
+        BinOp::Pow => "**", // non usato: Pow è generato a parte (pow/powf)
         BinOp::Eq => "==",
         BinOp::Ne => "!=",
         BinOp::Lt => "<",
@@ -1141,7 +1142,7 @@ impl Codegen {
         if is_cmp(op) {
             self.compare_ev(l, r, pt, ev);
             self.compare_ev(r, l, pt, ev);
-        } else if matches!(op, BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod) {
+        } else if matches!(op, BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod | BinOp::Pow) {
             self.arith_ev(l, r, pt, ev);
             self.arith_ev(r, l, pt, ev);
         } else if *op == BinOp::Add {
@@ -2308,6 +2309,15 @@ impl Codegen {
                 Ok(format!("{}{}", if *op == UnOp::Not { "!" } else { "-" }, s))
             }
             Expr::Binary { op, left, right } => {
+                if *op == BinOp::Pow {
+                    // esponente: float → powf, interi → pow(exp as u32)
+                    let lt = self.type_of(left, &self.cur_types.clone());
+                    return Ok(if lt.as_deref() == Some("float") {
+                        format!("(({}) as f64).powf(({}) as f64)", self.expr(left)?, self.expr(right)?)
+                    } else {
+                        format!("({}).pow(({}) as u32)", self.expr(left)?, self.expr(right)?)
+                    });
+                }
                 if *op == BinOp::Add && (self.is_string_expr(left) || self.is_string_expr(right)) {
                     Ok(format!(
                         "format!(\"{{}}{{}}\", {}, {})",
