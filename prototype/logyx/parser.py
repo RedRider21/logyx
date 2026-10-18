@@ -505,10 +505,32 @@ class Parser:
         return left
 
     def and_expr(self):
-        left = self.equality()
+        left = self.bitor()
         while self.at(T.AND):
             self.advance()
-            left = N.Logical("and", left, self.equality())
+            left = N.Logical("and", left, self.bitor())
+        return left
+
+    # bitwise: `|` più lasco di `^` più lasco di `&` (sotto l'uguaglianza, come in C)
+    def bitor(self):
+        left = self.bitxor()
+        while self.at(T.PIPE):
+            self.advance()
+            left = N.Binary("|", left, self.bitxor())
+        return left
+
+    def bitxor(self):
+        left = self.bitand()
+        while self.at(T.CARET):
+            self.advance()
+            left = N.Binary("^", left, self.bitand())
+        return left
+
+    def bitand(self):
+        left = self.equality()
+        while self.at(T.AMP):
+            self.advance()
+            left = N.Binary("&", left, self.equality())
         return left
 
     def equality(self):
@@ -519,18 +541,26 @@ class Parser:
         return left
 
     def comparison(self):
-        left = self.term()
+        left = self.shift()
         while True:
             # test di appartenenza: `item in coll`
             if self.at(T.IN):
                 self.advance()
-                left = N.In(left, self.term())
+                left = N.In(left, self.shift())
                 continue
             if self.peek().type in (T.LT, T.LE, T.GT, T.GE):
                 op = self.advance().value
-                left = N.Binary(op, left, self.term())
+                left = N.Binary(op, left, self.shift())
                 continue
             break
+        return left
+
+    def shift(self):
+        # scorrimenti `<<`/`>>`: fra l'additivo e il confronto
+        left = self.term()
+        while self.peek().type in (T.SHL, T.SHR):
+            op = self.advance().value
+            left = N.Binary(op, left, self.term())
         return left
 
     def term(self):
@@ -562,6 +592,9 @@ class Parser:
         if self.at(T.MINUS):
             self.advance()
             return N.Unary("-", self.unary())
+        if self.at(T.TILDE):
+            self.advance()
+            return N.Unary("~", self.unary())
         return self.postfix()
 
     def postfix(self):

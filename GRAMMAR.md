@@ -166,7 +166,8 @@ render       := "render" template
 espressione  := condizionale
 condizionale := orExpr ("?" orExpr ":" espressione)?    // ternario: cond ? a : b (destra-assoc)
                 // livello confronto: include anche `item in collezione` (lista/mappa/stringa) -> bool
-orExpr       := ... (letterali, chiamate, operatori aritmetici/confronto/logici, "**" esponente, postfisso "?", lambda)
+orExpr       := ... (aritmetici, confronto, logici, "**" esponente, bit a bit "& | ^ << >> ~", "in", postfisso "?", lambda)
+                // precedenza bit a bit come in C: ~ ; << >> ; & ; ^ ; | (sotto l'uguaglianza)
                 // e? propaga l'errore (postfisso): è ternario solo se "?" è seguito da un valore
                 // Nota: niente ";" — gli statement sono delimitati dalla struttura (a-capo liberi)
 lambda       := "|" (IDENT ("," IDENT)*)? "|" espressione    // passabile, ritornabile, assegnabile a variabile (con tipo fn(...)->...)

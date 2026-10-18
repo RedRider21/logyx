@@ -1,0 +1,34 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Operatori bit a bit (su interi):
+//   &  AND   |  OR   ^  XOR   <<  shift sinistro   >>  shift destro   ~  NOT
+// Precedenza (come in C): ~ unario; poi << >>; poi & ; poi ^ ; poi | .
+// Nota: `|` qui è l'OR bit a bit; la lambda |x| e il tipo `T | error` restano distinti.
+
+fn flag(bit) {
+    return 1 << bit
+}
+
+fn main() {
+    print(6 & 3)        // 2
+    print(6 | 1)        // 7
+    print(6 ^ 3)        // 5
+    print(1 << 4)       // 16
+    print(255 >> 4)     // 15
+    print(~0)           // -1
+    print(~5)           // -6
+
+    // precedenza: & più stretto di | ; << più stretto di &
+    print(1 | 2 & 3)    // 1 | (2 & 3) = 3
+    print(1 << 2 | 1)   // (1 << 2) | 1 = 5
+
+    // maschere di bit
+    permessi = flag(0) | flag(2)      // 1 | 4 = 5
+    print(permessi)                   // 5
+    print(permessi & flag(2))         // 4 (il bit 2 è acceso)
+
+    // convive con le lambda
+    nums = [1, 2, 3, 4]
+    print(sum(map(nums, |x| x * 2)))  // 20
+}

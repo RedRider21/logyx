@@ -726,6 +726,8 @@ class Interpreter:
             return not truthy(v)
         if n.op == "-":
             return -v
+        if n.op == "~":
+            return ~v
         raise LogyxError(f"operatore unario sconosciuto: {n.op}")
 
     def ex_Logical(self, n, env):
@@ -748,6 +750,16 @@ class Interpreter:
             return a * b
         if op == "**":
             return a ** b
+        if op == "&":
+            return a & b
+        if op == "|":
+            return a | b
+        if op == "^":
+            return a ^ b
+        if op == "<<":
+            return a << b
+        if op == ">>":
+            return a >> b
         if op == "/":
             if b == 0:
                 raise LogyxError("divisione per zero")

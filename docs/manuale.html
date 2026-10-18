@@ -267,6 +267,9 @@ tipo collezione/tupla nel backend tipizzato. Esempio <code>examples/native_globa
 <li><strong>Appartenenza</strong>: <code>elemento in collezione</code> → <code>bool</code> (lista: contiene il valore; mappa: ha la chiave;
   stringa: contiene la sottostringa). È distinto dal ciclo <code>for x in …</code>.</li>
 <li>Logici: <code>and  or  not</code></li>
+<li><strong>Bit a bit</strong> (su interi): <code>&amp;</code> AND, <code>|</code> OR, <code>^</code> XOR, <code>&lt;&lt;</code>/<code>&gt;&gt;</code> shift, <code>~</code> NOT. Precedenza come in C
+  (<code>~</code> unario; poi <code>&lt;&lt;</code>/<code>&gt;&gt;</code>; poi <code>&amp;</code>; poi <code>^</code>; poi <code>|</code>). Il <code>|</code> bit a bit non si confonde con la lambda
+  <code>|x|</code> né col tipo <code>T | error</code> (sono in posizioni diverse).</li>
 <li><strong>Condizionale (ternario)</strong>: <code>cond ? a : b</code> (vedi §5).</li>
 <li><code>+</code> fra stringhe (o stringa e numero) concatena.</li>
 <li>Assegnazione composta: <code>+=  -=  *=  /=  %=</code> — per esempio <code>x += 1</code> equivale a <code>x = x + 1</code>.</li>

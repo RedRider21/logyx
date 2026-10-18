@@ -114,6 +114,9 @@ tipo collezione/tupla nel backend tipizzato. Esempio `examples/native_globals.lo
 - **Appartenenza**: `elemento in collezione` → `bool` (lista: contiene il valore; mappa: ha la chiave;
   stringa: contiene la sottostringa). È distinto dal ciclo `for x in …`.
 - Logici: `and  or  not`
+- **Bit a bit** (su interi): `&` AND, `|` OR, `^` XOR, `<<`/`>>` shift, `~` NOT. Precedenza come in C
+  (`~` unario; poi `<<`/`>>`; poi `&`; poi `^`; poi `|`). Il `|` bit a bit non si confonde con la lambda
+  `|x|` né col tipo `T | error` (sono in posizioni diverse).
 - **Condizionale (ternario)**: `cond ? a : b` (vedi §5).
 - `+` fra stringhe (o stringa e numero) concatena.
 - Assegnazione composta: `+=  -=  *=  /=  %=` — per esempio `x += 1` equivale a `x = x + 1`.

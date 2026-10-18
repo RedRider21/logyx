@@ -79,8 +79,16 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **66/66**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **67/67**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**Bitwise FATTI (2026-10-18):** `& | ^ << >> ~` su interi, precedenza come in C (nuovi livelli parser
+`bitor→bitxor→bitand` sotto `and`, `shift` fra confronto e additivo; `~` in unary). Token `Amp/Caret/
+Tilde/Shl/Shr`; `BinOp::BitAnd/BitOr/BitXor/Shl/Shr`, `UnOp::BitNot`. **Il `|` bit a bit NON confligge:**
+la lambda `|x|` è in posizione primaria, il bitor in posizione binaria, `T|error` in posizione di tipo →
+nessuna regressione (funval/closure/errori verdi). Gen: op diretti (Rust `& | ^ << >>`, `~`→`!`); inferenza
+marca gli operandi `int`. Esempio `native_bitwise`. **Prossimi del nucleo:** `set`, indicizzazione
+stringhe `s[i]`, comprehension.
 
 **Esponente `**` FATTO (2026-10-18):** token `StarStar`/`STARSTAR`; livello `power` nel parser (fra
 `factor` e `unary`, destra-assoc); `BinOp::Pow`; gen int→`.pow(exp as u32)`, float→`.powf`; JS `**`;

@@ -182,6 +182,11 @@ fn binop_sym(op: &BinOp) -> &'static str {
         BinOp::Le => "<=",
         BinOp::Gt => ">",
         BinOp::Ge => ">=",
+        BinOp::BitAnd => "&",
+        BinOp::BitOr => "|",
+        BinOp::BitXor => "^",
+        BinOp::Shl => "<<",
+        BinOp::Shr => ">>",
     }
 }
 
@@ -835,6 +840,7 @@ impl Codegen {
             Expr::Unary { op, operand } => match op {
                 UnOp::Not => Some("bool".into()),
                 UnOp::Neg => self.type_of(operand, ptypes),
+                UnOp::BitNot => Some("int".into()),
             },
             Expr::Logical { .. } => Some("bool".into()),
             Expr::Binary { op, left, right } => {
@@ -1072,7 +1078,12 @@ impl Codegen {
             Expr::Unary { op, operand } => {
                 if let Expr::Ident(n) = &**operand {
                     if let Some(set) = ev.get_mut(n) {
-                        set.insert(if *op == UnOp::Not { "bool" } else { "num" }.into());
+                        let ty = match op {
+                            UnOp::Not => "bool",
+                            UnOp::BitNot => "int",
+                            UnOp::Neg => "num",
+                        };
+                        set.insert(ty.into());
                     }
                 }
                 self.scan_expr(operand, pt, ev);
@@ -1142,6 +1153,18 @@ impl Codegen {
         if is_cmp(op) {
             self.compare_ev(l, r, pt, ev);
             self.compare_ev(r, l, pt, ev);
+        } else if matches!(
+            op,
+            BinOp::BitAnd | BinOp::BitOr | BinOp::BitXor | BinOp::Shl | BinOp::Shr
+        ) {
+            // operatori bit a bit: entrambi gli operandi sono interi
+            for side in [l, r] {
+                if let Expr::Ident(n) = side {
+                    if let Some(set) = ev.get_mut(n) {
+                        set.insert("int".into());
+                    }
+                }
+            }
         } else if matches!(op, BinOp::Sub | BinOp::Mul | BinOp::Div | BinOp::Mod | BinOp::Pow) {
             self.arith_ev(l, r, pt, ev);
             self.arith_ev(r, l, pt, ev);
@@ -2306,7 +2329,12 @@ impl Codegen {
             }
             Expr::Unary { op, operand } => {
                 let s = self.expr(operand)?;
-                Ok(format!("{}{}", if *op == UnOp::Not { "!" } else { "-" }, s))
+                // in Rust `!` è sia il NOT booleano sia il NOT bit a bit (su interi)
+                let sym = match op {
+                    UnOp::Not | UnOp::BitNot => "!",
+                    UnOp::Neg => "-",
+                };
+                Ok(format!("({}({}))", sym, s))
             }
             Expr::Binary { op, left, right } => {
                 if *op == BinOp::Pow {

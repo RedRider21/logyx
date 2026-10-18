@@ -500,7 +500,8 @@ class RustTranspiler:
             self._scan_expr(e.right, pt, ev)
         elif t == "Unary":
             if isinstance(e.operand, N.Identifier) and e.operand.name in ev:
-                ev[e.operand.name].add("bool" if e.op == "not" else "num")
+                mark = {"not": "bool", "~": "int"}.get(e.op, "num")
+                ev[e.operand.name].add(mark)
             self._scan_expr(e.operand, pt, ev)
         elif t == "Try":
             self._scan_expr(e.operand, pt, ev)
@@ -534,6 +535,11 @@ class RustTranspiler:
         if op in ("==", "!=", "<", "<=", ">", ">="):
             self._compare_ev(L, R, pt, ev)
             self._compare_ev(R, L, pt, ev)
+        elif op in ("&", "|", "^", "<<", ">>"):
+            # operatori bit a bit: entrambi gli operandi sono interi
+            for side in (L, R):
+                if isinstance(side, N.Identifier) and side.name in ev:
+                    ev[side.name].add("int")
         elif op in ("-", "*", "/", "%", "**"):
             self._arith_ev(L, R, pt, ev)
             self._arith_ev(R, L, pt, ev)
@@ -1284,7 +1290,9 @@ class RustTranspiler:
                 return f"__get_{e.name}()"
             return e.name
         if t == "Unary":
-            return ("!" if e.op == "not" else "-") + self.expr(e.operand)
+            # in Rust `!` è sia il NOT booleano sia il NOT bit a bit (su interi)
+            sym = "!" if e.op in ("not", "~") else "-"
+            return f"({sym}({self.expr(e.operand)}))"
         if t == "Binary":
             if e.op == "**":
                 # esponente: float → powf, interi → pow(exp as u32)

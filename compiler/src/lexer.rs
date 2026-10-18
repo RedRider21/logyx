@@ -324,6 +324,8 @@ impl Lexer {
             ['-', '='] => Some(TokenKind::MinusEq),
             ['*', '='] => Some(TokenKind::StarEq),
             ['*', '*'] => Some(TokenKind::StarStar),
+            ['<', '<'] => Some(TokenKind::Shl),
+            ['>', '>'] => Some(TokenKind::Shr),
             ['/', '='] => Some(TokenKind::SlashEq),
             ['%', '='] => Some(TokenKind::PercentEq),
             _ => None,
@@ -354,6 +356,9 @@ impl Lexer {
             '>' => TokenKind::Gt,
             '?' => TokenKind::Question,
             '|' => TokenKind::Pipe,
+            '&' => TokenKind::Amp,
+            '^' => TokenKind::Caret,
+            '~' => TokenKind::Tilde,
             '.' => TokenKind::Dot,
             other => return Err(self.err(&format!("carattere inatteso {:?}", other))),
         };

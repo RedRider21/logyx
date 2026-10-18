@@ -20,6 +20,11 @@ pub enum BinOp {
     Le,
     Gt,
     Ge,
+    BitAnd,
+    BitOr,
+    BitXor,
+    Shl,
+    Shr,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -32,6 +37,7 @@ pub enum LogOp {
 pub enum UnOp {
     Not,
     Neg,
+    BitNot,
 }
 
 /// Pezzo di una stringa: testo letterale o espressione interpolata.

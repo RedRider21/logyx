@@ -41,7 +41,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | **Operatore condizionale (ternario)** `cond ? a : b` | ✅ nei tre backend — espressione, annidabile a destra; `?` disambiguato dalla propagazione errori (ternario solo se seguito da un valore). `examples/native_ternary.logyx` | — |
 | **`in` come operatore booleano** (`x in lista`, `k in mappa`, `sub in stringa`) | ✅ nei tre backend — distinto dal `for … in`; lista→contiene, mappa→chiave, stringa→sottostringa. `examples/native_inop.logyx` | — |
 | **Operatore di esponente** `**` | ✅ nei tre backend — più stretto di `*`/`/`, destra-assoc; interi→`pow`, float→`powf`. `examples/native_power.logyx` | — |
-| **Operatori bit a bit** `& \| ^ << >> ~` | ⏳ — assenti; utili per basso livello/cybersecurity (attenzione a `\|` già usato per lambda/Result) | 4 |
+| **Operatori bit a bit** `& \| ^ << >> ~` | ✅ nei tre backend — su interi, precedenza come in C; il `\|` bit a bit non confligge con la lambda `\|x\|` né col tipo `T \| error` (posizioni diverse). `examples/native_bitwise.logyx` | — |
 | **Indicizzazione di stringhe / tipo carattere** (`s[i]`), bytes | ⏳ — oggi solo `substring`/`index_of` | 5 |
 | **Tipo `set`** (insieme, elementi unici) | ⏳ — oggi ci sono list e map; manca l'insieme | 5 |
 | **List/dict comprehension** (`[x*2 for x in xs if …]`) | ⏳ — comodità; oggi si fa con `map`/`filter` | 5 |
@@ -102,8 +102,8 @@ nucleo. Da decidere se e quando adottarli (dopo il nucleo e, in parte, dopo il s
 ## Ordine consigliato (le prossime tappe)
 
 1. **Completare il nucleo con gli elementi "da ogni linguaggio"** (Piano 1): variabili/costanti globali
-   ✅, operatore ternario ✅, `in` come operatore ✅, esponente `**` ✅; prossimi → **bitwise**
-   (attenzione al conflitto di `|` con lambda/Result), `set`, indicizzazione stringhe, comprehension.
+   ✅, operatore ternario ✅, `in` come operatore ✅, esponente `**` ✅, bitwise ✅; prossimi →
+   **tipo `set`**, **indicizzazione stringhe**, **comprehension**.
 2. **Libreria matematica** (Piano 2): `sin`/`cos`/`log`/`exp`, costanti.
 3. **Self-hosting** (orizzonte): lexer di Logyx scritto in Logyx + test a specchio contro
    `logyxc tokens`, poi parser → AST → backend, a fasi.

@@ -717,11 +717,42 @@ impl Parser {
     }
 
     fn and_expr(&mut self) -> Result<Expr, LogyxError> {
-        let mut left = self.equality()?;
+        let mut left = self.bitor()?;
         while self.is(&TokenKind::And) {
             self.advance();
-            let right = self.equality()?;
+            let right = self.bitor()?;
             left = Expr::Logical { op: LogOp::And, left: Box::new(left), right: Box::new(right) };
+        }
+        Ok(left)
+    }
+
+    // bitwise: `|` più lasco di `^` più lasco di `&` (sotto l'uguaglianza, come in C)
+    fn bitor(&mut self) -> Result<Expr, LogyxError> {
+        let mut left = self.bitxor()?;
+        while self.is(&TokenKind::Pipe) {
+            self.advance();
+            let right = self.bitxor()?;
+            left = Expr::Binary { op: BinOp::BitOr, left: Box::new(left), right: Box::new(right) };
+        }
+        Ok(left)
+    }
+
+    fn bitxor(&mut self) -> Result<Expr, LogyxError> {
+        let mut left = self.bitand()?;
+        while self.is(&TokenKind::Caret) {
+            self.advance();
+            let right = self.bitand()?;
+            left = Expr::Binary { op: BinOp::BitXor, left: Box::new(left), right: Box::new(right) };
+        }
+        Ok(left)
+    }
+
+    fn bitand(&mut self) -> Result<Expr, LogyxError> {
+        let mut left = self.equality()?;
+        while self.is(&TokenKind::Amp) {
+            self.advance();
+            let right = self.equality()?;
+            left = Expr::Binary { op: BinOp::BitAnd, left: Box::new(left), right: Box::new(right) };
         }
         Ok(left)
     }
@@ -742,12 +773,12 @@ impl Parser {
     }
 
     fn comparison(&mut self) -> Result<Expr, LogyxError> {
-        let mut left = self.term()?;
+        let mut left = self.shift()?;
         loop {
             // test di appartenenza: `item in coll`
             if self.is(&TokenKind::In) {
                 self.advance();
-                let coll = self.term()?;
+                let coll = self.shift()?;
                 left = Expr::In { item: Box::new(left), coll: Box::new(coll) };
                 continue;
             }
@@ -756,6 +787,22 @@ impl Parser {
                 TokenKind::Le => BinOp::Le,
                 TokenKind::Gt => BinOp::Gt,
                 TokenKind::Ge => BinOp::Ge,
+                _ => break,
+            };
+            self.advance();
+            let right = self.shift()?;
+            left = Expr::Binary { op, left: Box::new(left), right: Box::new(right) };
+        }
+        Ok(left)
+    }
+
+    // scorrimenti `<<`/`>>`: fra l'additivo e il confronto
+    fn shift(&mut self) -> Result<Expr, LogyxError> {
+        let mut left = self.term()?;
+        loop {
+            let op = match self.kind() {
+                TokenKind::Shl => BinOp::Shl,
+                TokenKind::Shr => BinOp::Shr,
                 _ => break,
             };
             self.advance();
@@ -819,6 +866,10 @@ impl Parser {
         if self.is(&TokenKind::Minus) {
             self.advance();
             return Ok(Expr::Unary { op: UnOp::Neg, operand: Box::new(self.unary()?) });
+        }
+        if self.is(&TokenKind::Tilde) {
+            self.advance();
+            return Ok(Expr::Unary { op: UnOp::BitNot, operand: Box::new(self.unary()?) });
         }
         self.postfix()
     }
@@ -1233,7 +1284,12 @@ impl ClientCompiler {
                 Ok(buf)
             }
             Expr::Unary { op, operand } => {
-                Ok(format!("{}{}", if *op == UnOp::Not { "!" } else { "-" }, self.js_expr(operand)?))
+                let sym = match op {
+                    UnOp::Not => "!",
+                    UnOp::Neg => "-",
+                    UnOp::BitNot => "~",
+                };
+                Ok(format!("({}{})", sym, self.js_expr(operand)?))
             }
             Expr::Binary { op, left, right } => {
                 Ok(format!("({} {} {})", self.js_expr(left)?, js_binop(op), self.js_expr(right)?))
@@ -1314,6 +1370,11 @@ fn js_binop(op: &BinOp) -> &'static str {
         BinOp::Div => "/",
         BinOp::Mod => "%",
         BinOp::Pow => "**",
+        BinOp::BitAnd => "&",
+        BinOp::BitOr => "|",
+        BinOp::BitXor => "^",
+        BinOp::Shl => "<<",
+        BinOp::Shr => ">>",
     }
 }
 

@@ -20,6 +20,7 @@ _JS_OP = {
     "==": "===", "!=": "!==",
     "<": "<", "<=": "<=", ">": ">", ">=": ">=",
     "+": "+", "-": "-", "*": "*", "/": "/", "%": "%", "**": "**",
+    "&": "&", "|": "|", "^": "^", "<<": "<<", ">>": ">>",
 }
 
 
@@ -187,7 +188,8 @@ class ClientCompiler:
         return n.name
 
     def js_Unary(self, n):
-        return ("!" if n.op == "not" else "-") + self.js_expr(n.operand)
+        sym = {"not": "!", "-": "-", "~": "~"}.get(n.op, "-")
+        return f"({sym}{self.js_expr(n.operand)})"
 
     def js_Binary(self, n):
         return f"({self.js_expr(n.left)} {_JS_OP[n.op]} {self.js_expr(n.right)})"

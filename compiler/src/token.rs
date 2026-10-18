@@ -73,6 +73,11 @@ pub enum TokenKind {
     Ge,
     Question,
     Pipe,
+    Amp,
+    Caret,
+    Tilde,
+    Shl,
+    Shr,
     Dot,
     Eof,
 }

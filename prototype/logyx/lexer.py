@@ -157,7 +157,7 @@ class Lexer:
         two_map = {
             "->": T.ARROW, "==": T.EQ, "!=": T.NE, "<=": T.LE, ">=": T.GE,
             "+=": T.PLUSEQ, "-=": T.MINUSEQ, "*=": T.STAREQ, "/=": T.SLASHEQ, "%=": T.PERCENTEQ,
-            "**": T.STARSTAR,
+            "**": T.STARSTAR, "<<": T.SHL, ">>": T.SHR,
         }
         if two in two_map:
             self.advance()
@@ -171,6 +171,7 @@ class Lexer:
             "=": T.ASSIGN, "+": T.PLUS, "-": T.MINUS, "*": T.STAR,
             "/": T.SLASH, "%": T.PERCENT, "<": T.LT, ">": T.GT,
             "?": T.QUESTION, "|": T.PIPE, ".": T.DOT,
+            "&": T.AMP, "^": T.CARET, "~": T.TILDE,
         }
         if c in singles:
             self.advance()

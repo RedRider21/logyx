@@ -68,6 +68,11 @@ class T:
     GE = "GE"
     QUESTION = "QUESTION"
     PIPE = "PIPE"
+    AMP = "AMP"
+    CARET = "CARET"
+    TILDE = "TILDE"
+    SHL = "SHL"
+    SHR = "SHR"
     DOT = "DOT"
     EOF = "EOF"
 
