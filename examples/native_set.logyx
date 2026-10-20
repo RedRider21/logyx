@@ -1,0 +1,32 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Tipo `set` (insieme): elementi unici, letterale `{a, b, …}` (senza `:`, così si
+// distingue dalla mappa `{k: v}`). Iterazione ordinata (deterministica).
+//   add(s, x)       aggiunge x (ignorato se già presente)
+//   remove(s, x)    toglie x per valore
+//   x in s          test di appartenenza
+//   len(s)          numero di elementi
+//   for x in s      scorre gli elementi in ordine
+
+fn main() {
+    s = {3, 1, 2, 2, 1}        // i duplicati vengono fusi
+    print(len(s))              // 3
+    print(2 in s)              // true
+    print(9 in s)              // false
+
+    add(s, 5)
+    add(s, 2)                  // già presente → ignorato
+    print(len(s))              // 4
+
+    remove(s, 1)
+    print(1 in s)              // false
+    print(len(s))              // 3
+
+    for x in s { print(x) }    // 2 3 5 (ordinati)
+
+    // insieme di stringhe
+    colori = {"rosso", "verde", "rosso"}
+    print(len(colori))         // 2
+    print("verde" in colori)   // true
+}

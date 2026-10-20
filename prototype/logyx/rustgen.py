@@ -316,7 +316,7 @@ class RustTranspiler:
             return self._expr_has_try(e.target)
         if t == "StringLit":
             return any(self._expr_has_try(v) for k, v in e.parts if k != "lit")
-        if t == "ListLit" or t == "TupleLit":
+        if t in ("ListLit", "TupleLit", "SetLit"):
             return any(self._expr_has_try(x) for x in e.elements)
         if t == "MapLit":
             return any(self._expr_has_try(k) or self._expr_has_try(v) for k, v in e.pairs)
@@ -376,6 +376,8 @@ class RustTranspiler:
             return "list"
         if t == "MapLit":
             return "map"
+        if t == "SetLit":
+            return "set"
         return None
 
     # --- inferenza (punto fisso su parametri e tipi di ritorno) ---
@@ -834,6 +836,8 @@ class RustTranspiler:
         kv = _map_inner(t)
         if kv is not None:
             return f"std::collections::HashMap<{self.ty(kv[0])}, {self.ty(kv[1])}>"
+        if isinstance(t, str) and t.startswith("set<") and t.endswith(">"):
+            return f"std::collections::BTreeSet<{self.ty(t[4:-1])}>"
         parts = _tuple_parts(t)
         if parts is not None:
             return "(" + ", ".join(self.ty(p) for p in parts) + ")"
@@ -1019,6 +1023,8 @@ class RustTranspiler:
                     return pad + self.print_call(e.args)
                 if e.callee.name == "push":
                     return pad + self.push_call(e.args)
+                if e.callee.name == "add":
+                    return pad + self.add_call(e.args)
                 if e.callee.name == "remove":
                     return pad + self.remove_call(e.args)
                 if e.callee.name == "sort":
@@ -1070,11 +1076,21 @@ class RustTranspiler:
             raise LogyxError("push nel transpiler v0 richiede una variabile lista come primo argomento")
         return f"{args[0].name}.push({self.expr(args[1])});"
 
+    def add_call(self, args):
+        if len(args) != 2:
+            raise LogyxError("add accetta due argomenti: add(insieme, valore)")
+        if not isinstance(args[0], N.Identifier):
+            raise LogyxError("add nel transpiler v0 richiede una variabile insieme come primo argomento")
+        return f"{args[0].name}.insert({self.expr(args[1])});"
+
     def remove_call(self, args):
         if len(args) != 2:
             raise LogyxError("remove accetta due argomenti: remove(lista, indice)")
         if not isinstance(args[0], N.Identifier):
             raise LogyxError("remove nel transpiler v0 richiede una variabile lista come primo argomento")
+        # insieme → rimozione per valore; lista → rimozione per indice
+        if getattr(self, "kinds", {}).get(args[0].name) == "set":
+            return f"{args[0].name}.remove(&({self.expr(args[1])}));"
         return f"{args[0].name}.remove(({self.expr(args[1])}) as usize);"
 
     def sort_call(self, args):
@@ -1152,7 +1168,7 @@ class RustTranspiler:
 
     def _track_list_elem(self, name, value):
         """Se value è una lista/mappa letterale non vuota, ricorda i tipi dei suoi elementi."""
-        if type(value).__name__ == "ListLit" and value.elements:
+        if type(value).__name__ in ("ListLit", "SetLit") and value.elements:
             el = self._json_type_of(value.elements[0])
             if el:
                 self.list_elem[name] = el
@@ -1325,6 +1341,16 @@ class RustTranspiler:
                     "usa una lista con almeno un elemento"
                 )
             return "vec![" + ", ".join(self.expr(x) for x in e.elements) + "]"
+        if t == "SetLit":
+            if not e.elements:
+                raise LogyxError(
+                    "il transpiler v0 non deduce il tipo di un insieme vuoto; "
+                    "usa un insieme con almeno un elemento"
+                )
+            name = f"__set{self._tmp}"
+            self._tmp += 1
+            inserts = " ".join(f"{name}.insert({self.expr(x)});" for x in e.elements)
+            return f"{{ let mut {name} = std::collections::BTreeSet::new(); {inserts} {name} }}"
         if t == "TupleLit":
             return "(" + ", ".join(self._arg(x) for x in e.elements) + ")"
         if t == "Ternary":
@@ -1332,14 +1358,18 @@ class RustTranspiler:
                     f"else {{ {self.expr(e.els)} }})")
         if t == "In":
             coll_ty = self._type_of(e.coll, self.cur_types)
+            kinds = getattr(self, "kinds", {})
             is_map = (type(e.coll).__name__ == "MapLit"
-                      or (isinstance(e.coll, N.Identifier)
-                          and getattr(self, "kinds", {}).get(e.coll.name) == "map"))
+                      or (isinstance(e.coll, N.Identifier) and kinds.get(e.coll.name) == "map"))
+            is_set = (type(e.coll).__name__ == "SetLit"
+                      or (isinstance(e.coll, N.Identifier) and kinds.get(e.coll.name) == "set"))
             c, x = self.expr(e.coll), self.expr(e.item)
             if coll_ty == "string":
                 return f"(({c}).contains(({x}).as_str()))"
             if is_map:
                 return f"(({c}).contains_key(&({x})))"
+            if is_set:
+                return f"(({c}).contains(&({x})))"
             return f"(({c}).iter().any(|__e| *__e == ({x})))"
         if t == "MapLit":
             if not e.pairs:

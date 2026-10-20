@@ -79,8 +79,15 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **69/69**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **70/70**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**Tipo `set` FATTO (2026-10-20):** letterale `{a, b, …}` (disambiguato dalla mappa nel parser: dopo `{`,
+se il primo elemento è seguito da `:` è mappa, altrimenti set; `{}` = mappa vuota). Nativo `BTreeSet`
+(iterazione ordinata → deterministica, come le chiavi di mappa; interprete: `set` Python iterato con
+`sorted`). Nodo `Expr::Set`/`N.SetLit`; `kinds="set"`, elemento in `list_elem`. Operazioni: `add(s,x)`
+(insert), `remove(s,x)` per valore (remove rileva set vs lista), `x in s` (`.contains`), `len`, `for`
+ordinato. Esempio `native_set`. **Resta del nucleo: comprehension; poi self-hosting.**
 
 > ⚠️ **GIT: NON fare `git push` né aggiornare le Pages** finché l'utente non lo dice (è in ufficio, il
 > push è inibito). Si committa **solo in locale**; il push del repo e delle Pages lo faremo da casa.

@@ -996,9 +996,17 @@ impl Parser {
             }
             TokenKind::LBrace => {
                 self.advance();
-                let mut pairs = Vec::new();
-                if !self.is(&TokenKind::RBrace) {
-                    pairs.push(self.map_pair()?);
+                // `{}` = mappa vuota; `{k: v, …}` = mappa; `{a, b, …}` = insieme (set)
+                if self.is(&TokenKind::RBrace) {
+                    self.advance();
+                    return Ok(Expr::Map(Vec::new()));
+                }
+                let first = self.expression()?;
+                if self.is(&TokenKind::Colon) {
+                    // mappa
+                    self.advance();
+                    let v = self.expression()?;
+                    let mut pairs = vec![(first, v)];
                     while self.is(&TokenKind::Comma) {
                         self.advance();
                         if self.is(&TokenKind::RBrace) {
@@ -1006,9 +1014,21 @@ impl Parser {
                         }
                         pairs.push(self.map_pair()?);
                     }
+                    self.expect(&TokenKind::RBrace, "}")?;
+                    Ok(Expr::Map(pairs))
+                } else {
+                    // insieme
+                    let mut els = vec![first];
+                    while self.is(&TokenKind::Comma) {
+                        self.advance();
+                        if self.is(&TokenKind::RBrace) {
+                            break;
+                        }
+                        els.push(self.expression()?);
+                    }
+                    self.expect(&TokenKind::RBrace, "}")?;
+                    Ok(Expr::Set(els))
                 }
-                self.expect(&TokenKind::RBrace, "}")?;
-                Ok(Expr::Map(pairs))
             }
             other => Err(self.error(&format!("espressione attesa, trovato {:?}", other))),
         }
@@ -1309,6 +1329,10 @@ impl ClientCompiler {
                 let a: Result<Vec<_>, _> = els.iter().map(|x| self.js_expr(x)).collect();
                 Ok(format!("[{}]", a?.join(", ")))
             }
+            Expr::Set(els) => {
+                let a: Result<Vec<_>, _> = els.iter().map(|x| self.js_expr(x)).collect();
+                Ok(format!("new Set([{}])", a?.join(", ")))
+            }
             Expr::Ternary { cond, then, els } => Ok(format!(
                 "({} ? {} : {})",
                 self.js_expr(cond)?,
@@ -1316,10 +1340,10 @@ impl ClientCompiler {
                 self.js_expr(els)?
             )),
             Expr::In { item, coll } => {
-                // array/stringa → includes; oggetto (mappa) → operatore `in`
+                // set → has; array/stringa → includes; oggetto (mappa) → operatore `in`
                 let (i, c) = (self.js_expr(item)?, self.js_expr(coll)?);
                 Ok(format!(
-                    "((Array.isArray({c})||typeof {c}===\"string\") ? {c}.includes({i}) : ({i} in {c}))"
+                    "({c} instanceof Set ? {c}.has({i}) : (Array.isArray({c})||typeof {c}===\"string\") ? {c}.includes({i}) : ({i} in {c}))"
                 ))
             }
             Expr::Map(pairs) => {

@@ -509,6 +509,16 @@ iterano <strong>ordinate</strong> (<code>for k in m</code>, <code>keys(m)</code>
 nativo danno lo stesso risultato. Porzioni di lista con <code>slice(lista, a, b)</code>. Liste e mappe si passano
 alle funzioni e si restituiscono (anche nel compilatore nativo). Unico limite: la lista/mappa <strong>vuota</strong>
 senza elementi, da cui il backend non deduce il tipo.</p>
+<p><strong>Insiemi (<code>set</code>)</strong>: collezione di <strong>elementi unici</strong>, letterale <code>{a, b, …}</code> (senza <code>:</code>, così si distingue
+dalla mappa <code>{k: v}</code>; <code>{}</code> resta la mappa vuota). I duplicati nel letterale vengono fusi. Operazioni:
+<code>add(s, x)</code> aggiunge, <code>remove(s, x)</code> toglie <strong>per valore</strong>, <code>x in s</code> appartenenza, <code>len(s)</code> cardinalità,
+<code>for x in s</code> scorre gli elementi <strong>ordinati</strong> (deterministico, come le chiavi di mappa). Nel nativo è un
+<code>BTreeSet</code>.</p>
+<pre><code>s = {3, 1, 2, 2}     // {1, 2, 3}
+add(s, 5)
+print(2 in s)        // true
+print(len(s))        // 4
+</code></pre>
 <h2 id="8-stringhe-e-interpolazione">8. Stringhe e interpolazione ✅</h2>
 <pre><code>nome = &quot;Logyx&quot;
 print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
@@ -559,7 +569,11 @@ print(s[0] + s[1]) // lo
 </tr>
 <tr>
 <td><code>remove(lista, i)</code></td>
-<td>Toglie l'elemento all'indice <code>i</code> (muta la lista); usala come istruzione</td>
+<td>Toglie l'elemento all'indice <code>i</code> (lista) o <strong>per valore</strong> <code>x</code> (insieme); muta la collezione; usala come istruzione</td>
+</tr>
+<tr>
+<td><code>add(insieme, x)</code></td>
+<td>Aggiunge <code>x</code> a un <strong>insieme</strong> (ignorato se già presente); muta l'insieme; usala come istruzione</td>
 </tr>
 <tr>
 <td><code>abs(x)</code></td>

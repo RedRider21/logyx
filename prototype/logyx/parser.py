@@ -686,16 +686,29 @@ class Parser:
             return N.ListLit(elements)
         if t.type == T.LBRACE:
             self.advance()
-            pairs = []
-            if not self.at(T.RBRACE):
-                pairs.append(self.map_pair())
+            # {} = mappa vuota; {k: v, …} = mappa; {a, b, …} = insieme (set)
+            if self.at(T.RBRACE):
+                self.advance()
+                return N.MapLit([])
+            first = self.expression()
+            if self.at(T.COLON):
+                self.advance()
+                pairs = [(first, self.expression())]
                 while self.at(T.COMMA):
                     self.advance()
                     if self.at(T.RBRACE):
                         break
                     pairs.append(self.map_pair())
+                self.expect(T.RBRACE)
+                return N.MapLit(pairs)
+            elements = [first]
+            while self.at(T.COMMA):
+                self.advance()
+                if self.at(T.RBRACE):
+                    break
+                elements.append(self.expression())
             self.expect(T.RBRACE)
-            return N.MapLit(pairs)
+            return N.SetLit(elements)
         self.error(f"espressione attesa, trovato {t.type} ({t.value!r})", t)
 
     def map_pair(self):

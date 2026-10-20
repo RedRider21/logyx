@@ -63,6 +63,8 @@ pub enum Expr {
     Field { target: Box<Expr>, name: String },
     List(Vec<Expr>),
     Map(Vec<(Expr, Expr)>),
+    /// Insieme `{a, b, …}` (elementi unici, senza `:`).
+    Set(Vec<Expr>),
     /// Tupla `(a, b, …)` (almeno 2 elementi).
     Tuple(Vec<Expr>),
     /// Espressione condizionale: `then if cond else els`.

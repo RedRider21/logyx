@@ -66,6 +66,11 @@ class MapLit:
 
 
 @dataclass
+class SetLit:
+    elements: List[Any]
+
+
+@dataclass
 class TupleLit:
     elements: List[Any]
 

@@ -225,6 +225,7 @@ fn value_kind(e: &Expr) -> Option<&'static str> {
     match e {
         Expr::List(_) => Some("list"),
         Expr::Map(_) => Some("map"),
+        Expr::Set(_) => Some("set"),
         _ => None,
     }
 }
@@ -371,6 +372,9 @@ impl Codegen {
                 self.rust_type(k)?,
                 self.rust_type(v)?
             ));
+        }
+        if let Some(inner) = t.strip_prefix("set<").and_then(|s| s.strip_suffix('>')) {
+            return Ok(format!("std::collections::BTreeSet<{}>", self.rust_type(inner)?));
         }
         if let Some(parts) = tuple_parts(t) {
             let rs: Result<Vec<String>, _> = parts.iter().map(|p| self.rust_type(p)).collect();
@@ -672,7 +676,7 @@ impl Codegen {
                 StrPart::Expr(e) => self.expr_has_try(e),
                 _ => false,
             }),
-            Expr::List(xs) => xs.iter().any(|x| self.expr_has_try(x)),
+            Expr::List(xs) | Expr::Set(xs) => xs.iter().any(|x| self.expr_has_try(x)),
             Expr::Tuple(xs) => xs.iter().any(|x| self.expr_has_try(x)),
             Expr::Map(ps) => ps.iter().any(|(k, v)| self.expr_has_try(k) || self.expr_has_try(v)),
             Expr::Ternary { cond, then, els } => {
@@ -1145,7 +1149,7 @@ impl Codegen {
                 self.scan_expr(index, pt, ev);
             }
             Expr::Field { target, .. } => self.scan_expr(target, pt, ev),
-            Expr::List(xs) => {
+            Expr::List(xs) | Expr::Set(xs) => {
                 for x in xs {
                     self.scan_expr(x, pt, ev);
                 }
@@ -1870,6 +1874,9 @@ impl Codegen {
                         if n == "push" {
                             return Ok(format!("{pad}{}", self.push_call(args)?));
                         }
+                        if n == "add" {
+                            return Ok(format!("{pad}{}", self.add_call(args)?));
+                        }
                         if n == "remove" {
                             return Ok(format!("{pad}{}", self.remove_call(args)?));
                         }
@@ -1996,6 +2003,21 @@ impl Codegen {
         Ok(format!("{}.push({});", name, self.expr(&args[1])?))
     }
 
+    fn add_call(&mut self, args: &[Expr]) -> R<String> {
+        if args.len() != 2 {
+            return Err(LogyxError::new("add accetta due argomenti: add(insieme, valore)"));
+        }
+        let name = match &args[0] {
+            Expr::Ident(n) => n.clone(),
+            _ => {
+                return Err(LogyxError::new(
+                    "add richiede una variabile insieme come primo argomento",
+                ))
+            }
+        };
+        Ok(format!("{}.insert({});", name, self.expr(&args[1])?))
+    }
+
     fn remove_call(&mut self, args: &[Expr]) -> R<String> {
         if args.len() != 2 {
             return Err(LogyxError::new("remove accetta due argomenti: remove(lista, indice)"));
@@ -2008,6 +2030,10 @@ impl Codegen {
                 ))
             }
         };
+        // insieme → rimozione per valore; lista → rimozione per indice
+        if self.kinds.get(&name).map(|s| s.as_str()) == Some("set") {
+            return Ok(format!("{}.remove(&({}));", name, self.expr(&args[1])?));
+        }
         Ok(format!("{}.remove(({}) as usize);", name, self.expr(&args[1])?))
     }
 
@@ -2177,7 +2203,8 @@ impl Codegen {
     /// elementi per la variabile `name` (usato da `to_json`).
     fn track_list_elem(&mut self, name: &str, value: &Expr) {
         match value {
-            Expr::List(els) => {
+            // liste e insiemi: ricorda il tipo dell'elemento (per `in`, `for`, to_json…)
+            Expr::List(els) | Expr::Set(els) => {
                 if let Some(first) = els.first() {
                     if let Some(el) = self.json_type_of(first) {
                         self.list_elem.insert(name.to_string(), el);
@@ -2421,6 +2448,23 @@ impl Codegen {
                     "{{ let mut {name} = std::collections::HashMap::new(); {inserts}{name} }}"
                 ))
             }
+            Expr::Set(els) => {
+                if els.is_empty() {
+                    return Err(LogyxError::new(
+                        "il backend non deduce il tipo di un insieme vuoto; usa almeno un elemento",
+                    ));
+                }
+                // BTreeSet: iterazione ordinata → deterministica (come le chiavi di mappa)
+                let name = format!("__set{}", self.tmp);
+                self.tmp += 1;
+                let mut inserts = String::new();
+                for x in els {
+                    inserts += &format!("{name}.insert({}); ", self.expr(x)?);
+                }
+                Ok(format!(
+                    "{{ let mut {name} = std::collections::BTreeSet::new(); {inserts}{name} }}"
+                ))
+            }
             Expr::Ternary { cond, then, els } => Ok(format!(
                 "(if ({}) {{ {} }} else {{ {} }})",
                 self.expr(cond)?,
@@ -2432,12 +2476,17 @@ impl Codegen {
                 let is_map = matches!(&**coll, Expr::Map(_))
                     || matches!(&**coll, Expr::Ident(n)
                         if self.kinds.get(n).map(|s| s.as_str()) == Some("map"));
+                let is_set = matches!(&**coll, Expr::Set(_))
+                    || matches!(&**coll, Expr::Ident(n)
+                        if self.kinds.get(n).map(|s| s.as_str()) == Some("set"));
                 let c = self.expr(coll)?;
                 let x = self.expr(item)?;
                 if coll_ty.as_deref() == Some("string") {
                     Ok(format!("(({}).contains(({}).as_str()))", c, x))
-                } else if is_map {
-                    Ok(format!("(({}).contains_key(&({})))", c, x))
+                } else if is_map || is_set {
+                    // mappa → contains_key; set → contains (entrambi su &elemento)
+                    let m = if is_map { "contains_key" } else { "contains" };
+                    Ok(format!("(({}).{}(&({})))", c, m, x))
                 } else {
                     Ok(format!("(({}).iter().any(|__e| *__e == ({})))", c, x))
                 }

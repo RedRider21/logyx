@@ -203,7 +203,11 @@ class ClientCompiler:
 
     def js_In(self, n):
         i, c = self.js_expr(n.item), self.js_expr(n.coll)
-        return (f'((Array.isArray({c})||typeof {c}==="string") ? {c}.includes({i}) : ({i} in {c}))')
+        return (f'({c} instanceof Set ? {c}.has({i}) : '
+                f'(Array.isArray({c})||typeof {c}==="string") ? {c}.includes({i}) : ({i} in {c}))')
+
+    def js_SetLit(self, n):
+        return "new Set([" + ", ".join(self.js_expr(x) for x in n.elements) + "])"
 
     def js_Call(self, n):
         args = ", ".join(self.js_expr(a) for a in n.args)

@@ -240,17 +240,22 @@ class Interpreter:
 
         g.define("push", _push)
 
-        def _remove(lst, i):
-            if not isinstance(lst, list):
-                raise LogyxError("remove: il primo argomento deve essere una lista")
-            if not isinstance(i, int) or isinstance(i, bool):
+        def _remove(coll, x):
+            # insieme → rimozione per valore; lista → rimozione per indice
+            if isinstance(coll, set):
+                coll.discard(x)
+                return None
+            if not isinstance(coll, list):
+                raise LogyxError("remove: il primo argomento deve essere una lista o un insieme")
+            if not isinstance(x, int) or isinstance(x, bool):
                 raise LogyxError("remove: l'indice deve essere un intero")
-            if i < 0 or i >= len(lst):
+            if x < 0 or x >= len(coll):
                 raise LogyxError("remove: indice fuori dai limiti")
-            lst.pop(i)
+            coll.pop(x)
             return None
 
         g.define("remove", _remove)
+        g.define("add", lambda s, x: s.add(x))
         g.define("abs", lambda x: abs(x))
         g.define("min", lambda a, b: a if a <= b else b)
         g.define("max", lambda a, b: a if a >= b else b)
@@ -633,6 +638,8 @@ class Interpreter:
         iterable = self.eval(s.iterable, env)
         if isinstance(iterable, dict):
             iterable = sorted(iterable.keys())  # chiavi ordinate (deterministico, come nel nativo)
+        elif isinstance(iterable, set):
+            iterable = sorted(iterable)         # insieme ordinato (come BTreeSet nel nativo)
         for i, value in enumerate(iterable):
             child = Environment(env)
             if s.index is not None:
@@ -728,6 +735,9 @@ class Interpreter:
 
     def ex_MapLit(self, n, env):
         return {self.eval(k, env): self.eval(v, env) for k, v in n.pairs}
+
+    def ex_SetLit(self, n, env):
+        return set(self.eval(e, env) for e in n.elements)
 
     def ex_Unary(self, n, env):
         v = self.eval(n.operand, env)

@@ -386,6 +386,19 @@ nativo danno lo stesso risultato. Porzioni di lista con `slice(lista, a, b)`. Li
 alle funzioni e si restituiscono (anche nel compilatore nativo). Unico limite: la lista/mappa **vuota**
 senza elementi, da cui il backend non deduce il tipo.
 
+**Insiemi (`set`)**: collezione di **elementi unici**, letterale `{a, b, …}` (senza `:`, così si distingue
+dalla mappa `{k: v}`; `{}` resta la mappa vuota). I duplicati nel letterale vengono fusi. Operazioni:
+`add(s, x)` aggiunge, `remove(s, x)` toglie **per valore**, `x in s` appartenenza, `len(s)` cardinalità,
+`for x in s` scorre gli elementi **ordinati** (deterministico, come le chiavi di mappa). Nel nativo è un
+`BTreeSet`.
+
+```
+s = {3, 1, 2, 2}     // {1, 2, 3}
+add(s, 5)
+print(2 in s)        // true
+print(len(s))        // 4
+```
+
 ## 8. Stringhe e interpolazione ✅
 
 ```
@@ -414,7 +427,8 @@ print(s[0] + s[1]) // lo
 | `float(x)` | Converte in float: da stringa (0.0 se non valido) o da intero |
 | `range(n)` / `range(a, b)` | Lista `0 .. n-1`, oppure `a .. b-1` |
 | `push(lista, x)` | Aggiunge `x` in coda alla lista (la muta); usala come istruzione |
-| `remove(lista, i)` | Toglie l'elemento all'indice `i` (muta la lista); usala come istruzione |
+| `remove(lista, i)` | Toglie l'elemento all'indice `i` (lista) o **per valore** `x` (insieme); muta la collezione; usala come istruzione |
+| `add(insieme, x)` | Aggiunge `x` a un **insieme** (ignorato se già presente); muta l'insieme; usala come istruzione |
 | `abs(x)` | Valore assoluto di `x` (int o float) |
 | `min(a, b)` / `max(a, b)` | Il minore / il maggiore fra due numeri dello stesso tipo |
 | `pow(base, esp)` | `base` elevato a `esp` (interi, `esp >= 0`) |
