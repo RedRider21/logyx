@@ -916,7 +916,10 @@ impl Codegen {
                     if name == "floor" || name == "ceil" || name == "round" {
                         return Some("int".into());
                     }
-                    if name == "sqrt" || name == "random" {
+                    if matches!(
+                        name.as_str(),
+                        "sqrt" | "random" | "sin" | "cos" | "tan" | "log" | "log10" | "exp" | "pi" | "e"
+                    ) {
                         return Some("float".into());
                     }
                     if name == "reduce" {
@@ -1260,6 +1263,7 @@ impl Codegen {
             }
             if name == "abs" || name == "min" || name == "max" || name == "pow"
                 || name == "floor" || name == "ceil" || name == "sqrt" || name == "round"
+                || matches!(name.as_str(), "sin" | "cos" | "tan" | "log" | "log10" | "exp")
             {
                 for a in args {
                     if let Expr::Ident(n) = a {
@@ -2707,6 +2711,38 @@ impl Codegen {
                             return Err(LogyxError::new("sqrt accetta un solo argomento"));
                         }
                         return Ok(format!("(({}) as f64).sqrt()", self.expr(&args[0])?));
+                    }
+                    // libreria matematica: funzioni f64 della std di Rust
+                    if matches!(name.as_str(), "sin" | "cos" | "tan" | "exp") {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new(format!("{name} accetta un solo argomento")));
+                        }
+                        return Ok(format!("(({}) as f64).{}()", self.expr(&args[0])?, name));
+                    }
+                    if name == "log" {
+                        // log(x) = logaritmo naturale (ln)
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("log accetta un solo argomento (ln)"));
+                        }
+                        return Ok(format!("(({}) as f64).ln()", self.expr(&args[0])?));
+                    }
+                    if name == "log10" {
+                        if args.len() != 1 {
+                            return Err(LogyxError::new("log10 accetta un solo argomento"));
+                        }
+                        return Ok(format!("(({}) as f64).log10()", self.expr(&args[0])?));
+                    }
+                    if name == "pi" {
+                        if !args.is_empty() {
+                            return Err(LogyxError::new("pi non accetta argomenti"));
+                        }
+                        return Ok("std::f64::consts::PI".to_string());
+                    }
+                    if name == "e" {
+                        if !args.is_empty() {
+                            return Err(LogyxError::new("e non accetta argomenti"));
+                        }
+                        return Ok("std::f64::consts::E".to_string());
                     }
                     if name == "round" {
                         if args.len() != 1 {

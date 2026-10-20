@@ -334,6 +334,15 @@ class Interpreter:
             lambda c: _subprocess.run(c, shell=True, capture_output=True).returncode,
         )
         g.define("sqrt", lambda x: math.sqrt(x))
+        # libreria matematica (float): trigonometria, logaritmi, esponenziale, costanti
+        g.define("sin", lambda x: math.sin(x))
+        g.define("cos", lambda x: math.cos(x))
+        g.define("tan", lambda x: math.tan(x))
+        g.define("log", lambda x: math.log(x))      # logaritmo naturale (ln)
+        g.define("log10", lambda x: math.log10(x))
+        g.define("exp", lambda x: math.exp(x))
+        g.define("pi", lambda: math.pi)
+        g.define("e", lambda: math.e)
         # matches(stringa, pattern): vero se la regex trova una corrispondenza (ovunque)
         g.define("matches", lambda s, p: _re.search(p, s) is not None)
         g.define("index_of", lambda s, sub: s.find(sub))

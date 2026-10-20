@@ -1,0 +1,16 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Libreria matematica (float): trigonometria, logaritmi, esponenziale e costanti.
+//   sin cos tan · log (ln) · log10 · exp · pi() · e()
+// (I risultati sono arrotondati con floor per un output deterministico nei tre backend.)
+
+fn main() {
+    print(floor(sin(pi() / 2.0) * 1000.0))     // 1000  (sin(π/2) = 1)
+    print(floor(cos(0.0) * 1000.0))            // 1000  (cos 0 = 1)
+    print(floor(tan(0.0) * 1000.0))            // 0
+    print(floor(exp(1.0) * 1000.0))            // 2718  (e ≈ 2.718)
+    print(floor(log(e()) * 1000.0))            // 1000  (ln e = 1)
+    print(floor(log10(1000.0) * 1000.0))       // 3000  (log10 1000 = 3)
+    print(floor(pi() * 100.0))                 // 314
+}

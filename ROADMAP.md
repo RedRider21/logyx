@@ -56,7 +56,7 @@ Da costruire preferibilmente **in Logyx**, non come builtin infiniti nel compila
 | Collezioni di stringhe | liste e mappe di `String` ✅ (vedi `design/collezioni-stringhe.md`) | ✅ |
 | Liste | `len`, `push`, `remove`, `contains`, `sum`, `sort`, `map`, `filter`, `reduce`, `slice`, assegnazione `xs[i]=v` ✅ | ✅ |
 | Mappe | letterale, accesso, `len`, `has`, `keys`, `values`, iterazione `for k in mappa` (chiavi ordinate) ✅ | 🟢 |
-| Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil`, `sqrt`, `round`, `random`, conversioni `int`/`float` ✅ · **libreria matematica** (`sin`/`cos`/`tan`, `log`/`exp`, costanti `pi`/`e`) ⏳ | 🟡 |
+| Numeri | `abs`, `min`, `max`, `pow`, `floor`, `ceil`, `sqrt`, `round`, `random`, conversioni `int`/`float` ✅ · **libreria matematica** `sin`/`cos`/`tan`, `log`/`log10`/`exp`, costanti `pi()`/`e()` ✅ | ✅ |
 | I/O e sistema | `print`, **file** (`read_file`/`write_file`/`file_exists`), **stdin** (`read_line`/`read_all`), **ambiente** (`env`), **argomenti CLI** (`args`), **processi esterni** (`run`/`run_code`) ✅ | ✅ |
 | Dati | **JSON**: `to_json` + `from_json` (scalari/record/liste/mappe) ✅ · **date/tempo**: `now`, `format_date` (crate `chrono`) ✅ | ✅ |
 
@@ -103,7 +103,7 @@ nucleo. Da decidere se e quando adottarli (dopo il nucleo e, in parte, dopo il s
 
 1. **Completare il nucleo con gli elementi "da ogni linguaggio"** (Piano 1): variabili/costanti globali
    ✅, operatore ternario ✅, `in` come operatore ✅, esponente `**` ✅, bitwise ✅, indicizzazione
-   stringhe ✅; prossimi → **tipo `set`**, **comprehension**, **libreria matematica**.
+   stringhe ✅, libreria matematica ✅; prossimi → **tipo `set`**, **comprehension**. Poi **self-hosting**.
 2. **Libreria matematica** (Piano 2): `sin`/`cos`/`log`/`exp`, costanti.
 3. **Self-hosting** (orizzonte): lexer di Logyx scritto in Logyx + test a specchio contro
    `logyxc tokens`, poi parser → AST → backend, a fasi.

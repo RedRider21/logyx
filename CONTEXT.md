@@ -79,8 +79,16 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **68/68**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **69/69**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+> ⚠️ **GIT: NON fare `git push` né aggiornare le Pages** finché l'utente non lo dice (è in ufficio, il
+> push è inibito). Si committa **solo in locale**; il push del repo e delle Pages lo faremo da casa.
+
+**Libreria matematica FATTA (2026-10-20):** builtin float `sin`/`cos`/`tan`, `log` (ln)/`log10`, `exp`,
+costanti `pi()`/`e()` (zero-arg). Nativo: metodi `f64` della std (`.sin()`, `.ln()`, `std::f64::consts::PI`
+…); interprete: modulo `math`. Esempio `native_mathlib`. Chiude Piano 2 Numeri (✅). **Prossimi del
+nucleo:** tipo `set`, comprehension; poi **self-hosting**.
 
 **Indicizzazione stringhe FATTA (2026-10-18):** `s[i]` → carattere come stringa di 1 (nativo
 `.chars().nth(i).map(to_string)`, interprete `s[i]` Python). Gen in `Expr::Index` quando `type_of(target)

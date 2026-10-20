@@ -362,6 +362,7 @@ to_hex("ciao")                // 6369616f  (solo con build)</pre></div>
           <tr><td>pow(base, esp)</td><td data-i18n="bi.pow">Potenza fra interi (esp ≥ 0)</td></tr>
           <tr><td>floor(x), ceil(x)</td><td data-i18n="bi.floorceil">Arrotonda verso il basso / verso l'alto</td></tr>
           <tr><td>sqrt(x)</td><td data-i18n="bi.sqrt">Radice quadrata (ritorna un float)</td></tr>
+          <tr><td>sin, cos, tan, log, log10, exp, pi(), e()</td><td data-i18n="bi.math">Libreria matematica (float): trigonometria, logaritmi, esponenziale, costanti</td></tr>
           <tr><td>round(x)</td><td data-i18n="bi.round">Arrotonda all'intero più vicino (metà lontano dallo zero)</td></tr>
           <tr><td>random()</td><td data-i18n="bi.random">Float casuale in [0, 1) (non deterministico)</td></tr>
           <tr><td>upper(s), lower(s)</td><td data-i18n="bi.upperlower">Stringa in maiuscolo / minuscolo</td></tr>
@@ -501,7 +502,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.tojson":"Serializza x (scalare, record, lista o mappa) in JSON","bi.fromjson":"Deserializza il JSON nel tipo: scalare, record, [tipo] (lista) o {string: tipo} (mappa) (crate serde)","bi.sha256":"Hash SHA-256 di s (usa la crate Rust sha2)","bi.now":"Timestamp Unix corrente in secondi","bi.formatdate":"Formatta un timestamp come data UTC (crate chrono)","bi.fileio":"Leggi/scrivi un file di testo; verifica se esiste","bi.stdinenv":"Input da stdin (una riga / tutto) e variabili d'ambiente","bi.args":"Argomenti da riga di comando (lista di stringhe)","bi.run":"Esegue un comando via sh -c: stdout come stringa / codice d'uscita","bi.db":"SQLite: apri, esegui (righe modificate), interroga → lista di record",
       "bi.abs":"Valore assoluto","bi.minmax":"Il minore / il maggiore fra due numeri",
       "bi.pow":"Potenza fra interi (esp ≥ 0)","bi.floorceil":"Arrotonda verso il basso / verso l'alto",
-      "bi.sqrt":"Radice quadrata (ritorna un float)",
+      "bi.sqrt":"Radice quadrata (ritorna un float)","bi.math":"Libreria matematica (float): trigonometria, logaritmi, esponenziale, costanti",
       "bi.round":"Arrotonda all'intero più vicino (metà lontano dallo zero)","bi.random":"Float casuale in [0, 1) (non deterministico)",
       "bi.upperlower":"Stringa in maiuscolo / minuscolo","bi.trim":"Toglie gli spazi ai bordi",
       "bi.indexof":"Posizione della prima occorrenza di sub, o -1","bi.substring":"Sottostringa da a incluso a b escluso",
@@ -560,7 +561,7 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
       "bi.tojson":"Serializes x (scalar, record, list or map) to JSON","bi.fromjson":"Deserializes JSON into the given type: scalar, record, [type] (list) or {string: type} (map) (serde crate)","bi.sha256":"SHA-256 hash of s (uses the Rust crate sha2)","bi.now":"Current Unix timestamp in seconds","bi.formatdate":"Formats a timestamp as a UTC date (chrono crate)","bi.fileio":"Read/write a text file; check whether it exists","bi.stdinenv":"Input from stdin (one line / all) and environment variables","bi.args":"Command-line arguments (list of strings)","bi.run":"Runs a command via sh -c: stdout as a string / exit code","bi.db":"SQLite: open, exec (affected rows), query → list of records",
       "bi.abs":"Absolute value","bi.minmax":"The smaller / the larger of two numbers",
       "bi.pow":"Integer power (exp ≥ 0)","bi.floorceil":"Rounds down / up",
-      "bi.sqrt":"Square root (returns a float)",
+      "bi.sqrt":"Square root (returns a float)","bi.math":"Math library (float): trigonometry, logarithms, exponential, constants",
       "bi.round":"Rounds to the nearest integer (half away from zero)","bi.random":"Random float in [0, 1) (non-deterministic)",
       "bi.upperlower":"String in upper / lower case","bi.trim":"Removes surrounding whitespace",
       "bi.indexof":"Position of the first occurrence of sub, or -1","bi.substring":"Substring from a (inclusive) to b (exclusive)",

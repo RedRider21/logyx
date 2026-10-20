@@ -572,7 +572,8 @@ class RustTranspiler:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("int")
             return
-        if name in ("abs", "min", "max", "pow", "floor", "ceil", "sqrt", "round"):
+        if name in ("abs", "min", "max", "pow", "floor", "ceil", "sqrt", "round",
+                    "sin", "cos", "tan", "log", "log10", "exp"):
             for a in e.args:
                 if isinstance(a, N.Identifier) and a.name in ev:
                     ev[a.name].add("num")
@@ -797,7 +798,7 @@ class RustTranspiler:
                 return "int"
             if name in ("floor", "ceil", "round"):
                 return "int"
-            if name in ("sqrt", "random"):
+            if name in ("sqrt", "random", "sin", "cos", "tan", "log", "log10", "exp", "pi", "e"):
                 return "float"
             if name == "reduce" and len(e.args) >= 2:
                 return self._type_of(e.args[1], ptypes)
@@ -1484,6 +1485,26 @@ class RustTranspiler:
                     if len(e.args) != 1:
                         raise LogyxError("sqrt accetta un solo argomento")
                     return f"(({self.expr(e.args[0])}) as f64).sqrt()"
+                if nm in ("sin", "cos", "tan", "exp"):
+                    if len(e.args) != 1:
+                        raise LogyxError(f"{nm} accetta un solo argomento")
+                    return f"(({self.expr(e.args[0])}) as f64).{nm}()"
+                if nm == "log":
+                    if len(e.args) != 1:
+                        raise LogyxError("log accetta un solo argomento (ln)")
+                    return f"(({self.expr(e.args[0])}) as f64).ln()"
+                if nm == "log10":
+                    if len(e.args) != 1:
+                        raise LogyxError("log10 accetta un solo argomento")
+                    return f"(({self.expr(e.args[0])}) as f64).log10()"
+                if nm == "pi":
+                    if len(e.args) != 0:
+                        raise LogyxError("pi non accetta argomenti")
+                    return "std::f64::consts::PI"
+                if nm == "e":
+                    if len(e.args) != 0:
+                        raise LogyxError("e non accetta argomenti")
+                    return "std::f64::consts::E"
                 if nm == "round":
                     if len(e.args) != 1:
                         raise LogyxError("round accetta un solo argomento")

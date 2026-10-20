@@ -421,6 +421,10 @@ print(s[0] + s[1]) // lo
 | `floor(x)` / `ceil(x)` | Arrotonda verso il basso / verso l'alto (ritorna un intero) |
 | `round(x)` | Arrotonda all'intero più vicino, metà lontano dallo zero (`2.5`→`3`, `-2.5`→`-3`) |
 | `sqrt(x)` | Radice quadrata (ritorna un float) |
+| `sin(x)` / `cos(x)` / `tan(x)` | Funzioni trigonometriche (radianti); ritornano un float |
+| `log(x)` / `log10(x)` | Logaritmo naturale (`ln`) / in base 10 |
+| `exp(x)` | Esponenziale `e^x` |
+| `pi()` / `e()` | Costanti π ed e (float) |
 | `random()` | Float casuale in `[0, 1)` (crate `rand`); non deterministico, come `now()` |
 | `sum(lista)` | Somma degli elementi (lista di interi) |
 | `sort(lista)` | Ordina la lista in ordine crescente (la muta); usala come istruzione |
