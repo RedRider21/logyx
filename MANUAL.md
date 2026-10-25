@@ -5,6 +5,11 @@
 Manuale di riferimento del linguaggio **Logyx** e delle sue funzioni, aggiornato via via che il progetto
 cresce. Descrive ciò che il prototipo esegue davvero oggi; le parti non ancora fatte sono elencate in fondo.
 
+> **Logyx in breve:** è un linguaggio **contemporaneamente client e server** (un solo sorgente per
+> route, HTML, API e database sul server e per interfaccia, eventi e WebAssembly nel browser) e funziona
+> **indifferentemente interpretato o compilato** (esecuzione immediata con l'interprete, oppure binario
+> nativo / WebAssembly con il compilatore), con lo stesso risultato nei due modi.
+
 Legenda stato: ✅ implementato · 🟡 parziale · ⏳ previsto.
 
 ---

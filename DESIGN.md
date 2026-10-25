@@ -19,6 +19,15 @@ L'obiettivo è cancellare la divisione tra "linguaggio server" e "linguaggio cli
 servono due linguaggi diversi; qui un solo sorgente, con una sola sintassi, gira nativo sul server e come
 WebAssembly nel browser, con deploy semplice come PHP e velocità vicina al C.
 
+Due caratteristiche lo definiscono:
+
+- **Client e server insieme**: lo stesso linguaggio e lo stesso sorgente coprono il lato server (route,
+  render, API, database) e il lato client (isole → JavaScript, `fetch`, DOM, funzioni → WebAssembly).
+- **Interpretato o compilato, indifferentemente**: lo stesso programma si esegue con l'interprete
+  (immediato, per sviluppo e script) o si compila a nativo/WebAssembly (per la produzione), con lo
+  stesso risultato garantito dai test di conformità. Anche dopo il self-hosting resteranno entrambi:
+  un compilatore e un interprete scritti in Logyx.
+
 ## Versione 0 e piano di bootstrap
 
 Logyx è alla **versione 0**. Python e Rust, che compaiono in questa fase, sono **impalcature

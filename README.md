@@ -4,12 +4,21 @@ Un nuovo linguaggio di programmazione: versatile e conciso come Python, comodo p
 ma **compilato a codice macchina** e capace di girare **sia sul server sia sul client**.
 Un solo sorgente, una sola sintassi, molti bersagli (server nativo, browser via WASM, desktop, mobile).
 
+> **Le due nature di Logyx**
+>
+> - **Client e server insieme.** Un solo linguaggio e un solo sorgente per tutta l'applicazione: route,
+>   HTML, API e database sul server; interfaccia, eventi, `fetch` e WebAssembly nel browser.
+> - **Interpretato o compilato, a scelta.** Lo stesso programma si esegue subito con l'interprete
+>   (`python3 prototype/main.py file.logyx`), oppure si compila a binario nativo o WebAssembly
+>   (`logyxc build`, `logyxc build-wasm`, `logyxc build-server`). I due modi danno lo stesso risultato:
+>   lo verificano i test di conformità su ogni esempio.
+
 Il nome unisce la radice greca **λόγος** (parola, ragione, linguaggio) al suono `-yx` (dalla pietra onyx).
 
 - **Estensione dei file:** `.logyx` (breve: `.lgx`)
 - **Autore:** Daniele Deplano (RedRider21)
 - **Licenza:** AGPL-3.0 (vedi `LICENSE`)
-- **Stato:** **versione 0** — tre backend conformi: interprete Python, transpiler Python→Rust e **compilatore nativo `logyxc`** (Rust). Prossimo orizzonte: self-hosting
+- **Stato:** **versione 0** — linguaggio **client + server**, eseguibile **interpretato o compilato**: tre backend conformi (interprete Python, transpiler Python→Rust e **compilatore nativo `logyxc`** in Rust). In corso: self-hosting (lexer e parser già scritti in Logyx)
 - **Sito:** https://redrider21.github.io/logyx/ · **Manuale online:** https://redrider21.github.io/logyx/manuale.html
 - **Documento di design online:** https://claude.ai/code/artifact/0aa46f19-cef5-4728-8e26-4b83867259cd
 

@@ -93,6 +93,16 @@
   /* Sections */
   section{padding:44px 0}
   h2{font-size:clamp(1.5rem,3vw,2rem); letter-spacing:-.01em; margin:0 0 8px}
+  .duo{padding:8px 0 24px}
+  .duo-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:20px}
+  .duo-card{background:var(--panel); border:2px solid var(--accent); border-radius:18px; padding:26px;
+    box-shadow:var(--shadow)}
+  .duo-card h2{margin:6px 0 10px; font-size:1.35rem}
+  .duo-card p{margin:0 0 12px; color:var(--muted)}
+  .duo-card ul{margin:0; padding-left:1.2em}
+  .duo-card li{margin:4px 0}
+  .duo-ic{width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; color:#fff; background:linear-gradient(100deg,var(--accent),#6d5ef6)}
   .sub{color:var(--muted); margin:0 0 28px; max-width:680px}
   .grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:18px}
   .card{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:22px;
@@ -172,14 +182,39 @@
       <div class="hero-logo"><svg viewBox="0 0 256 256" aria-hidden="true"><defs><linearGradient id="hg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#6D5EF6"/><stop offset="1" stop-color="#5B4BE1"/></linearGradient></defs><circle cx="128" cy="128" r="120" fill="url(#hg)"/><path d="M494 1020 432 1188Q404 1265 366.5 1293.0Q329 1321 235 1321H123V1556H330Q512 1556 610.5 1479.0Q709 1402 777 1220L1235 0H877L654 588L419 0H61Z" transform="translate(64.70,216.00) scale(0.0977,-0.0977)" fill="#fff"/><circle cx="128" cy="44" r="15" fill="#22c3dd"/></svg></div>
       <div class="badges">
         <span class="badge v0" data-i18n="hero.v0">Versione 0 · anteprima</span>
-        <span class="badge" data-i18n="hero.badge">Un linguaggio · molti mondi</span>
+        <span class="badge" data-i18n="hero.badge">Client + server · interpretato o compilato</span>
       </div>
       <h1 data-i18n-html="hero.title">Un solo sorgente per <span class="grad">server e client</span></h1>
-      <p class="lead" data-i18n="hero.lead">Conciso come Python, comodo per il web come PHP, ma compilato a codice macchina. Lo stesso codice gira nativo sul server e come WebAssembly nel browser.</p>
+      <p class="lead" data-i18n="hero.lead">Conciso come Python, comodo per il web come PHP. Un solo linguaggio che è insieme client e server, e che puoi eseguire indifferentemente interpretato o compilato a codice macchina: lo stesso codice gira nativo sul server e come WebAssembly nel browser.</p>
       <div class="cta">
         <a class="btn primary" id="repo-cta" href="#" data-i18n="hero.cta.repo">Vai al repository</a>
         <a class="btn ghost" href="#codice" data-i18n="hero.cta.see">Guarda il codice</a>
         <a class="btn ghost" href="manuale.html" data-i18n="hero.cta.manual">Manuale</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="due-nature" class="duo">
+    <div class="wrap">
+      <div class="duo-grid">
+        <div class="duo-card">
+          <div class="duo-ic">⇄</div>
+          <h2 data-i18n="duo.cs.h">Client e server, nello stesso linguaggio</h2>
+          <p data-i18n="duo.cs.p">Un solo sorgente descrive tutta l'applicazione: le route e il database sul server, l'interfaccia e gli eventi nel browser. Niente secondo linguaggio, niente codice duplicato: il confine fra le due parti è esplicito nel sorgente (@start-client), il resto è Logyx.</p>
+          <ul>
+            <li data-i18n="duo.cs.l1">Server: route, render HTML, API JSON, SQLite, server HTTP nativo</li>
+            <li data-i18n="duo.cs.l2">Client: isole compilate a JavaScript, fetch, DOM, funzioni a WebAssembly</li>
+          </ul>
+        </div>
+        <div class="duo-card">
+          <div class="duo-ic">⚙</div>
+          <h2 data-i18n="duo.ic.h">Interpretato o compilato, a scelta</h2>
+          <p data-i18n="duo.ic.p">Lo stesso programma si esegue subito con l'interprete, senza compilare, oppure si compila a binario nativo o WebAssembly per la produzione. I due modi danno lo stesso risultato: lo garantiscono i test di conformità, che confrontano ogni esempio fra interprete e compilatori.</p>
+          <ul>
+            <li data-i18n="duo.ic.l1">Interpretato: prove immediate, script, sviluppo veloce</li>
+            <li data-i18n="duo.ic.l2">Compilato: binario nativo veloce, WebAssembly, server autonomo</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -470,10 +505,18 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
   var I18N = {
     it:{
       "nav.why":"Perché","nav.how":"Come funziona","nav.code":"Codice","nav.ref":"Riferimento","nav.manual":"Manuale","nav.status":"Stato","nav.start":"Inizia",
+      "duo.cs.h":"Client e server, nello stesso linguaggio",
+      "duo.cs.p":"Un solo sorgente descrive tutta l'applicazione: le route e il database sul server, l'interfaccia e gli eventi nel browser. Niente secondo linguaggio, niente codice duplicato: il confine fra le due parti è esplicito nel sorgente (@start-client), il resto è Logyx.",
+      "duo.cs.l1":"Server: route, render HTML, API JSON, SQLite, server HTTP nativo",
+      "duo.cs.l2":"Client: isole compilate a JavaScript, fetch, DOM, funzioni a WebAssembly",
+      "duo.ic.h":"Interpretato o compilato, a scelta",
+      "duo.ic.p":"Lo stesso programma si esegue subito con l'interprete, senza compilare, oppure si compila a binario nativo o WebAssembly per la produzione. I due modi danno lo stesso risultato: lo garantiscono i test di conformità, che confrontano ogni esempio fra interprete e compilatori.",
+      "duo.ic.l1":"Interpretato: prove immediate, script, sviluppo veloce",
+      "duo.ic.l2":"Compilato: binario nativo veloce, WebAssembly, server autonomo",
       "hero.v0":"Versione 0 · anteprima",
-      "hero.badge":"Un linguaggio · molti mondi",
+      "hero.badge":"Client + server · interpretato o compilato",
       "hero.title":"Un solo sorgente per <span class=\"grad\">server e client</span>",
-      "hero.lead":"Conciso come Python, comodo per il web come PHP, ma compilato a codice macchina. Lo stesso codice gira nativo sul server e come WebAssembly nel browser.",
+      "hero.lead":"Conciso come Python, comodo per il web come PHP. Un solo linguaggio che è insieme client e server, e che puoi eseguire indifferentemente interpretato o compilato a codice macchina: lo stesso codice gira nativo sul server e come WebAssembly nel browser.",
       "hero.cta.repo":"Vai al repository","hero.cta.see":"Guarda il codice","hero.cta.manual":"Manuale",
       "why.h":"Perché Logyx",
       "why.sub":"Oggi per il web servono due linguaggi diversi. Logyx cancella quel confine: una sola sintassi, un solo sorgente, deploy semplice come PHP e velocità vicina al C.",
@@ -529,10 +572,18 @@ logyxc serve examples/web_demo.logyx 8137</pre></div>
     },
     en:{
       "nav.why":"Why","nav.how":"How it works","nav.code":"Code","nav.ref":"Reference","nav.manual":"Manual","nav.status":"Status","nav.start":"Start",
+      "duo.cs.h":"Client and server, in the same language",
+      "duo.cs.p":"One source describes the whole application: routes and database on the server, interface and events in the browser. No second language, no duplicated code: the boundary between the two parts is explicit in the source (@start-client), everything else is Logyx.",
+      "duo.cs.l1":"Server: routes, HTML rendering, JSON APIs, SQLite, native HTTP server",
+      "duo.cs.l2":"Client: islands compiled to JavaScript, fetch, DOM, functions to WebAssembly",
+      "duo.ic.h":"Interpreted or compiled, your choice",
+      "duo.ic.p":"The same program runs right away with the interpreter, with no compile step, or compiles to a native binary or WebAssembly for production. Both ways give the same result: the conformance tests guarantee it, comparing every example across interpreter and compilers.",
+      "duo.ic.l1":"Interpreted: instant tries, scripts, fast development",
+      "duo.ic.l2":"Compiled: fast native binary, WebAssembly, standalone server",
       "hero.v0":"Version 0 · preview",
-      "hero.badge":"One language · many worlds",
+      "hero.badge":"Client + server · interpreted or compiled",
       "hero.title":"One source for <span class=\"grad\">server and client</span>",
-      "hero.lead":"Concise like Python, web-friendly like PHP, yet compiled to machine code. The same code runs native on the server and as WebAssembly in the browser.",
+      "hero.lead":"Concise like Python, web-friendly like PHP. One language that is client and server at the same time, and that you can run either interpreted or compiled to machine code: the same code runs native on the server and as WebAssembly in the browser.",
       "hero.cta.repo":"Go to the repository","hero.cta.see":"See the code","hero.cta.manual":"Manual",
       "why.h":"Why Logyx",
       "why.sub":"Today the web needs two different languages. Logyx erases that divide: one syntax, one source, deploy as simple as PHP and speed close to C.",
