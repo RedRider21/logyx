@@ -93,7 +93,7 @@ if x > 0 { print("positivo") }      // non:  if (x > 0)
 | `float` | `3.14` | virgola mobile |
 | `bool` | `true`, `false` | |
 | `string` | `"ciao"` | con interpolazione `"{...}"` |
-| `nil` | `nil` | assenza di valore |
+| `nil` | `nil` | assenza di valore (solo nell'interprete; nei backend compilati usa `T \| error` o un enum) |
 | lista `[T]` | `[1, 2, 3]` | vedi §7 |
 | mappa `{K: V}` | `{"nome": "Ada"}` | vedi §7 |
 
@@ -450,7 +450,7 @@ print(s[0] + s[1]) // lo
 
 | Funzione | Descrizione |
 | --- | --- |
-| `print(x)` | Stampa `x` (con conversione leggibile) |
+| `print(x)` | Stampa `x`. Liste `[a, b]`, mappe `{k: v}` con chiavi ordinate, insiemi `{a, b}` ordinati, tuple `(a, b)`, record `Nome(campo: v)`, enum `Tipo.Variante`: la stessa forma in `str(x)`, nell'interpolazione `"{x}"` e in tutti i backend |
 | `len(x)` | Lunghezza di lista, mappa o stringa |
 | `str(x)` | Converte in stringa |
 | `int(x)` | Converte in intero: da stringa (0 se non valido) o da float (tronca) |

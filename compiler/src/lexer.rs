@@ -289,7 +289,13 @@ impl Lexer {
                     parts.push(StringPart::Lit(std::mem::take(&mut buf)));
                 }
                 let mut expr = String::new();
-                while self.i < self.src.len() && self.peek(0) != '}' {
+                let mut depth = 0; // graffe annidate nell'espressione (es. una mappa letterale)
+                while self.i < self.src.len() && (self.peek(0) != '}' || depth > 0) {
+                    match self.peek(0) {
+                        '{' => depth += 1,
+                        '}' => depth -= 1,
+                        _ => {}
+                    }
                     expr.push(self.advance());
                 }
                 if self.i >= self.src.len() {

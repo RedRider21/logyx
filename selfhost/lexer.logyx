@@ -177,7 +177,10 @@ fn lex(src: string, file: string) -> [Tok] | error {
                         buf = ""
                     }
                     espr = ""
-                    while p.i < n and cs[p.i] != "\}" {
+                    prof = 0   // graffe annidate nell'espressione (es. una mappa letterale)
+                    while p.i < n and (cs[p.i] != "\}" or prof > 0) {
+                        if cs[p.i] == "\{" { prof = prof + 1 }
+                        if cs[p.i] == "\}" { prof = prof - 1 }
                         espr = espr + cs[p.i]
                         p = avanza(p, cs[p.i])
                     }

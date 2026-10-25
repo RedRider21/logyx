@@ -76,6 +76,39 @@ fn rust_str_lit(s: &str) -> String {
     format!("{:?}", s)
 }
 
+/// Rappresentazione testuale di un valore, identica nei tre backend (print, str,
+/// interpolazione): liste `[a, b]`, mappe `{k: v}` con chiavi ordinate, insiemi
+/// `{a, b}` ordinati, tuple `(a, b)`, record `Nome(campo: v)`, enum `Tipo.Variante`.
+const SHOW_HELPER: &str = r#"trait LxShow { fn lx(&self) -> String; }
+impl LxShow for i64 { fn lx(&self) -> String { self.to_string() } }
+impl LxShow for f64 { fn lx(&self) -> String { format!("{}", self) } }
+impl LxShow for bool { fn lx(&self) -> String { self.to_string() } }
+impl LxShow for String { fn lx(&self) -> String { self.clone() } }
+impl LxShow for str { fn lx(&self) -> String { self.to_string() } }
+impl<T: LxShow + ?Sized> LxShow for &T { fn lx(&self) -> String { (**self).lx() } }
+impl<T: LxShow> LxShow for Vec<T> {
+    fn lx(&self) -> String { format!("[{}]", self.iter().map(|x| x.lx()).collect::<Vec<_>>().join(", ")) }
+}
+impl<T: LxShow> LxShow for std::collections::BTreeSet<T> {
+    fn lx(&self) -> String { format!("{{{}}}", self.iter().map(|x| x.lx()).collect::<Vec<_>>().join(", ")) }
+}
+impl<K: LxShow + Ord + std::hash::Hash, V: LxShow> LxShow for std::collections::HashMap<K, V> {
+    fn lx(&self) -> String {
+        let mut ks: Vec<&K> = self.keys().collect();
+        ks.sort();
+        format!("{{{}}}", ks.iter().map(|k| format!("{}: {}", k.lx(), self[*k].lx())).collect::<Vec<_>>().join(", "))
+    }
+}
+impl<A: LxShow, B: LxShow> LxShow for (A, B) {
+    fn lx(&self) -> String { format!("({}, {})", self.0.lx(), self.1.lx()) }
+}
+impl<A: LxShow, B: LxShow, C: LxShow> LxShow for (A, B, C) {
+    fn lx(&self) -> String { format!("({}, {}, {})", self.0.lx(), self.1.lx(), self.2.lx()) }
+}
+impl<A: LxShow, B: LxShow, C: LxShow, D: LxShow> LxShow for (A, B, C, D) {
+    fn lx(&self) -> String { format!("({}, {}, {}, {})", self.0.lx(), self.1.lx(), self.2.lx(), self.3.lx()) }
+}"#;
+
 const JSON_HELPER: &str = r#"fn __json_str(s: &str) -> String {
     let mut out = String::from("\"");
     for c in s.chars() {
@@ -268,6 +301,8 @@ pub struct Codegen {
     // Per le variabili mappa: (tipo chiave, tipo valore) JSON (per `to_json`).
     map_val: HashMap<String, (String, String)>,
     uses_json: bool,
+    /// usa la rappresentazione testuale di valori non scalari (trait LxShow)
+    uses_show: bool,
     uses_serde: bool,
     uses_html: bool,
     /// true = genera un server HTTP (`tiny_http`); false = un binario `render` (default).
@@ -300,6 +335,7 @@ impl Codegen {
             list_elem: HashMap::new(),
             map_val: HashMap::new(),
             uses_json: false,
+            uses_show: false,
             uses_serde: false,
             uses_html: false,
             emit_server: false,
@@ -402,6 +438,7 @@ impl Codegen {
 
     pub fn generate(&mut self, items: &[Item]) -> R<String> {
         self.uses_json = false;
+        self.uses_show = false;
         self.uses_serde = false;
         self.uses_html = false;
         self.deps.clear();
@@ -625,6 +662,33 @@ impl Codegen {
         }
         if self.uses_html {
             out.push(HTML_HELPER.to_string());
+        }
+        if self.uses_show {
+            out.push(SHOW_HELPER.to_string());
+            // record → `Nome(campo: valore, …)`; enum → `Tipo.Variante`
+            for name in &rec_names {
+                let fs: Vec<String> = self.records[name]
+                    .iter()
+                    .map(|(f, _)| format!("format!(\"{f}: {{}}\", self.{f}.lx())"))
+                    .collect();
+                out.push(format!(
+                    "impl LxShow for {name} {{ fn lx(&self) -> String {{ format!(\"{name}({{}})\", vec![{}].join(\", \")) }} }}",
+                    fs.join(", ")
+                ));
+            }
+            for name in &enum_names {
+                let arms: Vec<String> = self.enums[name]
+                    .iter()
+                    .map(|(v, payload)| {
+                        let pat = if payload.is_empty() { String::new() } else { "(..)".to_string() };
+                        format!("{name}::{v}{pat} => \"{name}.{v}\".to_string()")
+                    })
+                    .collect();
+                out.push(format!(
+                    "impl LxShow for {name} {{ fn lx(&self) -> String {{ match self {{ {} }} }} }}",
+                    arms.join(", ")
+                ));
+            }
         }
         out.extend(structs);
         out.extend(global_code);
@@ -2155,8 +2219,19 @@ impl Codegen {
                 let (fmt, fargs) = self.format(parts)?;
                 Ok(format!("println!({}{});", rust_str_lit(&fmt), fargs))
             }
-            other => Ok(format!("println!(\"{{}}\", {});", self.expr(other)?)),
+            other => Ok(format!("println!(\"{{}}\", {});", self.show(other)?)),
         }
+    }
+
+    /// Valore come testo: gli scalari vanno diretti in `{}`, il resto (liste, mappe,
+    /// insiemi, tuple, record, enum) passa dalla rappresentazione comune `LxShow`.
+    fn show(&mut self, e: &Expr) -> R<String> {
+        let t = self.type_of(e, &self.cur_types.clone());
+        if matches!(t.as_deref(), Some("int") | Some("float") | Some("bool") | Some("string")) {
+            return self.expr(e);
+        }
+        self.uses_show = true;
+        Ok(format!("({}).lx()", self.expr(e)?))
     }
 
     fn format(&mut self, parts: &[StrPart]) -> R<(String, String)> {
@@ -2167,7 +2242,7 @@ impl Codegen {
                 StrPart::Lit(s) => fmt += &s.replace('{', "{{").replace('}', "}}"),
                 StrPart::Expr(e) => {
                     fmt += "{}";
-                    fargs += &format!(", {}", self.expr(e)?);
+                    fargs += &format!(", {}", self.show(e)?);
                 }
             }
         }
@@ -2710,7 +2785,7 @@ impl Codegen {
                         if args.len() != 1 {
                             return Err(LogyxError::new("str accetta un solo argomento"));
                         }
-                        return Ok(format!("format!(\"{{}}\", {})", self.expr(&args[0])?));
+                        return Ok(format!("format!(\"{{}}\", {})", self.show(&args[0])?));
                     }
                     if name == "int" || name == "float" {
                         if args.len() != 1 {

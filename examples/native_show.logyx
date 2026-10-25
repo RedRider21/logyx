@@ -1,0 +1,38 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Rappresentazione testuale dei valori (print, str, interpolazione), identica in
+// interprete e compilatori: liste [a, b], mappe {k: v} con chiavi ORDINATE,
+// insiemi {a, b} ordinati, tuple (a, b), record Nome(campo: v), enum Tipo.Variante.
+
+record Punto {
+    x: int,
+    y: int
+}
+
+enum Colore { Rosso, Verde, Rgb(int, int, int) }
+
+fn coppia() -> (string, int) {
+    return ("età", 36)
+}
+
+fn main() {
+    print([1, 2, 3])
+    print(["alfa", "beta"])
+    print([1.5, 2.0])
+    print({"b": 2, "a": 1, "c": 3})
+    print({3, 1, 2})
+    print(coppia())
+    print(Punto(1, 2))
+    print([Punto(0, 0), Punto(3, 4)])
+    print(Colore.Verde)
+    print(Colore.Rgb(1, 2, 3))
+    xs = [[1, 2], [3]]
+    print(xs)
+    print("lista: {[10, 20]} e mappa: {{"k": true}}")
+    s = str([7, 8])
+    print(s + "!")
+    vuota: [int] = []
+    print(vuota)
+    print(keys({"z": 1, "y": 2}))
+}

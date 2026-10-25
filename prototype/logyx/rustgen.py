@@ -61,6 +61,38 @@ def _parse_fn_type(t):
     params = [s.strip() for s in params_str.split(",")] if params_str else []
     return params, ret
 
+# Rappresentazione testuale comune (print, str, interpolazione): identica nei tre
+# backend. Stesso testo di SHOW_HELPER nel compilatore.
+_SHOW_HELPER = r'''trait LxShow { fn lx(&self) -> String; }
+impl LxShow for i64 { fn lx(&self) -> String { self.to_string() } }
+impl LxShow for f64 { fn lx(&self) -> String { format!("{}", self) } }
+impl LxShow for bool { fn lx(&self) -> String { self.to_string() } }
+impl LxShow for String { fn lx(&self) -> String { self.clone() } }
+impl LxShow for str { fn lx(&self) -> String { self.to_string() } }
+impl<T: LxShow + ?Sized> LxShow for &T { fn lx(&self) -> String { (**self).lx() } }
+impl<T: LxShow> LxShow for Vec<T> {
+    fn lx(&self) -> String { format!("[{}]", self.iter().map(|x| x.lx()).collect::<Vec<_>>().join(", ")) }
+}
+impl<T: LxShow> LxShow for std::collections::BTreeSet<T> {
+    fn lx(&self) -> String { format!("{{{}}}", self.iter().map(|x| x.lx()).collect::<Vec<_>>().join(", ")) }
+}
+impl<K: LxShow + Ord + std::hash::Hash, V: LxShow> LxShow for std::collections::HashMap<K, V> {
+    fn lx(&self) -> String {
+        let mut ks: Vec<&K> = self.keys().collect();
+        ks.sort();
+        format!("{{{}}}", ks.iter().map(|k| format!("{}: {}", k.lx(), self[*k].lx())).collect::<Vec<_>>().join(", "))
+    }
+}
+impl<A: LxShow, B: LxShow> LxShow for (A, B) {
+    fn lx(&self) -> String { format!("({}, {})", self.0.lx(), self.1.lx()) }
+}
+impl<A: LxShow, B: LxShow, C: LxShow> LxShow for (A, B, C) {
+    fn lx(&self) -> String { format!("({}, {}, {})", self.0.lx(), self.1.lx(), self.2.lx()) }
+}
+impl<A: LxShow, B: LxShow, C: LxShow, D: LxShow> LxShow for (A, B, C, D) {
+    fn lx(&self) -> String { format!("({}, {}, {}, {})", self.0.lx(), self.1.lx(), self.2.lx(), self.3.lx()) }
+}'''
+
 _JSON_HELPER = r'''fn __json_str(s: &str) -> String {
     let mut out = String::from("\"");
     for c in s.chars() {
@@ -215,6 +247,7 @@ class RustTranspiler:
             self.globals[name] = (ty, is_const)
         self._tmp = 0
         self.uses_json = False
+        self.uses_show = False  # usa LxShow (valori non scalari come testo)
         self.uses_serde = False
         self.deps = {}  # crate -> spec TOML (dopo '='), es. '"0.10"' o '{ version = "1", ... }'
         for u in uses:
@@ -259,6 +292,17 @@ class RustTranspiler:
             pieces.append("use serde::{Serialize, Deserialize};")
         if self.uses_json:
             pieces.append(_JSON_HELPER)
+        if self.uses_show:
+            pieces.append(_SHOW_HELPER)
+            # record → `Nome(campo: valore, …)`; enum → `Tipo.Variante`
+            for name in sorted(self.records):
+                fs = ", ".join(f'format!("{f}: {{}}", self.{f}.lx())' for f, _ in self.records[name])
+                pieces.append(f'impl LxShow for {name} {{ fn lx(&self) -> String {{ '
+                              f'format!("{name}({{}})", vec![{fs}].join(", ")) }} }}')
+            for name in sorted(self.enums):
+                arms = ", ".join(f'{name}::{v}{"(..)" if pl else ""} => "{name}.{v}".to_string()'
+                                 for v, pl in self.enums[name])
+                pieces.append(f"impl LxShow for {name} {{ fn lx(&self) -> String {{ match self {{ {arms} }} }} }}")
         pieces += struct_defs + global_code + extern_defs + func_defs
         return "\n\n".join(pieces) + "\n"
 
@@ -1361,7 +1405,15 @@ class RustTranspiler:
         if isinstance(a, N.StringLit):
             fmt, fargs = self._format(a)
             return f"println!({_rust_str(fmt)}{fargs});"
-        return f'println!("{{}}", {self.expr(a)});'
+        return f'println!("{{}}", {self._show(a)});'
+
+    def _show(self, e):
+        """Valore come testo: gli scalari vanno diretti in `{}`, il resto (liste, mappe,
+        insiemi, tuple, record, enum) passa dalla rappresentazione comune `LxShow`."""
+        if self._type_of(e, self.cur_types) in ("int", "float", "bool", "string"):
+            return self.expr(e)
+        self.uses_show = True
+        return f"({self.expr(e)}).lx()"
 
     # --- espressioni ---
 
@@ -1372,7 +1424,7 @@ class RustTranspiler:
                 fmt += val.replace("{", "{{").replace("}", "}}")
             else:
                 fmt += "{}"
-                fargs.append(self.expr(val))
+                fargs.append(self._show(val))
         return fmt, "".join(", " + x for x in fargs)
 
     def _stringish(self, e):
@@ -1561,7 +1613,7 @@ class RustTranspiler:
                 if nm == "str":
                     if len(e.args) != 1:
                         raise LogyxError("str accetta un solo argomento")
-                    return f'format!("{{}}", {self.expr(e.args[0])})'
+                    return f'format!("{{}}", {self._show(e.args[0])})'
                 if nm in ("int", "float"):
                     if len(e.args) != 1:
                         raise LogyxError(f"{nm} accetta un solo argomento")

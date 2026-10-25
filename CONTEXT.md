@@ -77,6 +77,15 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 > **Fronte grosso in corso: self-hosting.** Fase 1 lexer ✅ + Fase 2 parser ✅ (vedi sotto). Alla fine:
 > **compilatore + interprete scritti in Logyx** (deciso/consigliato 2026-10-25).
 >
+> **AUDIT COMANDI IN CORSO (2026-10-25)** — fatto finora: inventario builtin (64, presenti nei 3
+> backend); `tests/riferimento.sh` (NUOVO, permanente: ogni esempio di docs/riferimento.html eseguito
+> nei 3 backend e confrontato con l'output dichiarato → 86/86, 29 esclusi motivati). Corretti:
+> **stampa unica dei valori** (trait `LxShow` generato nel nativo; interprete allineato: mappe/insiemi
+> ORDINATI, tuple `(a, b)`) — prima `print(lista)` non compilava nel nativo; **graffe annidate
+> nelle interpolazioni** (`"{ {"k": 1} }"`, 3 lexer); doc: il `;` NON è ammesso (riferimento, GRAMMAR
+> e sito dicevano "opzionale"), `nil` solo interprete, 12 esempi resi eseguibili. Prossimo dell'audit:
+> casi limite (div/mod negativi, /0, overflow, indici fuori range, conversioni, float) e completezza.
+>
 > **RICHIESTE UTENTE IN CODA (2026-10-25), in quest'ordine:**
 > 1. **Audit approfondito di TUTTI i comandi** del linguaggio: assenza di errori (ogni builtin/costrutto
 >    nei 3 backend, esempi della reference eseguiti e confrontati) + **completezza** della dotazione.

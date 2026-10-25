@@ -162,10 +162,15 @@ def logyx_str(v):
         return v
     if isinstance(v, float):
         return str(int(v)) if v.is_integer() else repr(v)
+    # collezioni: rappresentazione comune ai tre backend (mappe e insiemi ORDINATI)
     if isinstance(v, list):
         return "[" + ", ".join(logyx_str(x) for x in v) + "]"
     if isinstance(v, dict):
-        return "{" + ", ".join(f"{logyx_str(k)}: {logyx_str(val)}" for k, val in v.items()) + "}"
+        return "{" + ", ".join(f"{logyx_str(k)}: {logyx_str(v[k])}" for k in sorted(v)) + "}"
+    if isinstance(v, (set, frozenset)):
+        return "{" + ", ".join(logyx_str(x) for x in sorted(v)) + "}"
+    if isinstance(v, tuple):
+        return "(" + ", ".join(logyx_str(x) for x in v) + ")"
     if isinstance(v, LogyxFunction):
         return f"<fn {v.decl.name}>"
     if isinstance(v, ErrValue):

@@ -10,7 +10,7 @@ multi-target e crescere per gradi. Le scelte qui sono coerenti con i principi in
 | Aspetto | Decisione | Motivo |
 | --- | --- | --- |
 | Blocchi | Graffe `{ }` | Sintassi non posizionale, nessuna ambiguità tab/spazi |
-| Fine istruzione | Fine riga oppure `;` (opzionale) | Leggerezza; il `;` non è obbligatorio |
+| Fine istruzione | Nessun terminatore: le istruzioni si susseguono (a capo); `;` è un errore lessicale | Leggerezza; la struttura delimita le istruzioni |
 | Commenti | `//` a riga singola, `/* ... */` a blocco | Familiari, coerenti con le graffe |
 | Indentazione | Solo cosmetica | Non cambia il significato |
 | Booleani / nulla | `true`, `false`, `nil` | — |

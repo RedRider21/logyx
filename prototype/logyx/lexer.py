@@ -136,7 +136,12 @@ class Lexer:
                     parts.append(("lit", "".join(buf)))
                     buf = []
                 expr = []
-                while self.i < len(self.src) and self.peek() != "}":
+                depth = 0  # graffe annidate nell'espressione (es. una mappa letterale)
+                while self.i < len(self.src) and (self.peek() != "}" or depth > 0):
+                    if self.peek() == "{":
+                        depth += 1
+                    elif self.peek() == "}":
+                        depth -= 1
                     expr.append(self.advance())
                 if self.i >= len(self.src):
                     self.error("interpolazione non terminata (manca '}')")

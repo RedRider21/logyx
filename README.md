@@ -132,7 +132,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | `design/` | Mini-design dei fronti grossi (collezioni, record, JSON, crate, web→WASM…) |
 | `prototype/` | Interprete/transpiler in Python (lexer, parser, interprete, rustgen) |
 | `compiler/` | Il compilatore vero in Rust (`logyxc`): lexer, parser, inferenza, backend |
-| `tests/` | Suite di conformità (`conformance.sh`): i tre backend (interprete, transpiler, compilatore) danno lo stesso output |
+| `tests/` | `conformance.sh` (i tre backend danno lo stesso output su ogni esempio), `riferimento.sh` (ogni esempio della pagina di riferimento eseguito e verificato nei tre backend), `selfhost_*.sh` (self-hosting a specchio), smoke test WASM/server/DB |
 | `examples/` | Programmi di esempio `.logyx` |
 | `selfhost/` | Il compilatore di Logyx **scritto in Logyx** (self-hosting): lexer e parser fatti, verificati a specchio con `tests/selfhost_lexer.sh` e `tests/selfhost_parser.sh` |
 | `docs/` | Sito (GitHub Pages) e documenti esportati (es. il documento di design in `.md`/`.pdf`); git li versiona col resto, così restano con te quando cloni il progetto |

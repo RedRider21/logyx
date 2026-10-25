@@ -241,7 +241,7 @@ client, invece, servono l'interattività del DOM e per questo diventano JavaScri
 <tr>
 <td><code>nil</code></td>
 <td><code>nil</code></td>
-<td>assenza di valore</td>
+<td>assenza di valore (solo nell'interprete; nei backend compilati usa <code>T \| error</code> o un enum)</td>
 </tr>
 <tr>
 <td>lista <code>[T]</code></td>
@@ -566,7 +566,7 @@ print(s[0] + s[1]) // lo
 <tbody>
 <tr>
 <td><code>print(x)</code></td>
-<td>Stampa <code>x</code> (con conversione leggibile)</td>
+<td>Stampa <code>x</code>. Liste <code>[a, b]</code>, mappe <code>{k: v}</code> con chiavi ordinate, insiemi <code>{a, b}</code> ordinati, tuple <code>(a, b)</code>, record <code>Nome(campo: v)</code>, enum <code>Tipo.Variante</code>: la stessa forma in <code>str(x)</code>, nell'interpolazione <code>"{x}"</code> e in tutti i backend</td>
 </tr>
 <tr>
 <td><code>len(x)</code></td>
