@@ -519,6 +519,16 @@ add(s, 5)
 print(2 in s)        // true
 print(len(s))        // 4
 </code></pre>
+<p><strong>List comprehension</strong>: <code>[espr for var in iterabile (if cond)?]</code> costruisce una <strong>lista</strong> scorrendo
+<code>iterabile</code> (un <code>range</code>, una lista, un insieme o le chiavi di una mappa — in ordine deterministico),
+legando <code>var</code> a ogni elemento e raccogliendo il valore di <code>espr</code>; con <code>if cond</code> filtra. È distinta dalla
+lista letterale <code>[a, b, …]</code> dalla parola <code>for</code> subito dopo il primo elemento. Il risultato è una lista a
+tutti gli effetti (iterabile, indicizzabile, <code>len</code>, <code>sum</code>, …).</p>
+<pre><code>nums = [1, 2, 3, 4, 5]
+doppi    = [x * 2 for x in nums]              // [2, 4, 6, 8, 10]
+pari     = [x for x in nums if x % 2 == 0]    // [2, 4]
+quadrati = [i * i for i in range(1, 6)]       // [1, 4, 9, 16, 25]
+</code></pre>
 <h2 id="8-stringhe-e-interpolazione">8. Stringhe e interpolazione ✅</h2>
 <pre><code>nome = &quot;Logyx&quot;
 print(&quot;Ciao da {nome}!&quot;)     // Ciao da Logyx!
@@ -1140,8 +1150,10 @@ fn main() {
 <ul>
 <li>Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); globali di tipo collezione/tupla;
   accesso a tupla per posizione (<code>t.0</code>).</li>
-<li>Operatore ternario, <code>in</code> come operatore, esponente <code>**</code>, bitwise, tipo <code>set</code>, comprehension (vedi
-  <code>ROADMAP.md</code>, "analisi di copertura").</li>
+<li>Nucleo "da ogni linguaggio" <strong>completo</strong>: operatore ternario, <code>in</code> come operatore, esponente <code>**</code>,
+  bitwise, tipo <code>set</code>, comprehension sono tutti implementati nei tre backend (vedi <code>ROADMAP.md</code>).</li>
+<li>Dict/set comprehension (oggi c'è la <strong>list</strong> comprehension); OOP classica, generici, concorrenza
+  (scelte di design, vedi <code>ROADMAP.md</code>).</li>
 <li>Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; eventi DOM dal WASM (oggi gli handler si
   invocano dai pulsanti della pagina generata); self-hosting del compilatore.</li>
 </ul>

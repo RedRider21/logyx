@@ -13,6 +13,8 @@ from .errors import LogyxError
 
 _TYPES = {"int": "i64", "float": "f64", "bool": "bool", "string": "String"}
 
+_MISSING = object()  # sentinella: assenza di una chiave (per salvataggio/ripristino tipi)
+
 
 def _list_inner(t):
     """Se t è un tipo lista '[T]' ritorna 'T', altrimenti None."""
@@ -325,6 +327,9 @@ class RustTranspiler:
                     or self._expr_has_try(e.els))
         if t == "In":
             return self._expr_has_try(e.item) or self._expr_has_try(e.coll)
+        if t == "Comprehension":
+            return (self._expr_has_try(e.expr) or self._expr_has_try(e.iterable)
+                    or (e.cond is not None and self._expr_has_try(e.cond)))
         return False
 
     def func(self, f):
@@ -378,6 +383,8 @@ class RustTranspiler:
             return "map"
         if t == "SetLit":
             return "set"
+        if t == "Comprehension":
+            return "list"
         return None
 
     # --- inferenza (punto fisso su parametri e tipi di ritorno) ---
@@ -516,6 +523,9 @@ class RustTranspiler:
         elif t == "In":
             self._scan_expr(e.item, pt, ev)
             self._scan_expr(e.coll, pt, ev)
+        elif t == "Comprehension":
+            # la variabile di ciclo è locale: niente inferenza su di essa
+            self._scan_expr(e.iterable, pt, ev)
         elif t == "Call":
             self._call_ev(e, pt, ev)
             for a in e.args:
@@ -1150,6 +1160,17 @@ class RustTranspiler:
                 if elem:
                     return f"list<{elem}>"
             return None
+        if type(e).__name__ == "Comprehension":
+            _, elem_ty = self._comp_iter(e.iterable)
+            prev = self.cur_types.get(e.var, _MISSING)
+            if elem_ty is not None:
+                self.cur_types[e.var] = elem_ty
+            inner = self._json_type_of(e.expr)
+            if prev is _MISSING:
+                self.cur_types.pop(e.var, None)
+            else:
+                self.cur_types[e.var] = prev
+            return f"list<{inner}>" if inner else None
         if type(e).__name__ == "MapLit":
             if e.pairs:
                 k, v = e.pairs[0]
@@ -1170,6 +1191,18 @@ class RustTranspiler:
         """Se value è una lista/mappa letterale non vuota, ricorda i tipi dei suoi elementi."""
         if type(value).__name__ in ("ListLit", "SetLit") and value.elements:
             el = self._json_type_of(value.elements[0])
+            if el:
+                self.list_elem[name] = el
+        elif type(value).__name__ == "Comprehension":
+            _, elem_ty = self._comp_iter(value.iterable)
+            prev = self.cur_types.get(value.var, _MISSING)
+            if elem_ty is not None:
+                self.cur_types[value.var] = elem_ty
+            el = self._json_type_of(value.expr)
+            if prev is _MISSING:
+                self.cur_types.pop(value.var, None)
+            else:
+                self.cur_types[value.var] = prev
             if el:
                 self.list_elem[name] = el
         elif type(value).__name__ == "MapLit" and value.pairs:
@@ -1294,6 +1327,28 @@ class RustTranspiler:
             return True
         return self._type_of(e, getattr(self, "cur_types", {})) == "string"
 
+    def _comp_iter(self, iterable):
+        """Ritorna (codice Rust iterabile, tipo elemento o None) per una comprehension."""
+        if (type(iterable).__name__ == "Call" and isinstance(iterable.callee, N.Identifier)
+                and iterable.callee.name == "range" and len(iterable.args) in (1, 2)):
+            if len(iterable.args) == 1:
+                lo, hi = "0i64", self.expr(iterable.args[0])
+            else:
+                lo, hi = self.expr(iterable.args[0]), self.expr(iterable.args[1])
+            return f"({lo})..({hi})", "int"
+        kinds = getattr(self, "kinds", {})
+        if isinstance(iterable, N.Identifier) and kinds.get(iterable.name) == "map":
+            mv = getattr(self, "map_val", {}).get(iterable.name)
+            elem = mv[0] if mv else None
+            return (f"{{ let mut __k: Vec<_> = ({iterable.name}).keys().cloned().collect(); "
+                    f"__k.sort(); __k }}.into_iter()"), elem
+        elem = None
+        if isinstance(iterable, N.Identifier):
+            elem = getattr(self, "list_elem", {}).get(iterable.name)
+        elif type(iterable).__name__ in ("ListLit", "SetLit") and iterable.elements:
+            elem = self._json_type_of(iterable.elements[0])
+        return f"({self.expr(iterable)}).iter().cloned()", elem
+
     def expr(self, e):
         t = type(e).__name__
         if t == "Literal":
@@ -1351,6 +1406,21 @@ class RustTranspiler:
             self._tmp += 1
             inserts = " ".join(f"{name}.insert({self.expr(x)});" for x in e.elements)
             return f"{{ let mut {name} = std::collections::BTreeSet::new(); {inserts} {name} }}"
+        if t == "Comprehension":
+            iter_rust, elem_ty = self._comp_iter(e.iterable)
+            prev = self.cur_types.get(e.var, _MISSING)
+            if elem_ty is not None:
+                self.cur_types[e.var] = elem_ty
+            body = self.expr(e.expr)
+            cond_rust = self.expr(e.cond) if e.cond is not None else None
+            if prev is _MISSING:
+                self.cur_types.pop(e.var, None)
+            else:
+                self.cur_types[e.var] = prev
+            push = (f"if {cond_rust} {{ __comp.push({body}); }}"
+                    if cond_rust is not None else f"__comp.push({body});")
+            return (f"{{ let mut __comp = Vec::new(); "
+                    f"for {e.var} in {iter_rust} {{ {push} }} __comp }}")
         if t == "TupleLit":
             return "(" + ", ".join(self._arg(x) for x in e.elements) + ")"
         if t == "Ternary":

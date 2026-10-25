@@ -674,14 +674,28 @@ class Parser:
             return e
         if t.type == T.LBRACK:
             self.advance()
-            elements = []
-            if not self.at(T.RBRACK):
-                elements.append(self.expression())
-                while self.at(T.COMMA):
+            if self.at(T.RBRACK):
+                self.advance()
+                return N.ListLit([])
+            first = self.expression()
+            # list comprehension: [espr for var in iterabile (if cond)?]
+            if self.at(T.FOR):
+                self.advance()
+                var = self.expect(T.IDENT, "variabile della comprehension").value
+                self.expect(T.IN)
+                iterable = self.expression()
+                cond = None
+                if self.at(T.IF):
                     self.advance()
-                    if self.at(T.RBRACK):
-                        break
-                    elements.append(self.expression())
+                    cond = self.expression()
+                self.expect(T.RBRACK)
+                return N.Comprehension(first, var, iterable, cond)
+            elements = [first]
+            while self.at(T.COMMA):
+                self.advance()
+                if self.at(T.RBRACK):
+                    break
+                elements.append(self.expression())
             self.expect(T.RBRACK)
             return N.ListLit(elements)
         if t.type == T.LBRACE:

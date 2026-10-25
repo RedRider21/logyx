@@ -209,6 +209,12 @@ class ClientCompiler:
     def js_SetLit(self, n):
         return "new Set([" + ", ".join(self.js_expr(x) for x in n.elements) + "])"
 
+    def js_Comprehension(self, n):
+        push = (f"if ({self.js_expr(n.cond)}) __c.push({self.js_expr(n.expr)});"
+                if n.cond is not None else f"__c.push({self.js_expr(n.expr)});")
+        return (f"(function(){{ const __c=[]; for (const {n.var} of {self.js_expr(n.iterable)}) "
+                f"{{ {push} }} return __c; }})()")
+
     def js_Call(self, n):
         args = ", ".join(self.js_expr(a) for a in n.args)
         return f"{self.js_expr(n.callee)}({args})"

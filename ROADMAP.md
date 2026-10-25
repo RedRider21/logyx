@@ -44,7 +44,7 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | **Operatori bit a bit** `& \| ^ << >> ~` | ✅ nei tre backend — su interi, precedenza come in C; il `\|` bit a bit non confligge con la lambda `\|x\|` né col tipo `T \| error` (posizioni diverse). `examples/native_bitwise.logyx` | — |
 | **Indicizzazione di stringhe** (`s[i]`) | ✅ nei tre backend — `s[i]` → carattere come stringa di 1. `examples/native_strindex.logyx`. (Tipo carattere/bytes a sé: ⏳) | — |
 | **Tipo `set`** (insieme, elementi unici) | ✅ nei tre backend — letterale `{a, b, …}` (distinto dalla mappa), `add`/`remove` per valore, `in`, `len`, `for` ordinato (`BTreeSet`). `examples/native_set.logyx` | — |
-| **List/dict comprehension** (`[x*2 for x in xs if …]`) | ⏳ — comodità; oggi si fa con `map`/`filter` | 5 |
+| **List comprehension** (`[x*2 for x in xs if …]`) | ✅ nei tre backend — `[espr for var in iterabile (if cond)?]` → lista; itera range/lista/set/chiavi-mappa in ordine deterministico; distinta dalla lista letterale dal `for` dopo il primo elemento. `examples/native_comprehension.logyx` | — |
 
 ## Piano 2 — Libreria standard (funzioni, a strati)
 
@@ -101,9 +101,9 @@ nucleo. Da decidere se e quando adottarli (dopo il nucleo e, in parte, dopo il s
 
 ## Ordine consigliato (le prossime tappe)
 
-1. **Completare il nucleo con gli elementi "da ogni linguaggio"** (Piano 1): variabili/costanti globali
-   ✅, operatore ternario ✅, `in` come operatore ✅, esponente `**` ✅, bitwise ✅, indicizzazione
-   stringhe ✅, libreria matematica ✅, tipo `set` ✅; resta → **comprehension**. Poi **self-hosting**.
+1. **Nucleo "da ogni linguaggio" (Piano 1): COMPLETO ✅** — variabili/costanti globali ✅, operatore
+   ternario ✅, `in` come operatore ✅, esponente `**` ✅, bitwise ✅, indicizzazione stringhe ✅,
+   libreria matematica ✅, tipo `set` ✅, comprehension ✅. Prossimo grande passo → **self-hosting**.
 2. **Libreria matematica** (Piano 2): `sin`/`cos`/`log`/`exp`, costanti.
 3. **Self-hosting** (orizzonte): lexer di Logyx scritto in Logyx + test a specchio contro
    `logyxc tokens`, poi parser → AST → backend, a fasi.

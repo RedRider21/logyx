@@ -980,16 +980,39 @@ impl Parser {
             }
             TokenKind::LBrack => {
                 self.advance();
-                let mut els = Vec::new();
-                if !self.is(&TokenKind::RBrack) {
-                    els.push(self.expression()?);
-                    while self.is(&TokenKind::Comma) {
+                if self.is(&TokenKind::RBrack) {
+                    self.advance();
+                    return Ok(Expr::List(Vec::new()));
+                }
+                let first = self.expression()?;
+                // list comprehension: `[espr for var in iterabile (if cond)?]`
+                if self.is(&TokenKind::For) {
+                    self.advance();
+                    let var = self.ident_name("variabile della comprehension")?;
+                    self.expect(&TokenKind::In, "in")?;
+                    let iterable = self.expression()?;
+                    let cond = if self.is(&TokenKind::If) {
                         self.advance();
-                        if self.is(&TokenKind::RBrack) {
-                            break;
-                        }
-                        els.push(self.expression()?);
+                        Some(Box::new(self.expression()?))
+                    } else {
+                        None
+                    };
+                    self.expect(&TokenKind::RBrack, "]")?;
+                    return Ok(Expr::Comprehension {
+                        expr: Box::new(first),
+                        var,
+                        iterable: Box::new(iterable),
+                        cond,
+                    });
+                }
+                // lista normale
+                let mut els = vec![first];
+                while self.is(&TokenKind::Comma) {
+                    self.advance();
+                    if self.is(&TokenKind::RBrack) {
+                        break;
                     }
+                    els.push(self.expression()?);
                 }
                 self.expect(&TokenKind::RBrack, "]")?;
                 Ok(Expr::List(els))
@@ -1332,6 +1355,17 @@ impl ClientCompiler {
             Expr::Set(els) => {
                 let a: Result<Vec<_>, _> = els.iter().map(|x| self.js_expr(x)).collect();
                 Ok(format!("new Set([{}])", a?.join(", ")))
+            }
+            Expr::Comprehension { expr, var, iterable, cond } => {
+                let it = self.js_expr(iterable)?;
+                let filt = match cond {
+                    Some(c) => format!(".filter(function({var}) {{ return {}; }})", self.js_expr(c)?),
+                    None => String::new(),
+                };
+                Ok(format!(
+                    "{it}{filt}.map(function({var}) {{ return {}; }})",
+                    self.js_expr(expr)?
+                ))
             }
             Expr::Ternary { cond, then, els } => Ok(format!(
                 "({} ? {} : {})",

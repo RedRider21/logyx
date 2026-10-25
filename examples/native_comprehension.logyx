@@ -1,0 +1,32 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// List comprehension: `[espr for var in iterabile (if cond)?]` → una lista.
+// Scorre `iterabile` (range, lista, set o chiavi di mappa, in ordine deterministico),
+// lega `var` a ogni elemento, valuta `espr` e la raccoglie; con `if cond` filtra.
+
+fn main() {
+    nums = [1, 2, 3, 4, 5]
+
+    // mappatura: raddoppia ogni elemento
+    doppi = [x * 2 for x in nums]
+    print("doppi:  quanti={len(doppi)} primo={doppi[0]} somma={sum(doppi)}")   // 5 2 30
+
+    // filtro: solo i pari
+    pari = [x for x in nums if x % 2 == 0]
+    print("pari:   quanti={len(pari)} primo={pari[0]} somma={sum(pari)}")      // 2 2 6
+
+    // mappatura + filtro su un range
+    quadrati = [i * i for i in range(1, 6)]
+    print("quadrati: somma={sum(quadrati)} ultimo={quadrati[4]}")              // 55 25
+
+    // la comprehension è una lista a tutti gli effetti: iterabile
+    tot = 0
+    for v in [x * x for x in nums if x > 2] { tot = tot + v }
+    print("tot = {tot}")                                                       // 9+16+25 = 50
+
+    // comprehension su un insieme (ordine deterministico)
+    s = {3, 1, 2}
+    triple = [x * 3 for x in s]
+    print("triple: primo={triple[0]} somma={sum(triple)}")                     // 3 18
+}

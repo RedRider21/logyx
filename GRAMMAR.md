@@ -168,6 +168,8 @@ condizionale := orExpr ("?" orExpr ":" espressione)?    // ternario: cond ? a : 
                 // livello confronto: include anche `item in collezione` (lista/mappa/stringa) -> bool
 orExpr       := ... (aritmetici, confronto, logici, "**" esponente, bit a bit "& | ^ << >> ~", "in", postfisso "?", lambda)
                 // letterali: lista [..] ; mappa {k: v} ; insieme {a, b, ..} (senza ':') ; {} = mappa vuota
+                // list comprehension: "[" espressione "for" IDENT "in" espressione ("if" espressione)? "]" -> lista
+                //   (il "for" dopo il primo elemento distingue la comprehension dalla lista letterale)
                 // precedenza bit a bit come in C: ~ ; << >> ; & ; ^ ; | (sotto l'uguaglianza)
                 // e? propaga l'errore (postfisso): è ternario solo se "?" è seguito da un valore
                 // Nota: niente ";" — gli statement sono delimitati dalla struttura (a-capo liberi)

@@ -224,6 +224,7 @@ fn stringish(e: &Expr) -> bool {
 fn value_kind(e: &Expr) -> Option<&'static str> {
     match e {
         Expr::List(_) => Some("list"),
+        Expr::Comprehension { .. } => Some("list"),
         Expr::Map(_) => Some("map"),
         Expr::Set(_) => Some("set"),
         _ => None,
@@ -683,6 +684,11 @@ impl Codegen {
                 self.expr_has_try(cond) || self.expr_has_try(then) || self.expr_has_try(els)
             }
             Expr::In { item, coll } => self.expr_has_try(item) || self.expr_has_try(coll),
+            Expr::Comprehension { expr, iterable, cond, .. } => {
+                self.expr_has_try(expr)
+                    || self.expr_has_try(iterable)
+                    || cond.as_deref().map_or(false, |c| self.expr_has_try(c))
+            }
             _ => false,
         }
     }
@@ -1120,6 +1126,13 @@ impl Codegen {
             Expr::In { item, coll } => {
                 self.scan_expr(item, pt, ev);
                 self.scan_expr(coll, pt, ev);
+            }
+            Expr::Comprehension { expr, iterable, cond, .. } => {
+                self.scan_expr(iterable, pt, ev);
+                self.scan_expr(expr, pt, ev);
+                if let Some(c) = cond {
+                    self.scan_expr(c, pt, ev);
+                }
             }
             Expr::Tuple(xs) => {
                 for x in xs {
@@ -1962,6 +1975,38 @@ impl Codegen {
         Ok(format!("{pad}for {pat} in ({it}).iter().cloned(){en} {{\n{pre}{b}\n{pad}}}"))
     }
 
+    /// Sorgente di iterazione Rust + tipo dell'elemento per una comprehension
+    /// (stessa logica del `for`: range, chiavi ordinate di mappa, lista/set).
+    fn comp_iter(&mut self, iterable: &Expr) -> R<(String, Option<String>)> {
+        if let Expr::Call { callee, args } = iterable {
+            if let Expr::Ident(name) = &**callee {
+                if name == "range" && (args.len() == 1 || args.len() == 2) {
+                    let (lo, hi) = if args.len() == 1 {
+                        ("0i64".to_string(), self.expr(&args[0])?)
+                    } else {
+                        (self.expr(&args[0])?, self.expr(&args[1])?)
+                    };
+                    return Ok((format!("({lo})..({hi})"), Some("int".to_string())));
+                }
+            }
+        }
+        if let Expr::Ident(n) = iterable {
+            if self.kinds.get(n).map(|s| s.as_str()) == Some("map") {
+                let elem = self.map_val.get(n).map(|(k, _)| k.clone());
+                return Ok((
+                    format!("{{ let mut __k: Vec<_> = ({n}).keys().cloned().collect(); __k.sort(); __k }}.into_iter()"),
+                    elem,
+                ));
+            }
+        }
+        let elem = match iterable {
+            Expr::Ident(n) => self.list_elem.get(n).cloned(),
+            Expr::List(els) | Expr::Set(els) => els.first().and_then(|e| self.json_type_of(e)),
+            _ => None,
+        };
+        Ok((format!("({}).iter().cloned()", self.expr(iterable)?), elem))
+    }
+
     /// Genera un blocco con la variabile di ciclo `var` tipizzata a `ty` (se noto),
     /// ripristinando l'ambiente dei tipi dopo.
     fn block_typed_var(
@@ -2250,6 +2295,16 @@ impl Codegen {
                     }
                 }
             }
+            // comprehension `[espr for var in it …]` → lista; tipo elemento = tipo di `espr`
+            Expr::Comprehension { expr, var, iterable, .. } => {
+                if let Ok((_, Some(elem))) = self.comp_iter(iterable) {
+                    let mut ct = self.cur_types.clone();
+                    ct.insert(var.clone(), Some(elem));
+                    if let Some(t) = self.type_of(expr, &ct) {
+                        self.list_elem.insert(name.to_string(), t);
+                    }
+                }
+            }
             _ => {}
         }
     }
@@ -2463,6 +2518,34 @@ impl Codegen {
                 }
                 Ok(format!(
                     "{{ let mut {name} = std::collections::BTreeSet::new(); {inserts}{name} }}"
+                ))
+            }
+            Expr::Comprehension { expr, var, iterable, cond } => {
+                let (iter_rust, elem_ty) = self.comp_iter(iterable)?;
+                let prev = self.cur_types.get(var).cloned();
+                if let Some(t) = elem_ty {
+                    self.cur_types.insert(var.clone(), Some(t));
+                }
+                let body = self.expr(expr)?;
+                let cond_rust = match cond {
+                    Some(c) => Some(self.expr(c)?),
+                    None => None,
+                };
+                match prev {
+                    Some(p) => {
+                        self.cur_types.insert(var.clone(), p);
+                    }
+                    None => {
+                        self.cur_types.remove(var);
+                    }
+                }
+                let push = match cond_rust {
+                    Some(c) => format!("if {} {{ __comp.push({}); }}", c, body),
+                    None => format!("__comp.push({});", body),
+                };
+                Ok(format!(
+                    "{{ let mut __comp = Vec::new(); for {} in {} {{ {} }} __comp }}",
+                    var, iter_rust, push
                 ))
             }
             Expr::Ternary { cond, then, els } => Ok(format!(

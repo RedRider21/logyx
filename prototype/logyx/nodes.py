@@ -71,6 +71,14 @@ class SetLit:
 
 
 @dataclass
+class Comprehension:
+    expr: Any
+    var: str
+    iterable: Any
+    cond: Any = None
+
+
+@dataclass
 class TupleLit:
     elements: List[Any]
 

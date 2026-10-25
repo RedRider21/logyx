@@ -739,6 +739,20 @@ class Interpreter:
     def ex_SetLit(self, n, env):
         return set(self.eval(e, env) for e in n.elements)
 
+    def ex_Comprehension(self, n, env):
+        iterable = self.eval(n.iterable, env)
+        if isinstance(iterable, dict):
+            iterable = sorted(iterable.keys())  # chiavi ordinate (deterministico, come nel nativo)
+        elif isinstance(iterable, set):
+            iterable = sorted(iterable)         # insieme ordinato (come BTreeSet nel nativo)
+        out = []
+        for value in iterable:
+            child = Environment(env)
+            child.define(n.var, value)
+            if n.cond is None or truthy(self.eval(n.cond, child)):
+                out.append(self.eval(n.expr, child))
+        return out
+
     def ex_Unary(self, n, env):
         v = self.eval(n.operand, env)
         if n.op == "not":

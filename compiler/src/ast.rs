@@ -65,6 +65,13 @@ pub enum Expr {
     Map(Vec<(Expr, Expr)>),
     /// Insieme `{a, b, …}` (elementi unici, senza `:`).
     Set(Vec<Expr>),
+    /// List comprehension: `[espr for var in iterabile (if cond)?]` → lista.
+    Comprehension {
+        expr: Box<Expr>,
+        var: String,
+        iterable: Box<Expr>,
+        cond: Option<Box<Expr>>,
+    },
     /// Tupla `(a, b, …)` (almeno 2 elementi).
     Tuple(Vec<Expr>),
     /// Espressione condizionale: `then if cond else els`.

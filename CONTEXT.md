@@ -67,11 +67,11 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 > accessor in `expr` solo se il nome non è un locale/param in scope (guardia via `cur_types`); errore su
 > riassegnazione di `const`; v0 esclude globali di tipo collezione/tupla. Esempio `native_globals`.
 >
-> **Prossimo (analisi di copertura, in ordine):** **operatore
-> ternario** (`cond ? a : b`) → **`in` come operatore** (`x in lista`) → esponente (`**`) → bitwise
-> (`& | ^ << >> ~`) → indicizzazione stringhe/char (`s[i]`) → tipo **`set`** → comprehension → libreria
-> **matematica** (`sin`/`cos`/`log`/`exp`). **Scelte di design (non buchi):** OOP/metodi, generici,
-> concorrenza, argomenti con nome, spread. Tutto dettagliato in `ROADMAP.md` (Piano 1/2 + sezione
+> **Nucleo "da ogni linguaggio" COMPLETO (2026-10-20):** operatore ternario (`cond ? a : b`) ✅ · `in`
+> come operatore (`x in lista`) ✅ · esponente (`**`) ✅ · bitwise (`& | ^ << >> ~`) ✅ · indicizzazione
+> stringhe/char (`s[i]`) ✅ · tipo **`set`** ✅ · libreria **matematica** (`sin`/`cos`/`log`/`exp`) ✅ ·
+> **list comprehension** ✅. **Scelte di design (non buchi):** OOP/metodi, generici, concorrenza,
+> argomenti con nome, spread. Tutto dettagliato in `ROADMAP.md` (Piano 1/2 + sezione
 > "Scelte di design da valutare").
 >
 > **Prossimo fronte grosso concordato:** self-hosting — prima pietra = lexer di Logyx scritto in Logyx
@@ -79,15 +79,25 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **70/70**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **71/71**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**List comprehension FATTA (2026-10-20):** `[espr for var in iterabile (if cond)?]` → lista, nei tre
+backend. Parser: dopo `[` si legge la prima espressione; se segue `for` è comprehension (`var in iter`,
+`if cond` opzionale), altrimenti lista letterale. Nodo `Expr::Comprehension`/`N.Comprehension`. Codegen:
+blocco `{ let mut __comp = Vec::new(); for var in <iter> { [if cond] __comp.push(expr); } __comp }`;
+helper `comp_iter`/`_comp_iter` deduce l'iterabile Rust e il tipo elemento (range→`(lo)..(hi)`;
+mappa→chiavi ordinate; lista/set→`.iter().cloned()`). `_value_kind`="list", `_track_list_elem`/`type_of`
+deducono `list<elem>`. Interprete: `ex_Comprehension` (dict/set iterati con `sorted` → deterministico).
+Client JS: IIFE con `for...of`. Esempio `native_comprehension`. **Nucleo completo → prossimo:
+self-hosting.**
 
 **Tipo `set` FATTO (2026-10-20):** letterale `{a, b, …}` (disambiguato dalla mappa nel parser: dopo `{`,
 se il primo elemento è seguito da `:` è mappa, altrimenti set; `{}` = mappa vuota). Nativo `BTreeSet`
 (iterazione ordinata → deterministica, come le chiavi di mappa; interprete: `set` Python iterato con
 `sorted`). Nodo `Expr::Set`/`N.SetLit`; `kinds="set"`, elemento in `list_elem`. Operazioni: `add(s,x)`
 (insert), `remove(s,x)` per valore (remove rileva set vs lista), `x in s` (`.contains`), `len`, `for`
-ordinato. Esempio `native_set`. **Resta del nucleo: comprehension; poi self-hosting.**
+ordinato. Esempio `native_set`. **(Nucleo poi completato con la list comprehension — vedi sopra.)**
 
 > ⚠️ **GIT: NON fare `git push` né aggiornare le Pages** finché l'utente non lo dice (è in ufficio, il
 > push è inibito). Si committa **solo in locale**; il push del repo e delle Pages lo faremo da casa.

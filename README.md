@@ -60,9 +60,12 @@ priorità sono in `ROADMAP.md`.
   **lambda/closure** e valori funzione (passabili, ritornabili, assegnabili a variabile).
 - **Tipi dati**: **record**, **enum** (con payload e `match` con binding), **tuple** con ritorni multipli
   e destructuring (`a, b = f()`), liste e mappe (anche come parametro/ritorno di funzione).
+- **Collezioni ed espressioni**: liste, mappe, **insiemi** (`{a, b}`), **list comprehension**
+  (`[x*2 for x in xs if x > 1]`), ternario `c ? a : b`, `x in coll`, esponente `**`, bit a bit
+  (`& | ^ << >> ~`), `s[i]` su stringhe, **variabili/costanti globali**.
 - **Errori** come valori (Result): `fail`, `?`, `match { ok v { } err e { } }`.
 - **Moduli**: `import "file.logyx"` (dedup e cicli gestiti).
-- **Libreria builtin**: numeri (`abs`/`min`/`max`/`pow`/`floor`/`ceil`/`round`/`sqrt`/`random`), stringhe
+- **Libreria builtin**: numeri (`abs`/`min`/`max`/`pow`/`floor`/`ceil`/`round`/`sqrt`/`random`, `sin`/`cos`/`tan`/`log`/`exp`, `pi()`/`e()`), stringhe
   (`upper`/`lower`/`trim`/`split`/`join`/`replace`/`matches` regex…), liste (`push`/`remove`/`sort`/`sum`/
   `slice`/`map`/`filter`/`reduce`), mappe (`has`/`keys`/`values`), **JSON** (`to_json`/`from_json`),
   **date** (`now`/`format_date`), **I/O file**, **stdin/ambiente/CLI**, **processi esterni** (`run`).

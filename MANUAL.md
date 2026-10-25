@@ -399,6 +399,19 @@ print(2 in s)        // true
 print(len(s))        // 4
 ```
 
+**List comprehension**: `[espr for var in iterabile (if cond)?]` costruisce una **lista** scorrendo
+`iterabile` (un `range`, una lista, un insieme o le chiavi di una mappa — in ordine deterministico),
+legando `var` a ogni elemento e raccogliendo il valore di `espr`; con `if cond` filtra. È distinta dalla
+lista letterale `[a, b, …]` dalla parola `for` subito dopo il primo elemento. Il risultato è una lista a
+tutti gli effetti (iterabile, indicizzabile, `len`, `sum`, …).
+
+```
+nums = [1, 2, 3, 4, 5]
+doppi    = [x * 2 for x in nums]              // [2, 4, 6, 8, 10]
+pari     = [x for x in nums if x % 2 == 0]    // [2, 4]
+quadrati = [i * i for i in range(1, 6)]       // [1, 4, 9, 16, 25]
+```
+
 ## 8. Stringhe e interpolazione ✅
 
 ```
@@ -819,7 +832,9 @@ fn main() {
 
 - Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); globali di tipo collezione/tupla;
   accesso a tupla per posizione (`t.0`).
-- Operatore ternario, `in` come operatore, esponente `**`, bitwise, tipo `set`, comprehension (vedi
-  `ROADMAP.md`, "analisi di copertura").
+- Nucleo "da ogni linguaggio" **completo**: operatore ternario, `in` come operatore, esponente `**`,
+  bitwise, tipo `set`, comprehension sono tutti implementati nei tre backend (vedi `ROADMAP.md`).
+- Dict/set comprehension (oggi c'è la **list** comprehension); OOP classica, generici, concorrenza
+  (scelte di design, vedi `ROADMAP.md`).
 - Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; eventi DOM dal WASM (oggi gli handler si
   invocano dai pulsanti della pagina generata); self-hosting del compilatore.
