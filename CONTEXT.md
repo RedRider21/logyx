@@ -99,8 +99,8 @@ se il primo elemento è seguito da `:` è mappa, altrimenti set; `{}` = mappa vu
 (insert), `remove(s,x)` per valore (remove rileva set vs lista), `x in s` (`.contains`), `len`, `for`
 ordinato. Esempio `native_set`. **(Nucleo poi completato con la list comprehension — vedi sopra.)**
 
-> ⚠️ **GIT: NON fare `git push` né aggiornare le Pages** finché l'utente non lo dice (è in ufficio, il
-> push è inibito). Si committa **solo in locale**; il push del repo e delle Pages lo faremo da casa.
+> **GIT:** push su GitHub (repo + Pages) di nuovo **consentito** dal 2026-10-25, fino a nuovo ordine
+> (era sospeso dal 2026-10-20 perché l'utente era in ufficio). Flusso: commit a ogni passo + `git push`.
 
 **Libreria matematica FATTA (2026-10-20):** builtin float `sin`/`cos`/`tan`, `log` (ln)/`log10`, `exp`,
 costanti `pi()`/`e()` (zero-arg). Nativo: metodi `f64` della std (`.sin()`, `.ln()`, `std::f64::consts::PI`
