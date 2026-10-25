@@ -1,0 +1,26 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Stringhe con caratteri non ASCII (accenti, simboli): `len`, `s[i]`, `substring`
+// e `index_of` lavorano sui CARATTERI, non sui byte UTF-8, in tutti i backend.
+
+fn main() {
+    s = "perché è così"
+    print(len(s))                       // 13
+    print(s[5])                         // é
+    print(substring(s, 7, 13))          // è così
+    print(index_of(s, "così"))          // 9
+    print(index_of(s, "zzz"))           // -1
+
+    // scorrere i caratteri uno a uno
+    vocali = 0
+    i = 0
+    while i < len(s) {
+        c = s[i]
+        if c == "a" or c == "e" or c == "i" or c == "o" or c == "u" or c == "é" or c == "è" or c == "ì" {
+            vocali = vocali + 1
+        }
+        i = i + 1
+    }
+    print("vocali: {vocali}")           // 5
+}

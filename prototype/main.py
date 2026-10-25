@@ -105,6 +105,8 @@ def cmd_build(path):
         print(rust)
         if shutil.which("rustc"):
             binp = base + "_bin"
+            if not os.path.dirname(binp):
+                binp = "./" + binp  # senza cartella verrebbe cercato nel PATH
             comp = subprocess.run(["rustc", "-O", out_rs, "-o", binp], capture_output=True, text=True)
             if comp.returncode != 0:
                 print("rustc ha segnalato errori:\n" + comp.stderr, file=sys.stderr)

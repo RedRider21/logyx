@@ -79,8 +79,18 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
-(ora **71/71**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
+(ora **73/73**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**Preparazione al self-hosting FATTA (2026-10-25)** — emersa scrivendo il lexer in Logyx:
+- **Collezioni vuote tipizzate** `xs: [T] = []` / `m: {K: V} = {}` nei backend tipizzati (l'annotazione
+  del `Decl` vince sempre sull'inferenza → `Vec::new()`/`HashMap::new()`). Esempio `native_emptytyped`.
+- **Stringhe in caratteri**: nel nativo `len` (stringa) = `.chars().count()`, `substring` = `chars().skip/take`,
+  `index_of` = indice in caratteri (prima byte → divergenza/panico con accenti). Esempio `native_utf8`.
+- `build` con file senza cartella (`logyxc build x.logyx`) lanciava `x_bin` cercandolo nel PATH → ora `./x_bin`.
+- **Suite a TRE vie**: `conformance.sh` confronta anche l'interprete (eccezione dichiarata `NATIVE_ONLY`:
+  `native_extern`) e un output **vuoto** conta come fallimento. Ha scoperto che `native_globals` falliva in
+  entrambi i backend tipizzati (prima "conforme" perché vuoto = vuoto): mancava l'annotazione `APP: string`.
 
 **List comprehension FATTA (2026-10-20):** `[espr for var in iterabile (if cond)?]` → lista, nei tre
 backend. Parser: dopo `[` si legge la prima espressione; se segue `for` è comprehension (`var in iter`,

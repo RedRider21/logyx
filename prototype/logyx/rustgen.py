@@ -642,7 +642,8 @@ class RustTranspiler:
             t = type(s).__name__
             if t == "Decl":
                 dt = getattr(s, "decl_type", None)
-                if _parse_fn_type(dt) is not None:
+                # un tipo annotato vince sempre sull'inferenza (lambda, lista/mappa vuota…)
+                if dt:
                     types[s.name] = dt
                 else:
                     vt = self._type_of(s.value, types)
@@ -962,6 +963,26 @@ class RustTranspiler:
             if type(s.value).__name__ == "Lambda" and _parse_fn_type(dt) is not None:
                 self.cur_types[s.name] = dt
                 return pad + f"{kw} {s.name} = {self._fn_value_arg(s.value, dt)};"
+            # collezione con tipo annotato (xs: [T] = [], m: {K: V} = {}): il tipo viene
+            # dall'annotazione, così anche la collezione VUOTA è ammessa
+            if dt:
+                vn = type(s.value).__name__
+                empty = ((vn == "ListLit" and not s.value.elements)
+                         or (vn == "MapLit" and not s.value.pairs))
+                inner, kv = _list_inner(dt), _map_inner(dt)
+                if inner is not None:
+                    self.kinds[s.name] = "list"
+                    self.list_elem[s.name] = inner
+                    self.cur_types[s.name] = dt
+                    if empty:
+                        return pad + f"let mut {s.name}: {self.ty(dt)} = Vec::new();"
+                elif kv is not None:
+                    self.kinds[s.name] = "map"
+                    self.map_val[s.name] = kv
+                    self.cur_types[s.name] = dt
+                    if empty:
+                        return pad + (f"let mut {s.name}: {self.ty(dt)} = "
+                                      "std::collections::HashMap::new();")
             k = self._value_kind(s.value)
             if k:
                 self.kinds[s.name] = k
@@ -1489,6 +1510,9 @@ class RustTranspiler:
                 if nm == "len":
                     if len(e.args) != 1:
                         raise LogyxError("len accetta un solo argomento")
+                    # stringa → numero di CARATTERI (come s[i] e l'interprete), non di byte
+                    if self._type_of(e.args[0], self.cur_types) == "string":
+                        return f"(({self.expr(e.args[0])}).chars().count() as i64)"
                     return f"(({self.expr(e.args[0])}).len() as i64)"
                 if nm == "str":
                     if len(e.args) != 1:
@@ -1622,8 +1646,10 @@ class RustTranspiler:
                 if nm == "index_of":
                     if len(e.args) != 2:
                         raise LogyxError("index_of accetta due argomenti: index_of(stringa, sottostringa)")
-                    return (f"({self.expr(e.args[0])}).find(({self.expr(e.args[1])}).as_str())"
-                            ".map(|i| i as i64).unwrap_or(-1i64)")
+                    # indice in CARATTERI (non byte): coerente con s[i]/substring
+                    return (f"{{ let __s = &({self.expr(e.args[0])}); "
+                            f"__s.find(({self.expr(e.args[1])}).as_str())"
+                            ".map(|i| __s[..i].chars().count() as i64).unwrap_or(-1i64) }")
                 if nm == "matches":
                     if len(e.args) != 2:
                         raise LogyxError("matches accetta due argomenti: matches(stringa, pattern)")
@@ -1633,8 +1659,10 @@ class RustTranspiler:
                 if nm == "substring":
                     if len(e.args) != 3:
                         raise LogyxError("substring accetta tre argomenti: substring(stringa, inizio, fine)")
-                    return (f"({self.expr(e.args[0])})[({self.expr(e.args[1])}) as usize.."
-                            f"({self.expr(e.args[2])}) as usize].to_string()")
+                    # indici in CARATTERI (non byte): niente panico su testo UTF-8
+                    return (f"{{ let (__a, __b) = (({self.expr(e.args[1])}) as usize, "
+                            f"({self.expr(e.args[2])}) as usize); ({self.expr(e.args[0])}).chars()"
+                            ".skip(__a).take(__b.saturating_sub(__a)).collect::<String>() }")
                 if nm == "split":
                     if len(e.args) != 2:
                         raise LogyxError("split accetta due argomenti: split(stringa, separatore)")

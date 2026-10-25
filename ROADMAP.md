@@ -44,6 +44,8 @@ Senza questi non si possono nemmeno *scrivere* le librerie: hanno la priorità p
 | **Operatori bit a bit** `& \| ^ << >> ~` | ✅ nei tre backend — su interi, precedenza come in C; il `\|` bit a bit non confligge con la lambda `\|x\|` né col tipo `T \| error` (posizioni diverse). `examples/native_bitwise.logyx` | — |
 | **Indicizzazione di stringhe** (`s[i]`) | ✅ nei tre backend — `s[i]` → carattere come stringa di 1. `examples/native_strindex.logyx`. (Tipo carattere/bytes a sé: ⏳) | — |
 | **Tipo `set`** (insieme, elementi unici) | ✅ nei tre backend — letterale `{a, b, …}` (distinto dalla mappa), `add`/`remove` per valore, `in`, `len`, `for` ordinato (`BTreeSet`). `examples/native_set.logyx` | — |
+| **Collezioni vuote tipizzate** (`xs: [T] = []`, `m: {K: V} = {}`) | ✅ nei tre backend — l'annotazione dà il tipo che i backend tipizzati non possono dedurre. `examples/native_emptytyped.logyx` | — |
+| **Stringhe in caratteri** (`len`/`s[i]`/`substring`/`index_of` su UTF-8) | ✅ nei tre backend — indici e lunghezze in caratteri, non byte (prima il nativo divergeva su accenti). `examples/native_utf8.logyx` | — |
 | **List comprehension** (`[x*2 for x in xs if …]`) | ✅ nei tre backend — `[espr for var in iterabile (if cond)?]` → lista; itera range/lista/set/chiavi-mappa in ordine deterministico; distinta dalla lista letterale dal `for` dopo il primo elemento. `examples/native_comprehension.logyx` | — |
 
 ## Piano 2 — Libreria standard (funzioni, a strati)

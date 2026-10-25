@@ -2,8 +2,9 @@
 # Copyright (C) 2026 Daniele Deplano (RedRider21)
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-# Suite di conformità: verifica che il compilatore Rust (logyxc) e il prototipo
-# Python producano lo STESSO output d'esecuzione su tutti gli esempi nativi.
+# Suite di conformità: verifica che i TRE backend — compilatore Rust (logyxc), transpiler
+# Python→Rust e interprete Python — producano lo STESSO output (non vuoto) su tutti gli
+# esempi nativi.
 # Esce con 0 se tutto conforme, 1 se qualcosa diverge, 2 in caso di errore di setup.
 set -u
 
@@ -13,7 +14,10 @@ EXAMPLES="$ROOT/examples"
 LOGYXC="$ROOT/compiler/target/release/logyxc"
 
 # Esempi supportati dal compilatore nativo (niente costrutti web).
-CASES="native_fib native_hello native_range native_infer native_list native_map native_push native_math native_mathlib native_power native_bitwise native_text native_remove native_contains native_trim native_pow native_breakcont native_compound native_ternary native_inop native_comprehension native_forindex native_globals native_listops native_round native_slice native_has native_set native_sqrt native_strops native_strindex native_strlist native_splitjoin native_replace native_regex native_mapfilter native_reduce native_record native_collparams native_json native_matchval native_crate native_strcheck native_fromjson native_extern native_date native_recordlist native_localret native_webstr native_mapkeys native_formap native_enum native_enumpayload native_tuple native_lambda native_funval native_closure native_lambdavar native_defaults native_varargs native_indexset native_convert native_fileio native_proc use_import errori"
+CASES="native_fib native_hello native_range native_infer native_list native_map native_push native_math native_mathlib native_power native_bitwise native_text native_remove native_contains native_trim native_pow native_breakcont native_compound native_ternary native_inop native_comprehension native_emptytyped native_utf8 native_forindex native_globals native_listops native_round native_slice native_has native_set native_sqrt native_strops native_strindex native_strlist native_splitjoin native_replace native_regex native_mapfilter native_reduce native_record native_collparams native_json native_matchval native_crate native_strcheck native_fromjson native_extern native_date native_recordlist native_localret native_webstr native_mapkeys native_formap native_enum native_enumpayload native_tuple native_lambda native_funval native_closure native_lambdavar native_defaults native_varargs native_indexset native_convert native_fileio native_proc use_import errori"
+
+# Casi che girano SOLO nei backend tipizzati (es. `extern rust`): esclusi dal confronto con l'interprete.
+NATIVE_ONLY=" native_extern "
 
 echo "== build del compilatore Rust (release) =="
 ( cd "$ROOT/compiler" && cargo build --release ) >/dev/null 2>&1 \
@@ -27,14 +31,20 @@ for c in $CASES; do
     f="$EXAMPLES/$c.logyx"
     py=$( cd "$PROTO" && python3 main.py build "$f" 2>/dev/null | exec_output )
     rs=$( "$LOGYXC" build "$f" 2>/dev/null | exec_output )
-    if [ "$py" = "$rs" ]; then
+    # terzo backend: l'interprete (salvo i casi solo-nativi)
+    case "$NATIVE_ONLY" in
+        *" $c "*) it="$rs" ;;
+        *) it=$( cd "$PROTO" && python3 main.py "$f" 2>&1 </dev/null ) ;;
+    esac
+    if [ -n "$py" ] && [ "$py" = "$rs" ] && [ "$it" = "$rs" ]; then
         echo "  OK    $c"
         pass=$((pass + 1))
     else
         echo "  DIFF  $c"
         fail=$((fail + 1)); failed="$failed $c"
-        echo "    --- prototipo (python) ---"; echo "$py" | sed 's/^/    /'
+        echo "    --- transpiler (python) ---"; echo "$py" | sed 's/^/    /'
         echo "    --- compilatore (rust)  ---"; echo "$rs" | sed 's/^/    /'
+        echo "    --- interprete          ---"; echo "$it" | sed 's/^/    /'
     fi
 done
 

@@ -78,8 +78,8 @@ priorità sono in `ROADMAP.md`.
   `wasm-bindgen`) e permette di manipolare il **DOM dal codice Logyx** (`dom_get`/`dom_set`/`dom_log`).
 - **Librerie esterne**: `use rust` / `extern rust` per agganciare qualunque crate di crates.io.
 
-Non ancora (vedi `ROADMAP.md`): **variabili/costanti globali a primo livello** nel backend tipizzato
-(oggi solo nell'interprete), lista/mappa vuota senza elementi, accesso a tupla per posizione (`t.0`),
+Non ancora (vedi `ROADMAP.md`): globali di tipo collezione/tupla, lista/mappa vuota **senza annotazione**
+nel backend tipizzato (con `xs: [int] = []` funziona), accesso a tupla per posizione (`t.0`),
 database oltre SQLite, e il **self-hosting** del compilatore. Il punto di ripresa è in `CONTEXT.md`.
 
 ## Librerie esterne
@@ -122,7 +122,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | `design/` | Mini-design dei fronti grossi (collezioni, record, JSON, crate, web→WASM…) |
 | `prototype/` | Interprete/transpiler in Python (lexer, parser, interprete, rustgen) |
 | `compiler/` | Il compilatore vero in Rust (`logyxc`): lexer, parser, inferenza, backend |
-| `tests/` | Suite di conformità (`conformance.sh`): prototipo e compilatore danno lo stesso output |
+| `tests/` | Suite di conformità (`conformance.sh`): i tre backend (interprete, transpiler, compilatore) danno lo stesso output |
 | `examples/` | Programmi di esempio `.logyx` |
 | `docs/` | Sito (GitHub Pages) e documenti esportati (es. il documento di design in `.md`/`.pdf`); git li versiona col resto, così restano con te quando cloni il progetto |
 | `LICENSE` | Testo completo della licenza AGPL-3.0 |

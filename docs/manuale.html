@@ -507,8 +507,13 @@ for k in m { ... }     // itera le chiavi della mappa, ordinate
 <code>map</code>/<code>filter</code>/<code>reduce</code> (con una funzione nominata <strong>o</strong> una lambda inline). Le chiavi di mappa si
 iterano <strong>ordinate</strong> (<code>for k in m</code>, <code>keys(m)</code>): l'ordine è deterministico, quindi prototipo e compilatore
 nativo danno lo stesso risultato. Porzioni di lista con <code>slice(lista, a, b)</code>. Liste e mappe si passano
-alle funzioni e si restituiscono (anche nel compilatore nativo). Unico limite: la lista/mappa <strong>vuota</strong>
-senza elementi, da cui il backend non deduce il tipo.</p>
+alle funzioni e si restituiscono (anche nel compilatore nativo). Una lista/mappa <strong>vuota</strong> si dichiara col
+suo tipo, così i backend tipizzati sanno cosa conterrà:</p>
+<pre><code>nums: [int] = []               // lista vuota di interi
+conta: {string: int} = {}      // mappa vuota stringa → intero
+push(nums, 10)
+conta[&quot;a&quot;] = 1
+</code></pre>
 <p><strong>Insiemi (<code>set</code>)</strong>: collezione di <strong>elementi unici</strong>, letterale <code>{a, b, …}</code> (senza <code>:</code>, così si distingue
 dalla mappa <code>{k: v}</code>; <code>{}</code> resta la mappa vuota). I duplicati nel letterale vengono fusi. Operazioni:
 <code>add(s, x)</code> aggiunge, <code>remove(s, x)</code> toglie <strong>per valore</strong>, <code>x in s</code> appartenenza, <code>len(s)</code> cardinalità,
@@ -1094,8 +1099,10 @@ JavaScript) resta previsto. ⏳</p>
   <code>fn chiavi(m: {string: int}) -&gt; [string]</code>. Vedi <code>examples/native_collparams.logyx</code>.</li>
 <li><strong>Variabili e costanti globali</strong> a primo livello: supportate (vedi §4). v0: non ancora globali di tipo
   collezione/tupla.</li>
-<li>Non ancora nel backend tipizzato: lista/mappa <strong>vuota</strong> senza elementi (tipo non deducibile),
-  codice dinamico senza tipi. In quei casi dà un errore chiaro.</li>
+<li>Lista/mappa <strong>vuota</strong>: nel backend tipizzato va annotata (<code>xs: [int] = []</code>), altrimenti il tipo non è
+  deducibile; codice dinamico senza tipi non è supportato. In quei casi dà un errore chiaro.</li>
+<li>Le stringhe si misurano e si indicizzano in <strong>caratteri</strong> (<code>len</code>, <code>s[i]</code>, <code>substring</code>, <code>index_of</code>),
+  non in byte UTF-8: accenti e simboli danno lo stesso risultato in tutti i backend.</li>
 </ul>
 <pre><code>fn fib(n) {                       // nessuna annotazione
     if n &lt; 2 { return n }
@@ -1148,7 +1155,7 @@ fn main() {
 </ul>
 <h2 id="14-cosa-non-ce-ancora">14. Cosa non c'è ancora ⏳</h2>
 <ul>
-<li>Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); globali di tipo collezione/tupla;
+<li>Lista/mappa vuota <strong>senza annotazione di tipo</strong> nel backend tipizzato; globali di tipo collezione/tupla;
   accesso a tupla per posizione (<code>t.0</code>).</li>
 <li>Nucleo "da ogni linguaggio" <strong>completo</strong>: operatore ternario, <code>in</code> come operatore, esponente <code>**</code>,
   bitwise, tipo <code>set</code>, comprehension sono tutti implementati nei tre backend (vedi <code>ROADMAP.md</code>).</li>

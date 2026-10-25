@@ -19,7 +19,7 @@ fn con_iva(prezzo) {
 }
 
 // il parametro APP oscura la costante globale APP
-fn eco(APP) {
+fn eco(APP: string) {
     return APP
 }
 

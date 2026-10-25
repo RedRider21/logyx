@@ -441,7 +441,7 @@ fn run_render(path: &str, route_path: &str) -> Result<(), error::LogyxError> {
     }
     let out_rs = change_ext(path, "rs");
     std::fs::write(&out_rs, &rust).map_err(|e| error::LogyxError::new(format!("{out_rs}: {e}")))?;
-    let bin = strip_ext(path) + "_bin";
+    let bin = local_exe(strip_ext(path) + "_bin");
     let comp = std::process::Command::new("rustc")
         .args(["-O", &out_rs, "-o", &bin])
         .output()
@@ -473,7 +473,7 @@ fn build_rustc(path: &str, rust: &str, harden: bool) -> Result<(), error::LogyxE
         println!("Per compilare:  rustc -O {out_rs} -o app && ./app");
         return Ok(());
     }
-    let bin = strip_ext(path) + "_bin";
+    let bin = local_exe(strip_ext(path) + "_bin");
     let mut rustc_args: Vec<&str> = vec!["-O", &out_rs, "-o", &bin];
     if harden {
         // hardening: niente unwinding sfruttabile, controlli overflow, simboli rimossi
@@ -651,6 +651,16 @@ fn strip_ext(path: &str) -> String {
     match path.rfind('.') {
         Some(i) => path[..i].to_string(),
         None => path.to_string(),
+    }
+}
+
+/// Percorso eseguibile di un binario generato: senza cartella (`file_bin`) verrebbe
+/// cercato nel PATH, quindi si antepone `./`.
+fn local_exe(p: String) -> String {
+    if p.contains('/') {
+        p
+    } else {
+        format!("./{p}")
     }
 }
 

@@ -383,8 +383,15 @@ Mutazioni: `push(lista, x)` aggiunge `x` in coda, `remove(lista, i)` toglie l'el
 `map`/`filter`/`reduce` (con una funzione nominata **o** una lambda inline). Le chiavi di mappa si
 iterano **ordinate** (`for k in m`, `keys(m)`): l'ordine è deterministico, quindi prototipo e compilatore
 nativo danno lo stesso risultato. Porzioni di lista con `slice(lista, a, b)`. Liste e mappe si passano
-alle funzioni e si restituiscono (anche nel compilatore nativo). Unico limite: la lista/mappa **vuota**
-senza elementi, da cui il backend non deduce il tipo.
+alle funzioni e si restituiscono (anche nel compilatore nativo). Una lista/mappa **vuota** si dichiara col
+suo tipo, così i backend tipizzati sanno cosa conterrà:
+
+```
+nums: [int] = []               // lista vuota di interi
+conta: {string: int} = {}      // mappa vuota stringa → intero
+push(nums, 10)
+conta["a"] = 1
+```
 
 **Insiemi (`set`)**: collezione di **elementi unici**, letterale `{a, b, …}` (senza `:`, così si distingue
 dalla mappa `{k: v}`; `{}` resta la mappa vuota). I duplicati nel letterale vengono fusi. Operazioni:
@@ -787,8 +794,10 @@ JavaScript) resta previsto. ⏳
   `fn chiavi(m: {string: int}) -> [string]`. Vedi `examples/native_collparams.logyx`.
 - **Variabili e costanti globali** a primo livello: supportate (vedi §4). v0: non ancora globali di tipo
   collezione/tupla.
-- Non ancora nel backend tipizzato: lista/mappa **vuota** senza elementi (tipo non deducibile),
-  codice dinamico senza tipi. In quei casi dà un errore chiaro.
+- Lista/mappa **vuota**: nel backend tipizzato va annotata (`xs: [int] = []`), altrimenti il tipo non è
+  deducibile; codice dinamico senza tipi non è supportato. In quei casi dà un errore chiaro.
+- Le stringhe si misurano e si indicizzano in **caratteri** (`len`, `s[i]`, `substring`, `index_of`),
+  non in byte UTF-8: accenti e simboli danno lo stesso risultato in tutti i backend.
 
 ```
 fn fib(n) {                       // nessuna annotazione
@@ -830,7 +839,7 @@ fn main() {
 
 ## 14. Cosa non c'è ancora ⏳
 
-- Lista/mappa vuota senza elementi (il backend non ne deduce il tipo); globali di tipo collezione/tupla;
+- Lista/mappa vuota **senza annotazione di tipo** nel backend tipizzato; globali di tipo collezione/tupla;
   accesso a tupla per posizione (`t.0`).
 - Nucleo "da ogni linguaggio" **completo**: operatore ternario, `in` come operatore, esponente `**`,
   bitwise, tipo `set`, comprehension sono tutti implementati nei tre backend (vedi `ROADMAP.md`).

@@ -774,7 +774,8 @@ impl Codegen {
         for s in stmts {
             match s {
                 Stmt::Decl { name, value, ty, .. } => {
-                    if let Some(t) = ty.as_ref().filter(|t| parse_fn_type(t).is_some()) {
+                    // un tipo annotato vince sempre sull'inferenza (lambda, lista/mappa vuota…)
+                    if let Some(t) = ty {
                         types.insert(name.clone(), Some(t.clone()));
                     } else if let Some(vt) = self.type_of(value, types) {
                         types.insert(name.clone(), Some(vt));
@@ -1787,6 +1788,31 @@ impl Codegen {
                         return Ok(format!("{pad}{kw} {name} = {rhs};"));
                     }
                 }
+                // collezione con tipo annotato (`xs: [T] = []`, `m: {K: V} = {}`): il tipo
+                // viene dall'annotazione, così anche la collezione VUOTA è ammessa
+                if let Some(t) = ty {
+                    let empty = matches!(value, Expr::List(v) if v.is_empty())
+                        || matches!(value, Expr::Map(v) if v.is_empty());
+                    if let Some(inner) = list_inner(t) {
+                        self.kinds.insert(name.clone(), "list".to_string());
+                        self.list_elem.insert(name.clone(), inner.to_string());
+                        self.cur_types.insert(name.clone(), Some(t.clone()));
+                        if empty {
+                            let rt = self.rust_type(t)?;
+                            return Ok(format!("{pad}let mut {name}: {rt} = Vec::new();"));
+                        }
+                    } else if let Some((k, v)) = map_inner(t) {
+                        self.kinds.insert(name.clone(), "map".to_string());
+                        self.map_val.insert(name.clone(), (k.to_string(), v.to_string()));
+                        self.cur_types.insert(name.clone(), Some(t.clone()));
+                        if empty {
+                            let rt = self.rust_type(t)?;
+                            return Ok(format!(
+                                "{pad}let mut {name}: {rt} = std::collections::HashMap::new();"
+                            ));
+                        }
+                    }
+                }
                 if let Some(k) = value_kind(value) {
                     self.kinds.insert(name.clone(), k.to_string());
                 }
@@ -2648,6 +2674,10 @@ impl Codegen {
                         if args.len() != 1 {
                             return Err(LogyxError::new("len accetta un solo argomento"));
                         }
+                        // stringa → numero di CARATTERI (come s[i] e l'interprete), non di byte
+                        if self.type_of(&args[0], &self.cur_types.clone()).as_deref() == Some("string") {
+                            return Ok(format!("(({}).chars().count() as i64)", self.expr(&args[0])?));
+                        }
                         return Ok(format!("(({}).len() as i64)", self.expr(&args[0])?));
                     }
                     if name == "str" {
@@ -2908,8 +2938,9 @@ impl Codegen {
                                 "index_of accetta due argomenti: index_of(stringa, sottostringa)",
                             ));
                         }
+                        // indice in CARATTERI (non byte): coerente con s[i]/substring
                         return Ok(format!(
-                            "({}).find(({}).as_str()).map(|i| i as i64).unwrap_or(-1i64)",
+                            "{{ let __s = &({}); __s.find(({}).as_str()).map(|i| __s[..i].chars().count() as i64).unwrap_or(-1i64) }}",
                             self.expr(&args[0])?,
                             self.expr(&args[1])?
                         ));
@@ -2933,11 +2964,12 @@ impl Codegen {
                                 "substring accetta tre argomenti: substring(stringa, inizio, fine)",
                             ));
                         }
+                        // indici in CARATTERI (non byte): niente panico su testo UTF-8
                         return Ok(format!(
-                            "({})[({}) as usize..({}) as usize].to_string()",
-                            self.expr(&args[0])?,
+                            "{{ let (__a, __b) = (({}) as usize, ({}) as usize); ({}).chars().skip(__a).take(__b.saturating_sub(__a)).collect::<String>() }}",
                             self.expr(&args[1])?,
-                            self.expr(&args[2])?
+                            self.expr(&args[2])?,
+                            self.expr(&args[0])?
                         ));
                     }
                     if name == "split" {
