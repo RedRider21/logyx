@@ -20,3 +20,6 @@ __pycache__/
 # Sistema
 .DS_Store
 examples/*.sha256
+
+# Artefatti del self-hosting (lexer compilato)
+selfhost/*.rs

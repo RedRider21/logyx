@@ -117,7 +117,7 @@ class Lexer:
         self.advance()  # apre virgolette
         parts = []
         buf = []
-        escapes = {"n": "\n", "t": "\t", '"': '"', "\\": "\\", "{": "{", "}": "}"}
+        escapes = {"n": "\n", "t": "\t", "r": "\r", '"': '"', "\\": "\\", "{": "{", "}": "}"}
         while True:
             if self.i >= len(self.src):
                 self.error("stringa non terminata")

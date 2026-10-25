@@ -74,13 +74,31 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 > argomenti con nome, spread. Tutto dettagliato in `ROADMAP.md` (Piano 1/2 + sezione
 > "Scelte di design da valutare").
 >
-> **Prossimo fronte grosso concordato:** self-hosting — prima pietra = lexer di Logyx scritto in Logyx
-> + test a specchio contro `logyxc tokens` (vedi fondo sezione / proposta in chat).
+> **Fronte grosso in corso: self-hosting.** Fase 1 (lexer in Logyx, `selfhost/lexer.logyx`, test a
+> specchio `tests/selfhost_lexer.sh` 84/84) ✅. **Prossimo: Fase 2 = parser in Logyx** a specchio con
+> `logyxc parse`.
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
 (ora **73/73**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**SELF-HOSTING FASE 1 — LEXER IN LOGYX FATTO (2026-10-25):** `selfhost/lexer.logyx` (porting di
+`compiler/src/lexer.rs`): sorgente → lista di caratteri (accesso O(1) anche nel nativo), posizione nel
+record `Pos(i, line, col)` avanzata da `avanza()`, tutta la scansione dentro `lex()` (così la lista non
+viene copiata a ogni chiamata), stringhe/numeri/identificatori/keyword/operatori/commenti/template `render`
+con isole `@start-client`, errori lessicali con gli STESSI messaggi. Stampa nel formato di `logyxc tokens`
+(Debug di Rust: `debug_str`, `debug_float`, padding `{:>4}:{:<3}`). Uso:
+`python3 prototype/main.py selfhost/lexer.logyx <file>` oppure `logyxc build` + `selfhost/lexer_bin <file>`.
+**Test a specchio** `tests/selfhost_lexer.sh` (anche `--nativo`): 84/84 identici (tutti gli esempi + il
+lexer su sé stesso), interprete e nativo, ~10 s. Scriverlo ha fatto emergere e correggere nei backend:
+- escape **`\r`** mancante nel linguaggio (`"\r"` valeva `r`!) → aggiunto ai due lexer;
+- **ambito per blocco** nei backend tipizzati: `declared` era condiviso fra blocchi fratelli → variabile
+  nata in un `if` e riusata in un altro `if` generava `x = …` senza `let` (Rust: fuori ambito). Ora ogni
+  blocco `if`/`else`/`while`/`for` riceve una COPIA di `declared`;
+- **tipo della variabile del `for`** dedotto anche dal tipo dell'espressione (es. `for x in rec.campo`
+  con campo `[string]`); il transpiler Python ora tipizza la variabile di ciclo come il compilatore.
+**Prossimo: Fase 2 = parser in Logyx** (token → AST), a specchio con `logyxc parse`.
 
 **Preparazione al self-hosting FATTA (2026-10-25)** — emersa scrivendo il lexer in Logyx:
 - **Collezioni vuote tipizzate** `xs: [T] = []` / `m: {K: V} = {}` nei backend tipizzati (l'annotazione

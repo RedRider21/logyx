@@ -937,19 +937,22 @@ class RustTranspiler:
                 out += arm + "_ => {\n" + body + "\n" + arm + "}\n"
             self.cur_types = saved
             return out + pad + "}"
+        # ogni blocco ha il suo ambito: le variabili nate dentro non escono
+        # (copia di `declared`), come in Rust e nell'interprete
         if t == "If":
             out = pad + f"if {self.expr(s.cond)} {{\n"
-            out += self.block(s.then_block, declared, indent + 1) + "\n" + pad + "}"
+            out += self.block(s.then_block, set(declared), indent + 1) + "\n" + pad + "}"
             if s.else_block is not None:
-                out += " else {\n" + self.block(s.else_block, declared, indent + 1) + "\n" + pad + "}"
+                out += (" else {\n" + self.block(s.else_block, set(declared), indent + 1)
+                        + "\n" + pad + "}")
             return out
         if t == "While":
             return (
                 pad + f"while {self.expr(s.cond)} {{\n"
-                + self.block(s.body, declared, indent + 1) + "\n" + pad + "}"
+                + self.block(s.body, set(declared), indent + 1) + "\n" + pad + "}"
             )
         if t == "For":
-            return self.for_stmt(s, declared, indent)
+            return self.for_stmt(s, set(declared), indent)
         if t == "Break":
             return pad + "break;"
         if t == "Continue":
@@ -1077,6 +1080,35 @@ class RustTranspiler:
         pat = f"({idx}, {s.var})" if idx is not None else s.var
         # con l'indice il contatore è usize → lo riportiamo a i64 in testa al corpo
         pre = (("    " * (indent + 1)) + f"let {idx} = {idx} as i64;\n") if idx is not None else ""
+        # tipo dell'elemento: tipizza la variabile di ciclo nel corpo (s[i], p.campo, concat…)
+        kinds = getattr(self, "kinds", {})
+        if is_range:
+            elem = "int"
+        elif isinstance(it, N.Identifier) and kinds.get(it.name) == "map":
+            mv = self.map_val.get(it.name)
+            elem = mv[0] if mv else None
+        elif isinstance(it, N.Identifier):
+            elem = self.list_elem.get(it.name)
+        elif type(it).__name__ == "ListLit" and it.elements:
+            elem = self._json_type_of(it.elements[0])
+        else:
+            elem = None
+        if elem is None:
+            # altrimenti dal tipo dell'espressione iterata (es. campo di record `[string]`)
+            elem = _list_inner(self._type_of(it, self.cur_types))
+        if elem is not None:
+            prev = self.cur_types.get(s.var, _MISSING)
+            self.cur_types[s.var] = elem
+            try:
+                return self._for_gen(s, it, is_range, idx, pat, pre, declared, indent, pad)
+            finally:
+                if prev is _MISSING:
+                    self.cur_types.pop(s.var, None)
+                else:
+                    self.cur_types[s.var] = prev
+        return self._for_gen(s, it, is_range, idx, pat, pre, declared, indent, pad)
+
+    def _for_gen(self, s, it, is_range, idx, pat, pre, declared, indent, pad):
 
         if is_range:
             if len(it.args) == 1:

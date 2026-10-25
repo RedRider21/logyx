@@ -1760,21 +1760,24 @@ impl Codegen {
                 ))
             }
             Stmt::If { cond, then_block, else_block } => {
+                // ogni blocco ha il suo ambito: le variabili nate dentro non escono
+                // (copia di `declared`), come in Rust e nell'interprete
                 let mut out = format!("{pad}if {} {{\n", self.expr(cond)?);
-                out += &self.block(then_block, declared, indent + 1)?;
+                out += &self.block(then_block, &mut declared.clone(), indent + 1)?;
                 out += &format!("\n{pad}}}");
                 if let Some(eb) = else_block {
-                    out += &format!(" else {{\n{}\n{pad}}}", self.block(eb, declared, indent + 1)?);
+                    let b = self.block(eb, &mut declared.clone(), indent + 1)?;
+                    out += &format!(" else {{\n{}\n{pad}}}", b);
                 }
                 Ok(out)
             }
             Stmt::While { cond, body } => Ok(format!(
                 "{pad}while {} {{\n{}\n{pad}}}",
                 self.expr(cond)?,
-                self.block(body, declared, indent + 1)?
+                self.block(body, &mut declared.clone(), indent + 1)?
             )),
             Stmt::For { var, iterable, body, index } => {
-                self.for_stmt(var, iterable, body, index, declared, indent)
+                self.for_stmt(var, iterable, body, index, &mut declared.clone(), indent)
             }
             Stmt::Decl { name, value, is_const, ty } => {
                 declared.insert(name.clone());
@@ -1970,7 +1973,14 @@ impl Codegen {
             Expr::Ident(n) => self.list_elem.get(n).cloned(),
             Expr::List(els) => els.first().and_then(|e| self.json_type_of(e)),
             _ => None,
-        };
+        }
+        // altrimenti dal tipo dell'espressione iterata (es. campo di record `[string]`)
+        .or_else(|| {
+            self.type_of(iterable, &self.cur_types.clone())
+                .as_deref()
+                .and_then(list_inner)
+                .map(|t| t.to_string())
+        });
         // range(n) oppure range(a, b)?
         if let Expr::Call { callee, args } = iterable {
             if let Expr::Ident(name) = &**callee {

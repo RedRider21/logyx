@@ -106,9 +106,10 @@ nucleo. Da decidere se e quando adottarli (dopo il nucleo e, in parte, dopo il s
 1. **Nucleo "da ogni linguaggio" (Piano 1): COMPLETO ✅** — variabili/costanti globali ✅, operatore
    ternario ✅, `in` come operatore ✅, esponente `**` ✅, bitwise ✅, indicizzazione stringhe ✅,
    libreria matematica ✅, tipo `set` ✅, comprehension ✅. Prossimo grande passo → **self-hosting**.
-2. **Libreria matematica** (Piano 2): `sin`/`cos`/`log`/`exp`, costanti.
-3. **Self-hosting** (orizzonte): lexer di Logyx scritto in Logyx + test a specchio contro
-   `logyxc tokens`, poi parser → AST → backend, a fasi.
+2. **Libreria matematica** (Piano 2): `sin`/`cos`/`log`/`exp`, costanti ✅.
+3. **Self-hosting** (in corso): **Fase 1 ✅** lexer di Logyx scritto in Logyx (`selfhost/lexer.logyx`) +
+   test a specchio contro `logyxc tokens` (`tests/selfhost_lexer.sh`, 84/84, interprete e nativo).
+   **Prossimo:** parser → AST (a specchio con `logyxc parse`), poi inferenza e backend, a fasi.
 4. **Scelte di design** (sopra) da discutere quando il nucleo è completo.
 
 Ogni tappa segue il ciclo già rodato: implementare nei tre backend, aggiungere un esempio, mantenere

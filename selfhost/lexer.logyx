@@ -1,0 +1,430 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Self-hosting, prima pietra: il LEXER di Logyx scritto in Logyx.
+//
+// Porting di compiler/src/lexer.rs. Legge un file .logyx e stampa i token nello
+// STESSO formato di `logyxc tokens <file>`, così i due si confrontano a specchio
+// (tests/selfhost_lexer.sh):
+//
+//   python3 prototype/main.py selfhost/lexer.logyx <file.logyx>     (interprete)
+//   logyxc build selfhost/lexer.logyx && selfhost/lexer_bin <file>   (nativo)
+//
+// Struttura: il sorgente diventa una lista di caratteri (accesso O(1) anche nel
+// nativo); la posizione è un record `Pos` (indice, riga, colonna) che avanza con
+// `avanza`. Tutta la scansione sta in `lex`, così la lista non viene copiata a ogni
+// chiamata di funzione.
+
+// Un token: tipo (es. "Ident", "Int", "Fn", "LParen"), valore testuale (per Ident,
+// Int, Float, Template), pezzi di una stringa ("L"+testo o "E"+sorgente), posizione.
+record Tok {
+    kind: string,
+    val: string,
+    parts: [string],
+    line: int,
+    col: int
+}
+
+// Posizione nel sorgente.
+record Pos {
+    i: int,
+    line: int,
+    col: int
+}
+
+// Avanza di un carattere `c` (quello in posizione p.i): a-capo → riga nuova.
+fn avanza(p: Pos, c: string) -> Pos {
+    if c == "\n" {
+        return Pos(p.i + 1, p.line + 1, 1)
+    }
+    return Pos(p.i + 1, p.line, p.col + 1)
+}
+
+fn is_digit(c: string) -> bool {
+    return c >= "0" and c <= "9"
+}
+
+// Lettera: ASCII, oppure qualsiasi carattere non ASCII (accenti ecc.) — approssima
+// `char::is_alphabetic` di Rust per i sorgenti reali.
+fn is_alpha(c: string) -> bool {
+    if c == "" {
+        return false
+    }
+    return (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or c > "~"
+}
+
+fn is_alnum(c: string) -> bool {
+    return is_alpha(c) or is_digit(c)
+}
+
+fn is_space(c: string) -> bool {
+    return c == " " or c == "\t" or c == "\r" or c == "\n"
+}
+
+// Parola chiave → nome del token; "" se è un identificatore normale.
+fn keyword(w: string) -> string {
+    kws = {"fn": "Fn", "return": "Return", "if": "If", "else": "Else", "while": "While",
+           "for": "For", "in": "In", "const": "Const", "import": "Import", "fail": "Fail",
+           "match": "Match", "break": "Break", "continue": "Continue", "record": "Record",
+           "enum": "Enum", "use": "Use", "extern": "Extern", "and": "And", "or": "Or",
+           "not": "Not", "true": "True", "false": "False", "nil": "Nil"}
+    if has(kws, w) {
+        return kws[w]
+    }
+    return ""
+}
+
+// Operatori di due caratteri → nome del token; "" se non è un operatore doppio.
+fn op2(two: string) -> string {
+    ops = {"->": "Arrow", "==": "Eq", "!=": "Ne", "<=": "Le", ">=": "Ge", "+=": "PlusEq",
+           "-=": "MinusEq", "*=": "StarEq", "**": "StarStar", "<<": "Shl", ">>": "Shr",
+           "/=": "SlashEq", "%=": "PercentEq"}
+    if has(ops, two) {
+        return ops[two]
+    }
+    return ""
+}
+
+// Operatori e punteggiatura di un carattere → nome del token; "" se sconosciuto.
+fn op1(c: string) -> string {
+    ops = {"(": "LParen", ")": "RParen", "\{": "LBrace", "\}": "RBrace", "[": "LBrack",
+           "]": "RBrack", ",": "Comma", ":": "Colon", "=": "Assign", "+": "Plus",
+           "-": "Minus", "*": "Star", "/": "Slash", "%": "Percent", "<": "Lt", ">": "Gt",
+           "?": "Question", "|": "Pipe", "&": "Amp", "^": "Caret", "~": "Tilde", ".": "Dot"}
+    if has(ops, c) {
+        return ops[c]
+    }
+    return ""
+}
+
+fn tok(kind: string, val: string, line: int, col: int) -> Tok {
+    nessuno: [string] = []
+    return Tok(kind, val, nessuno, line, col)
+}
+
+fn lex(src: string, file: string) -> [Tok] | error {
+    // il sorgente come lista di caratteri, più 4 sentinelle "" (fine file):
+    // così cs[i+1] è sempre valido finché i < n
+    cs: [string] = []
+    k = 0
+    n = len(src)
+    while k < n {
+        push(cs, src[k])
+        k = k + 1
+    }
+    for s in range(4) { push(cs, "") }
+
+    toks: [Tok] = []
+    p = Pos(0, 1, 1)
+    while p.i < n {
+        c = cs[p.i]
+        if is_space(c) {
+            p = avanza(p, c)
+            continue
+        }
+        // commento di riga
+        if c == "/" and cs[p.i + 1] == "/" {
+            while p.i < n and cs[p.i] != "\n" { p = avanza(p, cs[p.i]) }
+            continue
+        }
+        // commento di blocco
+        if c == "/" and cs[p.i + 1] == "*" {
+            p = avanza(p, "/")
+            p = avanza(p, "*")
+            while p.i < n and not (cs[p.i] == "*" and cs[p.i + 1] == "/") { p = avanza(p, cs[p.i]) }
+            if p.i < n {
+                p = avanza(p, "*")
+                p = avanza(p, "/")
+            }
+            continue
+        }
+        if c == "@" {
+            fail "{file}:{p.line}:{p.col}: errore lessicale: '@' inatteso: le isole client (@start-client … @end-client) sono ammesse solo dentro un template dopo 'render'"
+        }
+        sl = p.line
+        sc = p.col
+
+        // --- stringa con interpolazione {espr} ---
+        if c == "\"" {
+            p = avanza(p, c)
+            parts: [string] = []
+            buf = ""
+            chiusa = false
+            while not chiusa {
+                if p.i >= n {
+                    fail "{file}:{p.line}:{p.col}: errore lessicale: stringa non terminata"
+                }
+                d = cs[p.i]
+                if d == "\"" {
+                    p = avanza(p, d)
+                    chiusa = true
+                } else if d == "\\" {
+                    p = avanza(p, d)
+                    e = cs[p.i]
+                    p = avanza(p, e)
+                    if e == "n" {
+                        buf = buf + "\n"
+                    } else if e == "t" {
+                        buf = buf + "\t"
+                    } else if e == "r" {
+                        buf = buf + "\r"
+                    } else {
+                        buf = buf + e          // \" \\ \{ \} e ogni altro carattere: sé stesso
+                    }
+                } else if d == "\{" {
+                    p = avanza(p, d)
+                    if buf != "" {
+                        push(parts, "L" + buf)
+                        buf = ""
+                    }
+                    espr = ""
+                    while p.i < n and cs[p.i] != "\}" {
+                        espr = espr + cs[p.i]
+                        p = avanza(p, cs[p.i])
+                    }
+                    if p.i >= n {
+                        fail "{file}:{p.line}:{p.col}: errore lessicale: interpolazione non terminata (manca '\}')"
+                    }
+                    p = avanza(p, "\}")
+                    espr = trim(espr)
+                    if espr == "" {
+                        fail "{file}:{p.line}:{p.col}: errore lessicale: interpolazione vuota \{\}"
+                    }
+                    push(parts, "E" + espr)
+                } else {
+                    buf = buf + d
+                    p = avanza(p, d)
+                }
+            }
+            if buf != "" {
+                push(parts, "L" + buf)
+            }
+            push(toks, Tok("Str", "", parts, sl, sc))
+            continue
+        }
+
+        // --- numero intero o decimale ---
+        if is_digit(c) {
+            inizio = p.i
+            while is_digit(cs[p.i]) { p = avanza(p, cs[p.i]) }
+            kind = "Int"
+            if cs[p.i] == "." and is_digit(cs[p.i + 1]) {
+                kind = "Float"
+                p = avanza(p, ".")
+                while is_digit(cs[p.i]) { p = avanza(p, cs[p.i]) }
+            }
+            push(toks, tok(kind, join(slice(cs, inizio, p.i), ""), sl, sc))
+            continue
+        }
+
+        // --- identificatore / parola chiave / render + template ---
+        if is_alpha(c) or c == "_" {
+            inizio = p.i
+            while is_alnum(cs[p.i]) or cs[p.i] == "_" { p = avanza(p, cs[p.i]) }
+            testo = join(slice(cs, inizio, p.i), "")
+            if testo == "render" {
+                push(toks, tok("Render", "", sl, sc))
+                // cattura grezza del template HTML: conta la profondità dei tag,
+                // salta i buchi {…} e le isole @start-client … @end-client
+                while p.i < n and is_space(cs[p.i]) { p = avanza(p, cs[p.i]) }
+                if cs[p.i] != "<" {
+                    fail "{file}:{p.line}:{p.col}: errore lessicale: dopo 'render' è atteso un template che inizia con '<'"
+                }
+                tl = p.line
+                tc = p.col
+                tinizio = p.i
+                depth = 0
+                started = false
+                fine = false
+                while p.i < n and not fine {
+                    t = cs[p.i]
+                    if t == "\{" {
+                        p = avanza(p, t)
+                        prof = 1
+                        while p.i < n and prof > 0 {
+                            u = cs[p.i]
+                            p = avanza(p, u)
+                            if u == "\{" { prof = prof + 1 }
+                            if u == "\}" { prof = prof - 1 }
+                        }
+                        if prof > 0 {
+                            fail "{file}:{p.line}:{p.col}: errore lessicale: interpolazione non terminata nel template (manca '\}')"
+                        }
+                    } else if t == "@" and p.i + 13 <= n and join(slice(cs, p.i, p.i + 13), "") == "@start-client" {
+                        for q in range(13) { p = avanza(p, cs[p.i]) }
+                        while p.i < n and not (p.i + 11 <= n and join(slice(cs, p.i, p.i + 11), "") == "@end-client") {
+                            p = avanza(p, cs[p.i])
+                        }
+                        if p.i >= n {
+                            fail "{file}:{p.line}:{p.col}: errore lessicale: isola client non terminata (manca @end-client)"
+                        }
+                        for q in range(11) { p = avanza(p, cs[p.i]) }
+                    } else if t == "<" {
+                        p = avanza(p, t)
+                        closing = cs[p.i] == "/"
+                        last = ""
+                        while p.i < n and cs[p.i] != ">" {
+                            last = cs[p.i]
+                            p = avanza(p, last)
+                        }
+                        if p.i >= n {
+                            fail "{file}:{p.line}:{p.col}: errore lessicale: tag del template non terminato (manca '>')"
+                        }
+                        p = avanza(p, ">")
+                        selfclose = last == "/"
+                        if closing {
+                            depth = depth - 1
+                        } else if not selfclose {
+                            depth = depth + 1
+                            started = true
+                        } else if depth == 0 {
+                            started = true
+                        }
+                        if started and depth == 0 {
+                            fine = true
+                        }
+                    } else {
+                        p = avanza(p, t)
+                    }
+                }
+                push(toks, tok("Template", join(slice(cs, tinizio, p.i), ""), tl, tc))
+                continue
+            }
+            kw = keyword(testo)
+            if kw != "" {
+                push(toks, tok(kw, "", sl, sc))
+            } else {
+                push(toks, tok("Ident", testo, sl, sc))
+            }
+            continue
+        }
+
+        // --- operatori e punteggiatura ---
+        due = op2(c + cs[p.i + 1])
+        if due != "" {
+            p = avanza(p, c)
+            p = avanza(p, cs[p.i])
+            push(toks, tok(due, "", sl, sc))
+            continue
+        }
+        uno = op1(c)
+        if uno == "" {
+            fail "{file}:{p.line}:{p.col}: errore lessicale: carattere inatteso {debug_char(c)}"
+        }
+        p = avanza(p, c)
+        push(toks, tok(uno, "", sl, sc))
+    }
+    push(toks, tok("Eof", "", p.line, p.col))
+    return toks
+}
+
+// --- stampa nel formato di `logyxc tokens` (Debug di Rust) ---
+
+// Escape di una stringa come il Debug di Rust: "…" con \" \\ \n \t \r.
+fn debug_str(s: string) -> string {
+    out = "\""
+    i = 0
+    while i < len(s) {
+        c = s[i]
+        if c == "\"" {
+            out = out + "\\\""
+        } else if c == "\\" {
+            out = out + "\\\\"
+        } else if c == "\n" {
+            out = out + "\\n"
+        } else if c == "\t" {
+            out = out + "\\t"
+        } else if c == "\r" {
+            out = out + "\\r"
+        } else {
+            out = out + c
+        }
+        i = i + 1
+    }
+    return out + "\""
+}
+
+// Carattere come il Debug di Rust di un `char`: '…'.
+fn debug_char(c: string) -> string {
+    if c == "'" {
+        return "'\\''"
+    }
+    return "'" + c + "'"
+}
+
+// Valore di un letterale float come lo stampa il Debug di f64: zeri superflui
+// tolti, almeno una cifra per parte ("007.50" → "7.5", "2.0" → "2.0").
+fn debug_float(t: string) -> string {
+    punto = index_of(t, ".")
+    intera = str(int(substring(t, 0, punto)))
+    frac = substring(t, punto + 1, len(t))
+    while len(frac) > 1 and frac[len(frac) - 1] == "0" {
+        frac = substring(frac, 0, len(frac) - 1)
+    }
+    return intera + "." + frac
+}
+
+fn show(t: Tok) -> string {
+    if t.kind == "Ident" or t.kind == "Template" {
+        return t.kind + "(" + debug_str(t.val) + ")"
+    }
+    if t.kind == "Int" {
+        return "Int(" + str(int(t.val)) + ")"
+    }
+    if t.kind == "Float" {
+        return "Float(" + debug_float(t.val) + ")"
+    }
+    if t.kind == "Str" {
+        pezzi = ""
+        for i, pz in t.parts {
+            if i > 0 {
+                pezzi = pezzi + ", "
+            }
+            corpo = substring(pz, 1, len(pz))
+            if pz[0] == "L" {
+                pezzi = pezzi + "Lit(" + debug_str(corpo) + ")"
+            } else {
+                pezzi = pezzi + "Expr(" + debug_str(corpo) + ")"
+            }
+        }
+        return "Str([" + pezzi + "])"
+    }
+    return t.kind
+}
+
+// Allineamenti di `{:>4}` (destra) e `{:<3}` (sinistra).
+fn pad_sx(s: string, w: int) -> string {
+    r = s
+    while len(r) < w { r = " " + r }
+    return r
+}
+
+fn pad_dx(s: string, w: int) -> string {
+    r = s
+    while len(r) < w { r = r + " " }
+    return r
+}
+
+fn main() {
+    a = args()
+    if len(a) < 1 {
+        print("uso: lexer <file.logyx>")
+        return
+    }
+    file = a[0]
+    if not file_exists(file) {
+        print("Errore: {file}: file non trovato")
+        return
+    }
+    match lex(read_file(file), file) {
+        ok toks {
+            for t in toks {
+                print(pad_sx(str(t.line), 4) + ":" + pad_dx(str(t.col), 3) + " " + show(t))
+            }
+            print("({len(toks)} token)")
+        }
+        err e {
+            print("Errore: " + e)
+        }
+    }
+}

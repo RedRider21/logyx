@@ -426,6 +426,10 @@ nome = "Logyx"
 print("Ciao da {nome}!")     // Ciao da Logyx!
 ```
 
+**Sequenze di escape**: `\n` (a capo), `\t` (tabulazione), `\r` (ritorno carrello), `\"` (virgolette),
+`\\` (barra rovesciata), `\{` e `\}` (graffe letterali, che altrimenti aprono un'interpolazione).
+Qualsiasi altro carattere dopo `\` vale sé stesso.
+
 **Indicizzazione**: `s[i]` restituisce il carattere in posizione `i` come **stringa di 1** (non c'è un
 tipo carattere a sé). Si concatena e si confronta come una normale stringa. Per sottostringhe più lunghe
 c'è `substring(s, a, b)`.
@@ -837,7 +841,29 @@ fn main() {
 - La connessione è un **handle opaco** (`DB`), clonabile: in Rust è `Rc<rusqlite::Connection>`.
 - Esempio completo: `examples/native_db.logyx` (verificato nei tre backend da `tests/db_smoke.sh`).
 
-## 14. Cosa non c'è ancora ⏳
+## 14. Self-hosting: Logyx scritto in Logyx 🟡
+
+L'obiettivo di lungo periodo è un compilatore di Logyx **scritto in Logyx**, senza dipendere né da Python
+né da Rust. Si procede a fasi, ognuna verificata **a specchio** contro il compilatore attuale.
+
+**Fase 1 — il lexer ✅** (`selfhost/lexer.logyx`): porting di `compiler/src/lexer.rs`. Legge un file
+`.logyx` e stampa i token nello **stesso formato** di `logyxc tokens`. Gira sia con l'interprete sia
+compilato a nativo da `logyxc` (Logyx che compila il lexer di Logyx):
+
+```
+python3 prototype/main.py selfhost/lexer.logyx examples/native_fib.logyx   # interprete
+cd selfhost && logyxc build lexer.logyx && ./lexer_bin ../examples/native_fib.logyx
+./tests/selfhost_lexer.sh        # test a specchio su tutti i sorgenti (anche sul lexer stesso)
+```
+
+Il test confronta l'output del lexer Logyx con `logyxc tokens` su ogni esempio del progetto e sul lexer
+stesso, nei due modi di esecuzione (oggi **84/84 identici**, messaggi d'errore compresi). Scriverlo ha
+fatto emergere e correggere lacune reali del linguaggio: collezioni vuote tipizzate, stringhe misurate
+in caratteri, l'escape `\r`, l'ambito delle variabili per blocco e il tipo della variabile del `for`.
+
+Prossime fasi: **parser** (dai token all'albero sintattico) → inferenza dei tipi → backend.
+
+## 15. Cosa non c'è ancora ⏳
 
 - Lista/mappa vuota **senza annotazione di tipo** nel backend tipizzato; globali di tipo collezione/tupla;
   accesso a tupla per posizione (`t.0`).
@@ -846,4 +872,4 @@ fn main() {
 - Dict/set comprehension (oggi c'è la **list** comprehension); OOP classica, generici, concorrenza
   (scelte di design, vedi `ROADMAP.md`).
 - Database oltre SQLite (PostgreSQL/MySQL); sessioni HTTP; eventi DOM dal WASM (oggi gli handler si
-  invocano dai pulsanti della pagina generata); self-hosting del compilatore.
+  invocano dai pulsanti della pagina generata); self-hosting completo (fatto il lexer, vedi §14).

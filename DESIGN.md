@@ -234,6 +234,7 @@ anche record/enum/tuple, closure, default+varargs, libreria builtin completa, JS
 SQLite**, e **DOM dal WASM**.
 
 Lo stato aggiornato e il quadro vivo sono in `ROADMAP.md` (gap-analysis con legenda ✅/🟡/⏳) e in
-`CONTEXT.md` (punto di ripresa). **Prossimo grande fronte:** il **self-hosting** — riscrivere il
+`CONTEXT.md` (punto di ripresa). **Grande fronte in corso:** il **self-hosting** — riscrivere il
 compilatore in Logyx stesso, a fasi (lexer → parser → backend), finché né Python né Rust restano una
-dipendenza.
+dipendenza. **Fase 1 fatta:** il lexer in Logyx (`selfhost/lexer.logyx`), identico a `logyxc tokens` su
+tutti i sorgenti, sia interpretato sia compilato a nativo da `logyxc` (`tests/selfhost_lexer.sh`).
