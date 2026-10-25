@@ -283,8 +283,9 @@ for n in numeri { print(n) }
 successiva).</p>
 <p><strong>Operatore condizionale (ternario)</strong>: <code>condizione ? valore_se_vero : valore_se_falso</code>. A differenza
 dell'istruzione <code>if</code>, è un'<strong>espressione</strong> (ha un valore) e si usa ovunque serva un valore. Si annida a
-destra. (Il <code>?</code> qui non si confonde con la propagazione errori <code>espr?</code>: è ternario solo quando seguito da
-un valore.)</p>
+destra. (Il <code>?</code> qui non si confonde con la propagazione errori <code>espr?</code>: è ternario solo quando il valore
+che segue inizia <strong>sulla stessa riga</strong> del <code>?</code>. Così <code>x = f()?</code> a fine riga, seguito da una riga che
+comincia con un nome, resta una propagazione d'errore.)</p>
 <pre><code>segno = n &gt; 0 ? &quot;positivo&quot; : n &lt; 0 ? &quot;negativo&quot; : &quot;zero&quot;
 assoluto = n &lt; 0 ? -n : n
 print(x &gt; 5 ? &quot;grande&quot; : &quot;piccolo&quot;)
@@ -1159,18 +1160,28 @@ fn main() {
 <h2 id="14-self-hosting-logyx-scritto-in-logyx">14. Self-hosting: Logyx scritto in Logyx 🟡</h2>
 <p>L'obiettivo di lungo periodo è un compilatore di Logyx <strong>scritto in Logyx</strong>, senza dipendere né da Python
 né da Rust. Si procede a fasi, ognuna verificata <strong>a specchio</strong> contro il compilatore attuale.</p>
-<p><strong>Fase 1 — il lexer ✅</strong> (<code>selfhost/lexer.logyx</code>): porting di <code>compiler/src/lexer.rs</code>. Legge un file
-<code>.logyx</code> e stampa i token nello <strong>stesso formato</strong> di <code>logyxc tokens</code>. Gira sia con l'interprete sia
-compilato a nativo da <code>logyxc</code> (Logyx che compila il lexer di Logyx):</p>
-<pre><code>python3 prototype/main.py selfhost/lexer.logyx examples/native_fib.logyx   # interprete
-cd selfhost &amp;&amp; logyxc build lexer.logyx &amp;&amp; ./lexer_bin ../examples/native_fib.logyx
-./tests/selfhost_lexer.sh        # test a specchio su tutti i sorgenti (anche sul lexer stesso)
+<p><strong>Fase 1 — il lexer ✅</strong> (<code>selfhost/lexer.logyx</code>, libreria): porting di <code>compiler/src/lexer.rs</code>.
+<code>selfhost/tokens.logyx</code> stampa i token nello <strong>stesso formato</strong> di <code>logyxc tokens</code>.</p>
+<p><strong>Fase 2 — il parser ✅</strong> (<code>selfhost/parser.logyx</code>, libreria): porting di <code>compiler/src/parser.rs</code>, dai
+token all'albero sintattico. <code>selfhost/parse.logyx</code> stampa l'albero nello <strong>stesso formato</strong> di
+<code>logyxc parse</code>. L'albero è fatto di nodi generici (<code>Node</code>) che rispecchiano l'AST del compilatore; le
+precedenze degli operatori usano un'unica funzione a tabella ("precedence climbing").</p>
+<p>Entrambi girano con l'interprete e compilati a nativo da <code>logyxc</code> (Logyx che compila sé stesso):</p>
+<pre><code>python3 prototype/main.py selfhost/parse.logyx examples/native_fib.logyx   # interprete
+cd selfhost &amp;&amp; logyxc build parse.logyx &amp;&amp; ./parse_bin ../examples/native_fib.logyx
+./tests/selfhost_lexer.sh        # test a specchio dei token  (87/87)
+./tests/selfhost_parser.sh       # test a specchio dell'albero (87/87)
 </code></pre>
-<p>Il test confronta l'output del lexer Logyx con <code>logyxc tokens</code> su ogni esempio del progetto e sul lexer
-stesso, nei due modi di esecuzione (oggi <strong>84/84 identici</strong>, messaggi d'errore compresi). Scriverlo ha
-fatto emergere e correggere lacune reali del linguaggio: collezioni vuote tipizzate, stringhe misurate
-in caratteri, l'escape <code>\r</code>, l'ambito delle variabili per blocco e il tipo della variabile del <code>for</code>.</p>
-<p>Prossime fasi: <strong>parser</strong> (dai token all'albero sintattico) → inferenza dei tipi → backend.</p>
+<p>I test confrontano l'output con il compilatore su ogni sorgente del progetto, compresi quelli del
+self-hosting, nei due modi di esecuzione e con gli stessi messaggi d'errore. Scriverli ha fatto emergere
+e correggere lacune reali: collezioni vuote tipizzate, stringhe misurate in caratteri, l'escape <code>\r</code>,
+l'ambito delle variabili per blocco, il tipo della variabile del <code>for</code> e dell'indice di indice, il <code>?</code> a
+fine riga scambiato per ternario, <code>return g()</code> fra funzioni fallibili, l'assegnazione <code>a = b</code> che
+"muoveva" la sorgente nel nativo, i nomi di builtin (<code>e</code>, <code>len</code>…) usati come variabili locali
+nell'interprete.</p>
+<p>Prossime fasi: <strong>inferenza dei tipi</strong> → <strong>backend</strong>. Alla fine resteranno <strong>due esecutori scritti in
+Logyx</strong>, come oggi lo sono in Python/Rust: il <strong>compilatore</strong> (binari nativi e WebAssembly, per la
+produzione) e l'<strong>interprete</strong> (esecuzione immediata, script, REPL, riferimento per i test).</p>
 <h2 id="15-cosa-non-ce-ancora">15. Cosa non c'è ancora ⏳</h2>
 <ul>
 <li>Lista/mappa vuota <strong>senza annotazione di tipo</strong> nel backend tipizzato; globali di tipo collezione/tupla;

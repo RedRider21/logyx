@@ -236,5 +236,6 @@ SQLite**, e **DOM dal WASM**.
 Lo stato aggiornato e il quadro vivo sono in `ROADMAP.md` (gap-analysis con legenda ✅/🟡/⏳) e in
 `CONTEXT.md` (punto di ripresa). **Grande fronte in corso:** il **self-hosting** — riscrivere il
 compilatore in Logyx stesso, a fasi (lexer → parser → backend), finché né Python né Rust restano una
-dipendenza. **Fase 1 fatta:** il lexer in Logyx (`selfhost/lexer.logyx`), identico a `logyxc tokens` su
-tutti i sorgenti, sia interpretato sia compilato a nativo da `logyxc` (`tests/selfhost_lexer.sh`).
+dipendenza. **Fasi 1-2 fatte:** lexer e parser in Logyx (`selfhost/`), identici a `logyxc tokens` e
+`logyxc parse` su tutti i sorgenti, interpretati o compilati a nativo (`tests/selfhost_*.sh`). Esito
+finale: due esecutori scritti in Logyx, **compilatore** (produzione) e **interprete** (immediato/REPL).

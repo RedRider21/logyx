@@ -745,7 +745,13 @@ class RustTranspiler:
                 mv = getattr(self, "map_val", {}).get(e.target.name)
                 if mv:
                     return mv[1]
-            return None
+            # altrimenti dal tipo del bersaglio (campo di record `[T]`/`{K: V}`, xs[i][j])
+            tt = self._type_of(e.target, ptypes)
+            inner = _list_inner(tt)
+            if inner is not None:
+                return inner
+            kv = _map_inner(tt)
+            return kv[1] if kv else None
         if t == "StringLit":
             return "string"
         if t == "Literal":
@@ -871,6 +877,11 @@ class RustTranspiler:
                     return self._fn_value_arg(e, self.cur_ret)
                 return self.expr(e)
             if self.cur_fallible:
+                # `return g(…)` con g fallibile: il Result passa così com'è (errore compreso)
+                v = s.value
+                if (isinstance(v, N.Call) and isinstance(v.callee, N.Identifier)
+                        and self.fallible.get(v.callee.name)):
+                    return pad + f"return {self.expr(v)};"
                 inner = "()" if s.value is None else gen(s.value)
                 return pad + f"return Ok({inner});"
             return pad + ("return;" if s.value is None else f"return {gen(s.value)};")
@@ -995,7 +1006,8 @@ class RustTranspiler:
                 self.cur_types[s.name] = vt
             # marca il nome come locale in scope (anche se il tipo è ignoto)
             self.cur_types.setdefault(s.name, None)
-            return pad + f"{kw} {s.name} = {self.expr(s.value)};"
+            # valore da una variabile: si copia (altrimenti la sorgente verrebbe "mossa")
+            return pad + f"{kw} {s.name} = {self._arg(s.value)};"
         if t == "Destructure":
             # destructuring di tupla: let (a, b) = valore;
             vt = self._type_of(s.value, self.cur_types)
@@ -1036,7 +1048,7 @@ class RustTranspiler:
             if name in getattr(self, "globals", {}) and name not in declared:
                 if self.globals[name][1]:
                     raise LogyxError(f"non si può riassegnare la costante globale '{name}'")
-                return pad + f"__set_{name}({self.expr(s.value)});"
+                return pad + f"__set_{name}({self._arg(s.value)});"
             k = self._value_kind(s.value)
             if k:
                 self.kinds[name] = k
@@ -1045,7 +1057,7 @@ class RustTranspiler:
             if vt:
                 self.cur_types[name] = vt
             self.cur_types.setdefault(name, None)
-            val = self.expr(s.value)
+            val = self._arg(s.value)  # da variabile: copia, non "muove" la sorgente
             if name in declared:
                 return pad + f"{name} = {val};"
             declared.add(name)

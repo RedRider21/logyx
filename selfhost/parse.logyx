@@ -1,0 +1,40 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Self-hosting, fase 2: stampa l'albero sintattico di un file .logyx nello STESSO
+// formato di `logyxc parse <file>` (pretty-Debug di Rust), usando il lexer e il
+// parser scritti in Logyx. Test a specchio: tests/selfhost_parser.sh.
+//
+//   python3 prototype/main.py selfhost/parse.logyx <file.logyx>     (interprete)
+//   cd selfhost && logyxc build parse.logyx && ./parse_bin <file>    (nativo)
+
+import "parser.logyx"
+
+fn main() {
+    a = args()
+    if len(a) < 1 {
+        print("uso: parse <file.logyx>")
+        return
+    }
+    file = a[0]
+    if not file_exists(file) {
+        print("Errore: {file}: file non trovato")
+        return
+    }
+    match lex(read_file(file), file) {
+        ok toks {
+            match parse_program(toks) {
+                ok items {
+                    for it in items { print(pp(it, 0)) }
+                }
+                err e {
+                    // gli errori del parser arrivano senza il file in testa
+                    print("Errore: " + file + e)
+                }
+            }
+        }
+        err e {
+            print("Errore: " + e)
+        }
+    }
+}

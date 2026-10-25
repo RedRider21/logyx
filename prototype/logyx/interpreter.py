@@ -112,10 +112,11 @@ class LogyxFunction:
 class Environment:
     """Ambito con catena verso il genitore."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, builtins=False):
         self.vars = {}
         self.consts = set()
         self.parent = parent
+        self.builtins = builtins  # ambito radice dei builtin (print, len, e, …)
 
     def define(self, name, value, const=False):
         self.vars[name] = value
@@ -138,7 +139,11 @@ class Environment:
 
     def assign(self, name, value):
         env = self._holder(name)
-        if env is None:
+        # nome libero, oppure che coincide con un builtin o con una funzione definita
+        # altrove: l'assegnazione crea una variabile LOCALE (non sovrascrive il builtin
+        # né la funzione), come nei backend tipizzati
+        if env is None or (env is not self and (
+                env.builtins or isinstance(env.vars[name], (LogyxFunction, ExternMarker)))):
             self.vars[name] = value
             return
         if name in env.consts:
@@ -189,7 +194,8 @@ def truthy(v):
 
 class Interpreter:
     def __init__(self):
-        self.globals = Environment()
+        self.builtin_env = Environment(builtins=True)
+        self.globals = Environment(self.builtin_env)
         self.routes = {}
         self.records = {}  # nome -> lista di (nome_campo, tipo)
         self.enums = {}    # nome -> lista di varianti
@@ -197,7 +203,7 @@ class Interpreter:
         self._install_builtins()
 
     def _install_builtins(self):
-        g = self.globals
+        g = self.builtin_env
         g.define("print", lambda *a: print(" ".join(logyx_str(x) for x in a)))
         g.define("len", lambda x: len(x))
         g.define("str", logyx_str)

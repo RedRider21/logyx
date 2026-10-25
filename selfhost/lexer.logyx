@@ -1,14 +1,13 @@
 // Copyright (C) 2026 Daniele Deplano (RedRider21)
 // SPDX-License-Identifier: AGPL-3.0-or-later
 //
-// Self-hosting, prima pietra: il LEXER di Logyx scritto in Logyx.
+// Self-hosting, fase 1: il LEXER di Logyx scritto in Logyx (libreria).
 //
-// Porting di compiler/src/lexer.rs. Legge un file .logyx e stampa i token nello
-// STESSO formato di `logyxc tokens <file>`, così i due si confrontano a specchio
-// (tests/selfhost_lexer.sh):
-//
-//   python3 prototype/main.py selfhost/lexer.logyx <file.logyx>     (interprete)
-//   logyxc build selfhost/lexer.logyx && selfhost/lexer_bin <file>   (nativo)
+// Porting di compiler/src/lexer.rs: `lex(sorgente, file)` → lista di token, oppure
+// l'errore lessicale con lo stesso messaggio del compilatore. `show(t)` scrive un
+// token come il Debug di Rust (`Ident("x")`, `Int(2)`, …). Il programma che stampa
+// i token come `logyxc tokens` è selfhost/tokens.logyx; il parser (parser.logyx)
+// importa questa libreria.
 //
 // Struttura: il sorgente diventa una lista di caratteri (accesso O(1) anche nel
 // nativo); la posizione è un record `Pos` (indice, riga, colonna) che avanza con
@@ -403,28 +402,4 @@ fn pad_dx(s: string, w: int) -> string {
     r = s
     while len(r) < w { r = r + " " }
     return r
-}
-
-fn main() {
-    a = args()
-    if len(a) < 1 {
-        print("uso: lexer <file.logyx>")
-        return
-    }
-    file = a[0]
-    if not file_exists(file) {
-        print("Errore: {file}: file non trovato")
-        return
-    }
-    match lex(read_file(file), file) {
-        ok toks {
-            for t in toks {
-                print(pad_sx(str(t.line), 4) + ":" + pad_dx(str(t.col), 3) + " " + show(t))
-            }
-            print("({len(toks)} token)")
-        }
-        err e {
-            print("Errore: " + e)
-        }
-    }
 }

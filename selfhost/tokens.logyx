@@ -1,0 +1,35 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Self-hosting, fase 1: stampa i token di un file .logyx nello STESSO formato di
+// `logyxc tokens <file>`, usando il lexer scritto in Logyx (lexer.logyx). Test a
+// specchio: tests/selfhost_lexer.sh.
+//
+//   python3 prototype/main.py selfhost/tokens.logyx <file.logyx>     (interprete)
+//   cd selfhost && logyxc build tokens.logyx && ./tokens_bin <file>   (nativo)
+
+import "lexer.logyx"
+
+fn main() {
+    a = args()
+    if len(a) < 1 {
+        print("uso: lexer <file.logyx>")
+        return
+    }
+    file = a[0]
+    if not file_exists(file) {
+        print("Errore: {file}: file non trovato")
+        return
+    }
+    match lex(read_file(file), file) {
+        ok toks {
+            for t in toks {
+                print(pad_sx(str(t.line), 4) + ":" + pad_dx(str(t.col), 3) + " " + show(t))
+            }
+            print("({len(toks)} token)")
+        }
+        err e {
+            print("Errore: " + e)
+        }
+    }
+}

@@ -16,7 +16,8 @@ set -u
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOGYXC="$ROOT/compiler/target/release/logyxc"
 LEXER="$ROOT/selfhost/lexer.logyx"
-BIN="$ROOT/selfhost/lexer_bin"
+PROG="$ROOT/selfhost/tokens.logyx"
+BIN="$ROOT/selfhost/tokens_bin"
 SOLO_NATIVO=0
 [ "${1:-}" = "--nativo" ] && SOLO_NATIVO=1
 
@@ -25,10 +26,10 @@ echo "== build del compilatore Rust (release) =="
     || { echo "errore: 'cargo build --release' fallito"; exit 2; }
 
 echo "== compilazione nativa del lexer Logyx (logyxc build) =="
-( cd "$ROOT/selfhost" && "$LOGYXC" build lexer.logyx ) >/dev/null 2>&1
-[ -x "$BIN" ] || { echo "errore: compilazione di selfhost/lexer.logyx fallita"; exit 2; }
+( cd "$ROOT/selfhost" && "$LOGYXC" build tokens.logyx ) >/dev/null 2>&1
+[ -x "$BIN" ] || { echo "errore: compilazione di selfhost/tokens.logyx fallita"; exit 2; }
 
-FILES=$(ls "$ROOT"/examples/*.logyx "$LEXER")
+FILES=$(ls "$ROOT"/examples/*.logyx "$ROOT"/selfhost/*.logyx)
 pass=0; fail=0; failed=""
 for f in $FILES; do
     nome="${f#$ROOT/}"
@@ -37,7 +38,7 @@ for f in $FILES; do
     ok=1
     [ "$nat" = "$atteso" ] || ok=0
     if [ $SOLO_NATIVO -eq 0 ] && [ $ok -eq 1 ]; then
-        int=$( cd "$ROOT/prototype" && python3 main.py "$LEXER" "$f" 2>&1 )
+        int=$( cd "$ROOT/prototype" && python3 main.py "$PROG" "$f" 2>&1 )
         [ "$int" = "$atteso" ] || ok=0
     fi
     if [ $ok -eq 1 ]; then
@@ -50,7 +51,7 @@ for f in $FILES; do
     fi
 done
 
-rm -f "$ROOT/selfhost/lexer.rs" "$BIN"; rm -rf "$ROOT/selfhost/lexer_cargo"
+rm -f "$ROOT"/selfhost/*.rs "$BIN"; rm -rf "$ROOT"/selfhost/*_cargo
 echo "---------------------------------------"
 echo "Identici: $pass   Differenti: $fail"
 if [ $fail -eq 0 ]; then

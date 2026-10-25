@@ -616,8 +616,11 @@ class Parser:
                 self.expect(T.RBRACK)
                 e = N.Index(e, idx)
             elif self.at(T.QUESTION):
-                # `?` è ternario se seguito da un inizio di espressione; altrimenti è propagazione
-                if _starts_expr(self.peek(1).type):
+                # `?` è ternario se seguito da un inizio di espressione SULLA STESSA RIGA;
+                # altrimenti è propagazione (gli a-capo non sono token: `x = f()?` seguito
+                # da una riga che inizia con un nome non deve diventare un ternario)
+                nxt = self.peek(1)
+                if _starts_expr(nxt.type) and nxt.line == self.peek(0).line:
                     break
                 self.advance()
                 e = N.Try(e)

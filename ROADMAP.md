@@ -108,8 +108,14 @@ nucleo. Da decidere se e quando adottarli (dopo il nucleo e, in parte, dopo il s
    libreria matematica ✅, tipo `set` ✅, comprehension ✅. Prossimo grande passo → **self-hosting**.
 2. **Libreria matematica** (Piano 2): `sin`/`cos`/`log`/`exp`, costanti ✅.
 3. **Self-hosting** (in corso): **Fase 1 ✅** lexer di Logyx scritto in Logyx (`selfhost/lexer.logyx`) +
-   test a specchio contro `logyxc tokens` (`tests/selfhost_lexer.sh`, 84/84, interprete e nativo).
-   **Prossimo:** parser → AST (a specchio con `logyxc parse`), poi inferenza e backend, a fasi.
+   test a specchio contro `logyxc tokens` (`tests/selfhost_lexer.sh`, 87/87, interprete e nativo).
+   **Fase 2 ✅** parser in Logyx (`selfhost/parser.logyx`) a specchio con `logyxc parse`
+   (`tests/selfhost_parser.sh`, 87/87). **Prossimo:** inferenza dei tipi, poi backend. Esito finale:
+   **compilatore + interprete scritti in Logyx** (il primo per la produzione, il secondo per esecuzione
+   immediata/REPL/riferimento dei test).
+4. **Audit di tutti i comandi** (errori e completezza della dotazione) — richiesto 2026-10-25.
+5. **Audit di cybersecurity** del linguaggio, del compilatore e dei binari prodotti — richiesto
+   2026-10-25 (memory-safety, overflow, panic, iniezioni in `run`/SQL/HTML, percorsi file, binari).
 4. **Scelte di design** (sopra) da discutere quando il nucleo è completo.
 
 Ogni tappa segue il ciclo già rodato: implementare nei tre backend, aggiungere un esempio, mantenere

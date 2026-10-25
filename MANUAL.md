@@ -134,8 +134,9 @@ successiva).
 
 **Operatore condizionale (ternario)**: `condizione ? valore_se_vero : valore_se_falso`. A differenza
 dell'istruzione `if`, è un'**espressione** (ha un valore) e si usa ovunque serva un valore. Si annida a
-destra. (Il `?` qui non si confonde con la propagazione errori `espr?`: è ternario solo quando seguito da
-un valore.)
+destra. (Il `?` qui non si confonde con la propagazione errori `espr?`: è ternario solo quando il valore
+che segue inizia **sulla stessa riga** del `?`. Così `x = f()?` a fine riga, seguito da una riga che
+comincia con un nome, resta una propagazione d'errore.)
 
 ```
 segno = n > 0 ? "positivo" : n < 0 ? "negativo" : "zero"
@@ -846,22 +847,34 @@ fn main() {
 L'obiettivo di lungo periodo è un compilatore di Logyx **scritto in Logyx**, senza dipendere né da Python
 né da Rust. Si procede a fasi, ognuna verificata **a specchio** contro il compilatore attuale.
 
-**Fase 1 — il lexer ✅** (`selfhost/lexer.logyx`): porting di `compiler/src/lexer.rs`. Legge un file
-`.logyx` e stampa i token nello **stesso formato** di `logyxc tokens`. Gira sia con l'interprete sia
-compilato a nativo da `logyxc` (Logyx che compila il lexer di Logyx):
+**Fase 1 — il lexer ✅** (`selfhost/lexer.logyx`, libreria): porting di `compiler/src/lexer.rs`.
+`selfhost/tokens.logyx` stampa i token nello **stesso formato** di `logyxc tokens`.
+
+**Fase 2 — il parser ✅** (`selfhost/parser.logyx`, libreria): porting di `compiler/src/parser.rs`, dai
+token all'albero sintattico. `selfhost/parse.logyx` stampa l'albero nello **stesso formato** di
+`logyxc parse`. L'albero è fatto di nodi generici (`Node`) che rispecchiano l'AST del compilatore; le
+precedenze degli operatori usano un'unica funzione a tabella ("precedence climbing").
+
+Entrambi girano con l'interprete e compilati a nativo da `logyxc` (Logyx che compila sé stesso):
 
 ```
-python3 prototype/main.py selfhost/lexer.logyx examples/native_fib.logyx   # interprete
-cd selfhost && logyxc build lexer.logyx && ./lexer_bin ../examples/native_fib.logyx
-./tests/selfhost_lexer.sh        # test a specchio su tutti i sorgenti (anche sul lexer stesso)
+python3 prototype/main.py selfhost/parse.logyx examples/native_fib.logyx   # interprete
+cd selfhost && logyxc build parse.logyx && ./parse_bin ../examples/native_fib.logyx
+./tests/selfhost_lexer.sh        # test a specchio dei token  (87/87)
+./tests/selfhost_parser.sh       # test a specchio dell'albero (87/87)
 ```
 
-Il test confronta l'output del lexer Logyx con `logyxc tokens` su ogni esempio del progetto e sul lexer
-stesso, nei due modi di esecuzione (oggi **84/84 identici**, messaggi d'errore compresi). Scriverlo ha
-fatto emergere e correggere lacune reali del linguaggio: collezioni vuote tipizzate, stringhe misurate
-in caratteri, l'escape `\r`, l'ambito delle variabili per blocco e il tipo della variabile del `for`.
+I test confrontano l'output con il compilatore su ogni sorgente del progetto, compresi quelli del
+self-hosting, nei due modi di esecuzione e con gli stessi messaggi d'errore. Scriverli ha fatto emergere
+e correggere lacune reali: collezioni vuote tipizzate, stringhe misurate in caratteri, l'escape `\r`,
+l'ambito delle variabili per blocco, il tipo della variabile del `for` e dell'indice di indice, il `?` a
+fine riga scambiato per ternario, `return g()` fra funzioni fallibili, l'assegnazione `a = b` che
+"muoveva" la sorgente nel nativo, i nomi di builtin (`e`, `len`…) usati come variabili locali
+nell'interprete.
 
-Prossime fasi: **parser** (dai token all'albero sintattico) → inferenza dei tipi → backend.
+Prossime fasi: **inferenza dei tipi** → **backend**. Alla fine resteranno **due esecutori scritti in
+Logyx**, come oggi lo sono in Python/Rust: il **compilatore** (binari nativi e WebAssembly, per la
+produzione) e l'**interprete** (esecuzione immediata, script, REPL, riferimento per i test).
 
 ## 15. Cosa non c'è ancora ⏳
 

@@ -1,0 +1,60 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Casi limite del parser e dei backend, emersi scrivendo il parser in Logyx:
+//  - `x = f()?` a fine riga, seguito da una riga che inizia con un nome: è
+//    PROPAGAZIONE dell'errore, non un ternario (`?` ternario solo se l'espressione
+//    che segue sta sulla stessa riga);
+//  - `return g(…)` in una funzione fallibile, con g fallibile: l'errore passa;
+//  - un nome di builtin (`e`, `len`…) usato come variabile locale resta locale;
+//  - `a = b` fra stringhe copia il valore (b resta usabile);
+//  - indice di indice su un campo di record (`r.parti[0][0]`).
+
+record Riga {
+    parti: [string]
+}
+
+fn meta(x: int) -> int | error {
+    if x % 2 != 0 {
+        fail "{x} è dispari"
+    }
+    return x / 2
+}
+
+fn quarto(x: int) -> int | error {
+    m = meta(x)?
+    q = meta(m)?
+    return q
+}
+
+fn quarto_diretto(x: int) -> int | error {
+    return quarto(x)
+}
+
+fn usa_e(n: int) -> int {
+    e = n * 2          // `e` è anche un builtin (costante di Eulero): qui è locale
+    return e + 1
+}
+
+fn main() {
+    match quarto_diretto(12) {
+        ok v { print("quarto di 12 = {v}") }
+        err msg { print("errore: {msg}") }
+    }
+    match quarto_diretto(6) {
+        ok v { print("quarto di 6 = {v}") }
+        err msg { print("errore: {msg}") }
+    }
+    print(usa_e(5))
+    print(usa_e(usa_e(1)))
+    primo = "alfa"
+    secondo = primo
+    print(primo + " " + secondo)
+    r = Riga(["xyz", "abc"])
+    print(r.parti[1][0])
+    print(cond_si(true))
+}
+
+fn cond_si(c: bool) -> string {
+    return c ? "si" : "no"
+}

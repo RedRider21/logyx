@@ -80,8 +80,8 @@ priorità sono in `ROADMAP.md`.
 
 Non ancora (vedi `ROADMAP.md`): globali di tipo collezione/tupla, lista/mappa vuota **senza annotazione**
 nel backend tipizzato (con `xs: [int] = []` funziona), accesso a tupla per posizione (`t.0`),
-database oltre SQLite, e il **self-hosting** completo del compilatore (fatto il **lexer in Logyx**, in
-`selfhost/`; prossimo il parser). Il punto di ripresa è in `CONTEXT.md`.
+database oltre SQLite, e il **self-hosting** completo del compilatore (fatti **lexer e parser in Logyx**, in
+`selfhost/`; prossimi inferenza e backend). Il punto di ripresa è in `CONTEXT.md`.
 
 ## Librerie esterne
 
@@ -125,7 +125,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 | `compiler/` | Il compilatore vero in Rust (`logyxc`): lexer, parser, inferenza, backend |
 | `tests/` | Suite di conformità (`conformance.sh`): i tre backend (interprete, transpiler, compilatore) danno lo stesso output |
 | `examples/` | Programmi di esempio `.logyx` |
-| `selfhost/` | Il compilatore di Logyx **scritto in Logyx** (self-hosting): oggi il lexer, verificato a specchio con `tests/selfhost_lexer.sh` |
+| `selfhost/` | Il compilatore di Logyx **scritto in Logyx** (self-hosting): lexer e parser fatti, verificati a specchio con `tests/selfhost_lexer.sh` e `tests/selfhost_parser.sh` |
 | `docs/` | Sito (GitHub Pages) e documenti esportati (es. il documento di design in `.md`/`.pdf`); git li versiona col resto, così restano con te quando cloni il progetto |
 | `LICENSE` | Testo completo della licenza AGPL-3.0 |
 

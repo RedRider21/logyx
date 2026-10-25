@@ -172,6 +172,7 @@ orExpr       := ... (aritmetici, confronto, logici, "**" esponente, bit a bit "&
                 //   (il "for" dopo il primo elemento distingue la comprehension dalla lista letterale)
                 // precedenza bit a bit come in C: ~ ; << >> ; & ; ^ ; | (sotto l'uguaglianza)
                 // e? propaga l'errore (postfisso): è ternario solo se "?" è seguito da un valore
+                //   che inizia SULLA STESSA RIGA (gli a-capo non sono token)
                 // Nota: niente ";" — gli statement sono delimitati dalla struttura (a-capo liberi)
 lambda       := "|" (IDENT ("," IDENT)*)? "|" espressione    // passabile, ritornabile, assegnabile a variabile (con tipo fn(...)->...)
 tipo         := tipoBase ("|" "error")?          // "T | error" = fallibile (Result in Rust)

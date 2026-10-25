@@ -74,14 +74,39 @@ da sole, build da `main`/`docs`). Suite attuale: **32/32**.
 > argomenti con nome, spread. Tutto dettagliato in `ROADMAP.md` (Piano 1/2 + sezione
 > "Scelte di design da valutare").
 >
-> **Fronte grosso in corso: self-hosting.** Fase 1 (lexer in Logyx, `selfhost/lexer.logyx`, test a
-> specchio `tests/selfhost_lexer.sh` 84/84) ✅. **Prossimo: Fase 2 = parser in Logyx** a specchio con
-> `logyxc parse`.
+> **Fronte grosso in corso: self-hosting.** Fase 1 lexer ✅ + Fase 2 parser ✅ (vedi sotto). Alla fine:
+> **compilatore + interprete scritti in Logyx** (deciso/consigliato 2026-10-25).
+>
+> **RICHIESTE UTENTE IN CODA (2026-10-25), in quest'ordine:**
+> 1. **Audit approfondito di TUTTI i comandi** del linguaggio: assenza di errori (ogni builtin/costrutto
+>    nei 3 backend, esempi della reference eseguiti e confrontati) + **completezza** della dotazione.
+> 2. **Audit di cybersecurity** "linguaggio il più inattaccabile possibile": memory-safety, overflow
+>    interi, panic, iniezioni (`run`, SQL, HTML/template), percorsi file, hardening dei binari.
+> Poi si riprende il self-hosting (Fase 3 = inferenza dei tipi).
 
 Si sta procedendo con l'opzione **B/C: ampliare il linguaggio a giri incrementali**, ognuno nei tre backend
 (interprete + transpiler Python + compilatore Rust) con un esempio e la suite `tests/conformance.sh` verde
 (ora **73/73**, + smoke test `db_smoke.sh`). Ciclo: implementa → esempio `examples/native_*` →
 `./tests/conformance.sh`.
+
+**SELF-HOSTING FASE 2 — PARSER IN LOGYX FATTO (2026-10-25):** `selfhost/parser.logyx` (libreria,
+porting di `compiler/src/parser.rs` fino a `build_string`; le isole client→JS restano al backend) +
+`selfhost/parse.logyx` (stampa come `logyxc parse`). Il lexer è diventato libreria (`lexer.logyx`) con
+`tokens.logyx` come programma. AST = record ricorsivo generico `Node {k, name, keys, kids}` (k: S
+struttura, T tupla-variante, L lista, Q stringa, U atomo) + `pp()` che emula il pretty-Debug `{:#?}`.
+Ogni funzione di parsing: `(ts: [Tok], i: int) -> PR | error` (PR = nodo + posizione). Precedenze:
+`binexpr` a precedence climbing con tabella `prec` (meno chiamate = meno copie dei token nel nativo).
+Errori senza file in testa (lo antepone il chiamante; il sub-lexer delle interpolazioni usa file "").
+Test `tests/selfhost_parser.sh` (anche `--nativo`): **87/87**, ~28 s completo. Bug corretti emersi:
+- **`?` a fine riga** preso per ternario se la riga dopo inizia con un nome (`x = f()?` + `y = …`): ora
+  `?` è ternario solo se l'espressione che segue è SULLA STESSA RIGA (3 parser: Rust, Python, Logyx);
+- **interprete**: assegnare a un nome di builtin (`e`, `len`…) o di funzione dentro una funzione
+  sovrascriveva la definizione globale → builtin in ambiente radice separato (`builtin_env`); assegnare a
+  builtin/funzione crea un LOCALE (le globali vere restano condivise);
+- **`return g(…)`** in funzione fallibile con g fallibile generava `Ok(Result)` → ora passa il Result;
+- **tipo di `xs[i]`** dedotto anche dal tipo del bersaglio (campo di record, indice di indice);
+- **`a = b`** (Decl/Assign/setter globale) da variabile ora clona (prima "muoveva" la String).
+Esempio di regressione `native_parsefix`; suite conformance **74/74**.
 
 **SELF-HOSTING FASE 1 — LEXER IN LOGYX FATTO (2026-10-25):** `selfhost/lexer.logyx` (porting di
 `compiler/src/lexer.rs`): sorgente → lista di caratteri (accesso O(1) anche nel nativo), posizione nel

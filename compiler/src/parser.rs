@@ -895,8 +895,14 @@ impl Parser {
                 self.expect(&TokenKind::RBrack, "]")?;
                 e = Expr::Index { target: Box::new(e), index: Box::new(idx) };
             } else if self.is(&TokenKind::Question) {
-                // `?` è ternario se seguito da un inizio di espressione; altrimenti è propagazione
-                if starts_expr(self.kind_at(1)) {
+                // `?` è ternario se seguito da un inizio di espressione SULLA STESSA RIGA;
+                // altrimenti è propagazione (gli a-capo non sono token: `x = f()?` seguito
+                // da una riga che inizia con un nome non deve diventare un ternario)
+                let same_line = self
+                    .toks
+                    .get(self.i + 1)
+                    .map_or(false, |t| t.line == self.cur().line);
+                if starts_expr(self.kind_at(1)) && same_line {
                     break;
                 }
                 self.advance();

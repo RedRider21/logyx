@@ -1,0 +1,1055 @@
+// Copyright (C) 2026 Daniele Deplano (RedRider21)
+// SPDX-License-Identifier: AGPL-3.0-or-later
+//
+// Self-hosting, fase 2: il PARSER di Logyx scritto in Logyx (libreria).
+//
+// Porting di compiler/src/parser.rs (la parte che va dai token all'albero sintattico;
+// le isole client → JS restano al backend). `parse_program(tokens)` → lista di item.
+//
+// L'albero: ogni nodo è un `Node` generico che rispecchia l'AST di Rust:
+//   k = "S"  struttura/variante con campi  Nome { campo: valore, … }   (keys + kids)
+//   k = "T"  variante a tupla               Nome(valore, …)            (name "" = tupla)
+//   k = "L"  lista                          [ … ]
+//   k = "Q"  stringa                        "…"
+//   k = "U"  valore atomico scritto così com'è (Break, Lt, true, 42, None…)
+// `pp(nodo, 0)` lo scrive come il pretty-Debug `{:#?}` di Rust: così l'output si
+// confronta a specchio con `logyxc parse` (tests/selfhost_parser.sh).
+//
+// Ogni funzione di parsing riceve i token e la posizione e restituisce un `PR`
+// (nodo + nuova posizione) oppure un errore. I messaggi d'errore sono quelli del
+// compilatore senza il nome del file in testa (":riga:col: errore di sintassi: …"):
+// lo antepone il chiamante.
+//
+// Precedenze degli operatori binari: un'unica funzione a "precedence climbing"
+// (`binexpr`) con la tabella `prec`, equivalente ai livelli or/and/|/^/&/==/</<</+/*/**
+// del compilatore ma con molte meno chiamate (nel nativo ogni chiamata copia i token).
+
+import "lexer.logyx"
+
+record Node {
+    k: string,
+    name: string,
+    keys: [string],
+    kids: [Node]
+}
+
+// Risultato di una funzione di parsing: il nodo e la posizione dopo di esso.
+record PR {
+    node: Node,
+    pos: int
+}
+
+// --- costruttori di nodi ---
+
+fn nU(s: string) -> Node {
+    nk: [string] = []
+    nn: [Node] = []
+    return Node("U", s, nk, nn)
+}
+
+fn nQ(s: string) -> Node {
+    nk: [string] = []
+    nn: [Node] = []
+    return Node("Q", s, nk, nn)
+}
+
+fn nL(kids: [Node]) -> Node {
+    nk: [string] = []
+    return Node("L", "", nk, kids)
+}
+
+fn nT(name: string, kids: [Node]) -> Node {
+    nk: [string] = []
+    return Node("T", name, nk, kids)
+}
+
+fn nS(name: string, keys: [string], kids: [Node]) -> Node {
+    return Node("S", name, keys, kids)
+}
+
+fn vuota() -> Node {
+    nn: [Node] = []
+    return nL(nn)
+}
+
+fn nessuno() -> Node {
+    return nU("None")
+}
+
+fn qualche(n: Node) -> Node {
+    return nT("Some", [n])
+}
+
+fn nbool(b: bool) -> Node {
+    return nU(b ? "true" : "false")
+}
+
+fn ident(nome: string) -> Node {
+    return nT("Ident", [nQ(nome)])
+}
+
+// --- utilità sui token (ricevono UN token, non la lista: niente copie) ---
+
+fn errm(t: Tok, msg: string) -> string {
+    return ":{t.line}:{t.col}: errore di sintassi: {msg}"
+}
+
+// `expect`: 1 se il token è del tipo atteso (si avanza di 1), altrimenti errore.
+fn atteso(t: Tok, kind: string, what: string) -> int | error {
+    if t.kind != kind {
+        fail errm(t, "atteso {what}, trovato {show(t)}")
+    }
+    return 1
+}
+
+// `ident_name`: il nome se il token è un identificatore, altrimenti errore.
+fn nome(t: Tok, what: string) -> string | error {
+    if t.kind != "Ident" {
+        fail errm(t, "atteso {what}, trovato {show(t)}")
+    }
+    return t.val
+}
+
+// Stringa semplice (un solo pezzo letterale), per percorsi/crate/corpi extern.
+fn stringa_semplice(t: Tok, dopo: Tok, what: string) -> string | error {
+    if t.kind != "Str" {
+        fail errm(t, "atteso {what}, trovato {show(t)}")
+    }
+    if len(t.parts) == 1 and t.parts[0][0] == "L" {
+        p = t.parts[0]
+        return substring(p, 1, len(p))
+    }
+    fail errm(dopo, "{what}: è attesa una stringa semplice")
+}
+
+// Il token può iniziare un'espressione? (`?` ternario contro `?` di propagazione)
+fn starts_expr(k: string) -> bool {
+    return k == "Int" or k == "Float" or k == "Str" or k == "True" or k == "False"
+        or k == "Nil" or k == "Ident" or k == "LParen" or k == "LBrack" or k == "LBrace"
+        or k == "Minus" or k == "Not" or k == "Pipe"
+}
+
+// --- programma ---
+
+fn parse_program(ts: [Tok]) -> [Node] | error {
+    items: [Node] = []
+    i = 0
+    while ts[i].kind != "Eof" {
+        k = ts[i].kind
+        r = PR(nessuno(), i)
+        if k == "Import" {
+            r = import_item(ts, i)?
+        } else if k == "Record" {
+            r = record_def(ts, i)?
+        } else if k == "Enum" {
+            r = enum_def(ts, i)?
+        } else if k == "Use" {
+            r = use_rust(ts, i)?
+        } else if k == "Extern" {
+            r = extern_fn(ts, i)?
+        } else if k == "Fn" {
+            r = function(ts, i)?
+            r = PR(nT("Func", [r.node]), r.pos)
+        } else if k == "Ident" and ts[i].val == "route" {
+            r = route_def(ts, i)?
+        } else {
+            r = statement(ts, i)?
+            r = PR(nT("Stmt", [r.node]), r.pos)
+        }
+        push(items, r.node)
+        i = r.pos
+    }
+    return items
+}
+
+fn import_item(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "Import", "import")?
+    t = ts[i]
+    i = i + atteso(t, "Str", "percorso del modulo da importare")?
+    if len(t.parts) == 1 and t.parts[0][0] == "L" {
+        return PR(nT("Import", [nQ(substring(t.parts[0], 1, len(t.parts[0])))]), i)
+    }
+    fail errm(ts[i], "il percorso di 'import' deve essere una stringa semplice (senza interpolazione)")
+}
+
+fn record_def(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "Record", "record")?
+    name = nome(ts[i], "nome del record")?
+    i = i + 1
+    i = i + atteso(ts[i], "LBrace", "\{")?
+    fields: [Node] = []
+    if ts[i].kind != "RBrace" {
+        r = record_field(ts, i)?
+        push(fields, r.node)
+        i = r.pos
+        while ts[i].kind == "Comma" {
+            i = i + 1
+            if ts[i].kind == "RBrace" { break }
+            r = record_field(ts, i)?
+            push(fields, r.node)
+            i = r.pos
+        }
+    }
+    i = i + atteso(ts[i], "RBrace", "\}")?
+    rd = nS("RecordDef", ["name", "fields"], [nQ(name), nL(fields)])
+    return PR(nT("Record", [rd]), i)
+}
+
+fn record_field(ts: [Tok], i0: int) -> PR | error {
+    fname = nome(ts[i0], "nome del campo")?
+    i = i0 + 1
+    i = i + atteso(ts[i], "Colon", ":")?
+    r = type_ref(ts, i)?
+    return PR(nT("", [nQ(fname), r.node]), r.pos)
+}
+
+fn enum_def(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "Enum", "enum")?
+    name = nome(ts[i], "nome dell'enum")?
+    i = i + 1
+    i = i + atteso(ts[i], "LBrace", "\{")?
+    variants: [Node] = []
+    if ts[i].kind != "RBrace" {
+        r = enum_variant(ts, i)?
+        push(variants, r.node)
+        i = r.pos
+        while ts[i].kind == "Comma" {
+            i = i + 1
+            if ts[i].kind == "RBrace" { break }
+            r = enum_variant(ts, i)?
+            push(variants, r.node)
+            i = r.pos
+        }
+    }
+    i = i + atteso(ts[i], "RBrace", "\}")?
+    return PR(nS("Enum", ["name", "variants"], [nQ(name), nL(variants)]), i)
+}
+
+fn enum_variant(ts: [Tok], i0: int) -> PR | error {
+    name = nome(ts[i0], "nome di variante")?
+    i = i0 + 1
+    payload: [Node] = []
+    if ts[i].kind == "LParen" {
+        i = i + 1
+        if ts[i].kind != "RParen" {
+            r = type_ref(ts, i)?
+            push(payload, r.node)
+            i = r.pos
+            while ts[i].kind == "Comma" {
+                i = i + 1
+                r = type_ref(ts, i)?
+                push(payload, r.node)
+                i = r.pos
+            }
+        }
+        i = i + atteso(ts[i], "RParen", ")")?
+    }
+    return PR(nT("", [nQ(name), nL(payload)]), i)
+}
+
+// `require_ident`: un identificatore che deve essere proprio `word`.
+fn parola(ts: [Tok], i: int, word: string, dopo: string) -> int | error {
+    got = nome(ts[i], "'{word}'")?
+    if got != word {
+        fail errm(ts[i + 1], "dopo '{dopo}' è atteso '{word}'")
+    }
+    return i + 1
+}
+
+fn use_rust(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "Use", "use")?
+    i = parola(ts, i, "rust", "use")?
+    crate_name = stringa_semplice(ts[i], ts[i + 1], "nome della crate")?
+    i = i + 1
+    i = i + atteso(ts[i], "Assign", "=")?
+    version = stringa_semplice(ts[i], ts[i + 1], "versione della crate")?
+    i = i + 1
+    return PR(nS("UseRust", ["crate_name", "version"], [nQ(crate_name), nQ(version)]), i)
+}
+
+fn extern_fn(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "Extern", "extern")?
+    i = parola(ts, i, "rust", "extern")?
+    i = i + atteso(ts[i], "Fn", "fn")?
+    name = nome(ts[i], "nome di funzione")?
+    i = i + 1
+    i = i + atteso(ts[i], "LParen", "(")?
+    params: [Node] = []
+    if ts[i].kind != "RParen" {
+        r = extern_param(ts, i)?
+        push(params, r.node)
+        i = r.pos
+        while ts[i].kind == "Comma" {
+            i = i + 1
+            r = extern_param(ts, i)?
+            push(params, r.node)
+            i = r.pos
+        }
+    }
+    i = i + atteso(ts[i], "RParen", ")")?
+    i = i + atteso(ts[i], "Arrow", "'->' con il tipo di ritorno")?
+    rr = type_ref(ts, i)?
+    i = rr.pos
+    i = i + atteso(ts[i], "Assign", "=")?
+    body = stringa_semplice(ts[i], ts[i + 1], "corpo Rust dell'extern")?
+    i = i + 1
+    ef = nS("ExternFn", ["name", "params", "ret", "body"], [nQ(name), nL(params), rr.node, nQ(body)])
+    return PR(nT("ExternFn", [ef]), i)
+}
+
+fn extern_param(ts: [Tok], i0: int) -> PR | error {
+    r = param(ts, i0)?
+    ty = r.node.kids[1]
+    if ty.k == "U" {
+        fail errm(ts[r.pos], "i parametri di una funzione extern richiedono un tipo")
+    }
+    return PR(nT("", [r.node.kids[0], ty.kids[0]]), r.pos)
+}
+
+fn route_def(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + 1   // 'route' (identificatore)
+    t = ts[i]
+    i = i + atteso(t, "Str", "percorso della route")?
+    if not (len(t.parts) == 1 and t.parts[0][0] == "L") {
+        fail errm(ts[i], "il percorso della route deve essere una stringa semplice (senza interpolazione)")
+    }
+    path = substring(t.parts[0], 1, len(t.parts[0]))
+    b = block(ts, i)?
+    return PR(nS("Route", ["path", "body"], [nQ(path), b.node]), b.pos)
+}
+
+fn function(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "Fn", "fn")?
+    name = nome(ts[i], "nome di funzione")?
+    i = i + 1
+    i = i + atteso(ts[i], "LParen", "(")?
+    params: [Node] = []
+    if ts[i].kind != "RParen" {
+        r = param(ts, i)?
+        push(params, r.node)
+        i = r.pos
+        while ts[i].kind == "Comma" {
+            i = i + 1
+            r = param(ts, i)?
+            push(params, r.node)
+            i = r.pos
+        }
+    }
+    i = i + atteso(ts[i], "RParen", ")")?
+    // i parametri con default stanno in coda; il varargs può essere solo l'ultimo
+    seen_default = false
+    for p in params {
+        if p.kids[2].k != "U" {
+            seen_default = true
+        } else if seen_default {
+            fail errm(ts[i], "un parametro senza valore di default non può seguirne uno con default")
+        }
+    }
+    for j, p in params {
+        if p.kids[3].name == "true" and j != len(params) - 1 {
+            fail errm(ts[i], "un parametro varargs può essere solo l'ultimo")
+        }
+    }
+    ret = nessuno()
+    if ts[i].kind == "Arrow" {
+        i = i + 1
+        r = type_ref(ts, i)?
+        ret = qualche(r.node)
+        i = r.pos
+    }
+    b = block(ts, i)?
+    f = nS("Function", ["name", "params", "ret", "body"], [nQ(name), nL(params), ret, b.node])
+    return PR(f, b.pos)
+}
+
+fn param(ts: [Tok], i0: int) -> PR | error {
+    name = nome(ts[i0], "nome di parametro")?
+    i = i0 + 1
+    ty = nessuno()
+    if ts[i].kind == "Colon" {
+        i = i + 1
+        r = type_ref(ts, i)?
+        ty = qualche(r.node)
+        i = r.pos
+    }
+    // varargs: `nome: tipo...`
+    variadic = false
+    if ts[i].kind == "Dot" {
+        i = i + 1
+        i = i + atteso(ts[i], "Dot", ".")?
+        i = i + atteso(ts[i], "Dot", ".")?
+        variadic = true
+    }
+    def = nessuno()
+    if ts[i].kind == "Assign" {
+        i = i + 1
+        r = expression(ts, i)?
+        def = qualche(r.node)
+        i = r.pos
+    }
+    if variadic and def.k != "U" {
+        fail errm(ts[i], "un parametro varargs non può avere un valore di default")
+    }
+    p = nS("Param", ["name", "ty", "default", "variadic"], [nQ(name), ty, def, nbool(variadic)])
+    return PR(p, i)
+}
+
+// Tipo: base, eventualmente fallibile `T | error` (il nodo è la stringa del tipo).
+fn type_ref(ts: [Tok], i0: int) -> PR | error {
+    r = type_base(ts, i0)?
+    i = r.pos
+    if ts[i].kind == "Pipe" {
+        i = i + 1
+        w = nome(ts[i], "'error'")?
+        i = i + 1
+        if w != "error" {
+            fail errm(ts[i], "dopo '|' nel tipo è atteso 'error', trovato '{w}'")
+        }
+        return PR(nQ(r.node.name + "|error"), i)
+    }
+    return r
+}
+
+fn type_base(ts: [Tok], i0: int) -> PR | error {
+    i = i0
+    k = ts[i].kind
+    if k == "LBrack" {
+        r = type_base(ts, i + 1)?
+        i = r.pos + atteso(ts[r.pos], "RBrack", "]")?
+        return PR(nQ("[" + r.node.name + "]"), i)
+    }
+    if k == "LBrace" {
+        kk = type_base(ts, i + 1)?
+        i = kk.pos + atteso(ts[kk.pos], "Colon", ":")?
+        vv = type_base(ts, i)?
+        i = vv.pos + atteso(ts[vv.pos], "RBrace", "\}")?
+        return PR(nQ("\{" + kk.node.name + ": " + vv.node.name + "\}"), i)
+    }
+    if k == "Nil" {
+        return PR(nQ("nil"), i + 1)
+    }
+    if k == "LParen" {
+        // tipo tupla (T1, T2, …); con un solo tipo è un raggruppamento
+        r = type_base(ts, i + 1)?
+        tipi = r.node.name
+        quanti = 1
+        i = r.pos
+        while ts[i].kind == "Comma" {
+            r = type_base(ts, i + 1)?
+            tipi = tipi + "," + r.node.name
+            quanti = quanti + 1
+            i = r.pos
+        }
+        i = i + atteso(ts[i], "RParen", ")")?
+        return PR(nQ(quanti == 1 ? tipi : "(" + tipi + ")"), i)
+    }
+    if k == "Fn" {
+        // tipo funzione: fn(T1, T2) -> R
+        i = i + 1
+        i = i + atteso(ts[i], "LParen", "(")?
+        ps = ""
+        if ts[i].kind != "RParen" {
+            r = type_base(ts, i)?
+            ps = r.node.name
+            i = r.pos
+            while ts[i].kind == "Comma" {
+                r = type_base(ts, i + 1)?
+                ps = ps + "," + r.node.name
+                i = r.pos
+            }
+        }
+        i = i + atteso(ts[i], "RParen", ")")?
+        i = i + atteso(ts[i], "Arrow", "'->' con il tipo di ritorno")?
+        rt = type_base(ts, i)?
+        return PR(nQ("fn(" + ps + ")->" + rt.node.name), rt.pos)
+    }
+    n = nome(ts[i], "tipo")?
+    return PR(nQ(n), i + 1)
+}
+
+fn block(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "LBrace", "\{")?
+    stmts: [Node] = []
+    while ts[i].kind != "RBrace" and ts[i].kind != "Eof" {
+        if ts[i].kind == "Fn" {
+            r = function(ts, i)?
+            push(stmts, nT("Func", [r.node]))
+            i = r.pos
+        } else {
+            r = statement(ts, i)?
+            push(stmts, r.node)
+            i = r.pos
+        }
+    }
+    i = i + atteso(ts[i], "RBrace", "\}")?
+    return PR(nL(stmts), i)
+}
+
+// --- istruzioni ---
+
+fn statement(ts: [Tok], i: int) -> PR | error {
+    k = ts[i].kind
+    if k == "If" { return if_stmt(ts, i) }
+    if k == "While" {
+        c = expression(ts, i + 1)?
+        b = block(ts, c.pos)?
+        return PR(nS("While", ["cond", "body"], [c.node, b.node]), b.pos)
+    }
+    if k == "For" { return for_stmt(ts, i) }
+    if k == "Return" {
+        if ts[i + 1].kind == "RBrace" or ts[i + 1].kind == "Eof" {
+            return PR(nT("Return", [nessuno()]), i + 1)
+        }
+        e = expression(ts, i + 1)?
+        return PR(nT("Return", [qualche(e.node)]), e.pos)
+    }
+    if k == "Fail" {
+        e = expression(ts, i + 1)?
+        return PR(nT("Fail", [e.node]), e.pos)
+    }
+    if k == "Match" { return match_stmt(ts, i) }
+    if k == "Render" {
+        if ts[i + 1].kind == "Template" {
+            return PR(nS("Render", ["template"], [nQ(ts[i + 1].val)]), i + 2)
+        }
+        fail errm(ts[i + 1], "dopo 'render' è atteso un template HTML che inizia con '<'")
+    }
+    if k == "Ident" and ts[i].val == "respond" and ts[i + 1].kind != "Assign" {
+        e = expression(ts, i + 1)?
+        return PR(nT("Respond", [e.node]), e.pos)
+    }
+    if k == "Break" { return PR(nU("Break"), i + 1) }
+    if k == "Continue" { return PR(nU("Continue"), i + 1) }
+    if k == "Const" {
+        name = nome(ts[i + 1], "nome costante")?
+        j = i + 2
+        ty = nessuno()
+        if ts[j].kind == "Colon" {
+            r = type_ref(ts, j + 1)?
+            ty = qualche(r.node)
+            j = r.pos
+        }
+        j = j + atteso(ts[j], "Assign", "=")?
+        v = expression(ts, j)?
+        d = nS("Decl", ["name", "value", "is_const", "ty"], [nQ(name), v.node, nbool(true), ty])
+        return PR(d, v.pos)
+    }
+    return decl_or_expr(ts, i)
+}
+
+fn kind_at(ts: [Tok], i: int) -> string {
+    return i < len(ts) ? ts[i].kind : "Eof"
+}
+
+fn decl_or_expr(ts: [Tok], i0: int) -> PR | error {
+    i = i0
+    // destructuring di tupla:  IDENT ',' IDENT (',' IDENT)* '=' espressione
+    if ts[i].kind == "Ident" and ts[i + 1].kind == "Comma" {
+        k = 0
+        esito = 0   // 0 = da decidere, 1 = destructuring, 2 = no
+        while esito == 0 {
+            if kind_at(ts, i + k) != "Ident" {
+                esito = 2
+            } else {
+                dopo = kind_at(ts, i + k + 1)
+                if dopo == "Comma" {
+                    k = k + 2
+                } else if dopo == "Assign" {
+                    esito = 1
+                } else {
+                    esito = 2
+                }
+            }
+        }
+        if esito == 1 {
+            names: [Node] = []
+            push(names, nQ(nome(ts[i], "nome")?))
+            i = i + 1
+            while ts[i].kind == "Comma" {
+                push(names, nQ(nome(ts[i + 1], "nome")?))
+                i = i + 2
+            }
+            i = i + atteso(ts[i], "Assign", "=")?
+            v = expression(ts, i)?
+            return PR(nS("Destructure", ["names", "value"], [nL(names), v.node]), v.pos)
+        }
+    }
+    // dichiarazione tipizzata:  IDENT ':' tipo '=' espressione
+    if ts[i].kind == "Ident" and ts[i + 1].kind == "Colon" {
+        name = ts[i].val
+        r = type_ref(ts, i + 2)?
+        i = r.pos + atteso(ts[r.pos], "Assign", "=")?
+        v = expression(ts, i)?
+        d = nS("Decl", ["name", "value", "is_const", "ty"], [nQ(name), v.node, nbool(false), qualche(r.node)])
+        return PR(d, v.pos)
+    }
+    e = expression(ts, i)?
+    i = e.pos
+    bersaglio = e.node.name == "Ident" or e.node.name == "Index"
+    if ts[i].kind == "Assign" {
+        v = expression(ts, i + 1)?
+        if not bersaglio {
+            fail errm(ts[v.pos], "assegnazione a un bersaglio non valido")
+        }
+        return PR(nS("Assign", ["target", "value"], [e.node, v.node]), v.pos)
+    }
+    ops = {"PlusEq": "Add", "MinusEq": "Sub", "StarEq": "Mul", "SlashEq": "Div", "PercentEq": "Mod"}
+    if has(ops, ts[i].kind) {
+        op = ops[ts[i].kind]
+        rhs = expression(ts, i + 1)?
+        if not bersaglio {
+            fail errm(ts[rhs.pos], "assegnazione composta a un bersaglio non valido")
+        }
+        val = nS("Binary", ["op", "left", "right"], [nU(op), e.node, rhs.node])
+        return PR(nS("Assign", ["target", "value"], [e.node, val]), rhs.pos)
+    }
+    return PR(nT("Expr", [e.node]), i)
+}
+
+fn if_stmt(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "If", "if")?
+    c = expression(ts, i)?
+    t = block(ts, c.pos)?
+    i = t.pos
+    els = nessuno()
+    if ts[i].kind == "Else" {
+        i = i + 1
+        if ts[i].kind == "If" {
+            r = if_stmt(ts, i)?
+            els = qualche(nL([r.node]))
+            i = r.pos
+        } else {
+            r = block(ts, i)?
+            els = qualche(r.node)
+            i = r.pos
+        }
+    }
+    return PR(nS("If", ["cond", "then_block", "else_block"], [c.node, t.node, els]), i)
+}
+
+fn for_stmt(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "For", "for")?
+    first = nome(ts[i], "variabile di ciclo")?
+    i = i + 1
+    index = nessuno()
+    var = first
+    if ts[i].kind == "Comma" {
+        // for indice, elemento in …
+        index = qualche(nQ(first))
+        var = nome(ts[i + 1], "variabile di ciclo")?
+        i = i + 2
+    }
+    i = i + atteso(ts[i], "In", "in")?
+    it = expression(ts, i)?
+    b = block(ts, it.pos)?
+    f = nS("For", ["var", "iterable", "body", "index"], [nQ(var), it.node, b.node, index])
+    return PR(f, b.pos)
+}
+
+fn match_stmt(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "Match", "match")?
+    s = expression(ts, i)?
+    i = s.pos + atteso(ts[s.pos], "LBrace", "\{")?
+    is_result = ts[i].kind == "Ident" and (ts[i].val == "ok" or ts[i].val == "err")
+    if not is_result {
+        cases: [Node] = []
+        els = nessuno()
+        while ts[i].kind != "RBrace" and ts[i].kind != "Eof" {
+            if ts[i].kind == "Else" {
+                b = block(ts, i + 1)?
+                els = qualche(b.node)
+                i = b.pos
+            } else {
+                pat = expression(ts, i)?
+                b = block(ts, pat.pos)?
+                push(cases, nT("", [pat.node, b.node]))
+                i = b.pos
+            }
+        }
+        i = i + atteso(ts[i], "RBrace", "\}")?
+        // match su enum con payload: se un pattern è `Variante(bind, …)` con soli nomi
+        is_enum = false
+        for c in cases {
+            p = c.kids[0]
+            if p.name == "Call" and p.kids[0].name == "Ident" {
+                tutti = true
+                for a in p.kids[1].kids {
+                    if a.name != "Ident" { tutti = false }
+                }
+                if tutti { is_enum = true }
+            }
+        }
+        if is_enum {
+            ecases: [Node] = []
+            for c in cases {
+                p = c.kids[0]
+                variant = ""
+                binds: [Node] = []
+                if p.name == "Call" {
+                    if p.kids[0].name != "Ident" {
+                        fail errm(ts[i], "pattern di variante non valido")
+                    }
+                    variant = p.kids[0].kids[0].name
+                    for a in p.kids[1].kids {
+                        if a.name != "Ident" {
+                            fail errm(ts[i], "in un pattern di variante gli argomenti devono essere nomi (binding)")
+                        }
+                        push(binds, a.kids[0])
+                    }
+                } else if p.name == "Ident" {
+                    variant = p.kids[0].name
+                } else {
+                    fail errm(ts[i], "in 'match' su enum i rami sono 'Variante(bind…)' o 'Variante'")
+                }
+                push(ecases, nS("EnumCase", ["variant", "binds", "block"], [nQ(variant), nL(binds), c.kids[1]]))
+            }
+            return PR(nS("MatchEnum", ["subject", "cases", "else_block"], [s.node, nL(ecases), els]), i)
+        }
+        return PR(nS("MatchValue", ["subject", "cases", "else_block"], [s.node, nL(cases), els]), i)
+    }
+    okv = ""
+    errv = ""
+    okb = vuota()
+    errb = vuota()
+    ha_ok = false
+    ha_err = false
+    while ts[i].kind != "RBrace" and ts[i].kind != "Eof" {
+        tag = nome(ts[i], "ramo 'ok' oppure 'err'")?
+        i = i + 1
+        if tag != "ok" and tag != "err" {
+            fail errm(ts[i], "in 'match' sono ammessi solo i rami 'ok' e 'err', trovato '{tag}'")
+        }
+        var = nome(ts[i], "nome della variabile del ramo")?
+        b = block(ts, i + 1)?
+        i = b.pos
+        if tag == "ok" {
+            okv = var
+            okb = b.node
+            ha_ok = true
+        } else {
+            errv = var
+            errb = b.node
+            ha_err = true
+        }
+    }
+    i = i + atteso(ts[i], "RBrace", "\}")?
+    if not (ha_ok and ha_err) {
+        fail errm(ts[i], "'match' richiede entrambi i rami 'ok' e 'err'")
+    }
+    m = nS("Match", ["subject", "ok_var", "ok_block", "err_var", "err_block"],
+           [s.node, nQ(okv), okb, nQ(errv), errb])
+    return PR(m, i)
+}
+
+// --- espressioni ---
+
+fn expression(ts: [Tok], i0: int) -> PR | error {
+    c = binexpr(ts, i0, 1)?
+    // espressione condizionale (ternario): `cond ? then : els`
+    if ts[c.pos].kind == "Question" {
+        t = binexpr(ts, c.pos + 1, 1)?
+        i = t.pos + atteso(ts[t.pos], "Colon", "':' nell'espressione condizionale (cond ? a : b)")?
+        e = expression(ts, i)?   // destra-associativo
+        return PR(nS("Ternary", ["cond", "then", "els"], [c.node, t.node, e.node]), e.pos)
+    }
+    return c
+}
+
+// Precedenza degli operatori binari (0 = non è un operatore binario).
+fn prec(k: string) -> int {
+    tab = {"Or": 1, "And": 2, "Pipe": 3, "Caret": 4, "Amp": 5, "Eq": 6, "Ne": 6,
+           "Lt": 7, "Le": 7, "Gt": 7, "Ge": 7, "In": 7, "Shl": 8, "Shr": 8,
+           "Plus": 9, "Minus": 9, "Star": 10, "Slash": 10, "Percent": 10, "StarStar": 11}
+    return has(tab, k) ? tab[k] : 0
+}
+
+fn combina(k: string, l: Node, r: Node) -> Node {
+    if k == "Or" or k == "And" {
+        return nS("Logical", ["op", "left", "right"], [nU(k), l, r])
+    }
+    if k == "In" {
+        return nS("In", ["item", "coll"], [l, r])
+    }
+    nomi = {"Pipe": "BitOr", "Caret": "BitXor", "Amp": "BitAnd", "Eq": "Eq", "Ne": "Ne",
+            "Lt": "Lt", "Le": "Le", "Gt": "Gt", "Ge": "Ge", "Shl": "Shl", "Shr": "Shr",
+            "Plus": "Add", "Minus": "Sub", "Star": "Mul", "Slash": "Div", "Percent": "Mod",
+            "StarStar": "Pow"}
+    return nS("Binary", ["op", "left", "right"], [nU(nomi[k]), l, r])
+}
+
+// Precedence climbing: operatori a sinistra-associativi, `**` a destra.
+fn binexpr(ts: [Tok], i0: int, minp: int) -> PR | error {
+    r = unary(ts, i0)?
+    left = r.node
+    i = r.pos
+    fine = false
+    while not fine {
+        k = ts[i].kind
+        p = prec(k)
+        if p == 0 or p < minp {
+            fine = true
+        } else {
+            prossimo = k == "StarStar" ? p : p + 1
+            d = binexpr(ts, i + 1, prossimo)?
+            left = combina(k, left, d.node)
+            i = d.pos
+        }
+    }
+    return PR(left, i)
+}
+
+fn unary(ts: [Tok], i: int) -> PR | error {
+    k = ts[i].kind
+    if k == "Not" or k == "Minus" or k == "Tilde" {
+        op = k == "Not" ? "Not" : (k == "Minus" ? "Neg" : "BitNot")
+        r = unary(ts, i + 1)?
+        return PR(nS("Unary", ["op", "operand"], [nU(op), r.node]), r.pos)
+    }
+    return postfix(ts, i)
+}
+
+fn postfix(ts: [Tok], i0: int) -> PR | error {
+    r = primary(ts, i0)?
+    e = r.node
+    i = r.pos
+    fine = false
+    while not fine {
+        k = ts[i].kind
+        if k == "LParen" {
+            i = i + 1
+            args: [Node] = []
+            if ts[i].kind != "RParen" {
+                a = expression(ts, i)?
+                push(args, a.node)
+                i = a.pos
+                while ts[i].kind == "Comma" {
+                    a = expression(ts, i + 1)?
+                    push(args, a.node)
+                    i = a.pos
+                }
+            }
+            i = i + atteso(ts[i], "RParen", ")")?
+            e = nS("Call", ["callee", "args"], [e, nL(args)])
+        } else if k == "LBrack" {
+            x = expression(ts, i + 1)?
+            i = x.pos + atteso(ts[x.pos], "RBrack", "]")?
+            e = nS("Index", ["target", "index"], [e, x.node])
+        } else if k == "Question" {
+            // `?` è ternario se seguito da un inizio di espressione SULLA STESSA RIGA;
+            // altrimenti propaga (gli a-capo non sono token)
+            if starts_expr(kind_at(ts, i + 1)) and ts[i + 1].line == ts[i].line {
+                fine = true
+            } else {
+                i = i + 1
+                e = nT("Try", [e])
+            }
+        } else if k == "Dot" {
+            n = nome(ts[i + 1], "nome del campo")?
+            i = i + 2
+            e = nS("Field", ["target", "name"], [e, nQ(n)])
+        } else {
+            fine = true
+        }
+    }
+    return PR(e, i)
+}
+
+// Lambda inline: `|p1, p2| espressione`.
+fn lambda(ts: [Tok], i0: int) -> PR | error {
+    i = i0 + atteso(ts[i0], "Pipe", "|")?
+    params: [Node] = []
+    if ts[i].kind != "Pipe" {
+        push(params, nQ(nome(ts[i], "parametro della lambda")?))
+        i = i + 1
+        while ts[i].kind == "Comma" {
+            push(params, nQ(nome(ts[i + 1], "parametro della lambda")?))
+            i = i + 2
+        }
+    }
+    i = i + atteso(ts[i], "Pipe", "| di chiusura dei parametri")?
+    b = expression(ts, i)?
+    return PR(nS("Lambda", ["params", "body"], [nL(params), b.node]), b.pos)
+}
+
+fn primary(ts: [Tok], i: int) -> PR | error {
+    t = ts[i]
+    k = t.kind
+    if k == "Pipe" { return lambda(ts, i) }
+    if k == "Int" { return PR(nT("Int", [nU(str(int(t.val)))]), i + 1) }
+    if k == "Float" { return PR(nT("Float", [nU(debug_float(t.val))]), i + 1) }
+    if k == "True" { return PR(nT("Bool", [nU("true")]), i + 1) }
+    if k == "False" { return PR(nT("Bool", [nU("false")]), i + 1) }
+    if k == "Nil" { return PR(nU("Nil"), i + 1) }
+    if k == "Str" {
+        s = build_string(t.parts, ts[i + 1])?
+        return PR(s, i + 1)
+    }
+    if k == "Ident" { return PR(ident(t.val), i + 1) }
+    if k == "LParen" {
+        e = expression(ts, i + 1)?
+        j = e.pos
+        // tupla `(a, b, …)` se c'è una virgola; altrimenti raggruppamento
+        if ts[j].kind == "Comma" {
+            els: [Node] = []
+            push(els, e.node)
+            fine = false
+            while ts[j].kind == "Comma" and not fine {
+                j = j + 1
+                if ts[j].kind == "RParen" {
+                    fine = true
+                } else {
+                    x = expression(ts, j)?
+                    push(els, x.node)
+                    j = x.pos
+                }
+            }
+            j = j + atteso(ts[j], "RParen", ")")?
+            return PR(nT("Tuple", [nL(els)]), j)
+        }
+        j = j + atteso(ts[j], "RParen", ")")?
+        return PR(e.node, j)
+    }
+    if k == "LBrack" {
+        if ts[i + 1].kind == "RBrack" {
+            return PR(nT("List", [vuota()]), i + 2)
+        }
+        first = expression(ts, i + 1)?
+        j = first.pos
+        // list comprehension: `[espr for var in iterabile (if cond)?]`
+        if ts[j].kind == "For" {
+            var = nome(ts[j + 1], "variabile della comprehension")?
+            j = j + 2
+            j = j + atteso(ts[j], "In", "in")?
+            it = expression(ts, j)?
+            j = it.pos
+            cond = nessuno()
+            if ts[j].kind == "If" {
+                c = expression(ts, j + 1)?
+                cond = qualche(c.node)
+                j = c.pos
+            }
+            j = j + atteso(ts[j], "RBrack", "]")?
+            cn = nS("Comprehension", ["expr", "var", "iterable", "cond"], [first.node, nQ(var), it.node, cond])
+            return PR(cn, j)
+        }
+        els: [Node] = []
+        push(els, first.node)
+        fine = false
+        while ts[j].kind == "Comma" and not fine {
+            j = j + 1
+            if ts[j].kind == "RBrack" {
+                fine = true
+            } else {
+                x = expression(ts, j)?
+                push(els, x.node)
+                j = x.pos
+            }
+        }
+        j = j + atteso(ts[j], "RBrack", "]")?
+        return PR(nT("List", [nL(els)]), j)
+    }
+    if k == "LBrace" {
+        // `{}` = mappa vuota; `{k: v, …}` = mappa; `{a, b, …}` = insieme
+        if ts[i + 1].kind == "RBrace" {
+            return PR(nT("Map", [vuota()]), i + 2)
+        }
+        first = expression(ts, i + 1)?
+        j = first.pos
+        if ts[j].kind == "Colon" {
+            v = expression(ts, j + 1)?
+            j = v.pos
+            pairs: [Node] = []
+            push(pairs, nT("", [first.node, v.node]))
+            fine = false
+            while ts[j].kind == "Comma" and not fine {
+                j = j + 1
+                if ts[j].kind == "RBrace" {
+                    fine = true
+                } else {
+                    kx = expression(ts, j)?
+                    j = kx.pos + atteso(ts[kx.pos], "Colon", ":")?
+                    vx = expression(ts, j)?
+                    push(pairs, nT("", [kx.node, vx.node]))
+                    j = vx.pos
+                }
+            }
+            j = j + atteso(ts[j], "RBrace", "\}")?
+            return PR(nT("Map", [nL(pairs)]), j)
+        }
+        els: [Node] = []
+        push(els, first.node)
+        fine = false
+        while ts[j].kind == "Comma" and not fine {
+            j = j + 1
+            if ts[j].kind == "RBrace" {
+                fine = true
+            } else {
+                x = expression(ts, j)?
+                push(els, x.node)
+                j = x.pos
+            }
+        }
+        j = j + atteso(ts[j], "RBrace", "\}")?
+        return PR(nT("Set", [nL(els)]), j)
+    }
+    fail errm(t, "espressione attesa, trovato {show(t)}")
+}
+
+// Stringa con interpolazione: ogni pezzo `{espr}` viene rilessato e parsato.
+// Un errore di troppo-testo nell'interpolazione si segnala sul token che segue.
+fn build_string(parts: [string], dopo: Tok) -> Node | error {
+    out: [Node] = []
+    for p in parts {
+        corpo = substring(p, 1, len(p))
+        if p[0] == "L" {
+            push(out, nT("Lit", [nQ(corpo)]))
+        } else {
+            sub = lex(corpo, "")?
+            e = expression(sub, 0)?
+            if sub[e.pos].kind != "Eof" {
+                fail errm(dopo, "interpolazione con espressione non valida: \{" + corpo + "\}")
+            }
+            push(out, nT("Expr", [e.node]))
+        }
+    }
+    return nT("Str", [nL(out)])
+}
+
+// --- stampa come il pretty-Debug `{:#?}` di Rust ---
+
+fn rientro(d: int) -> string {
+    s = ""
+    for q in range(d) { s = s + "    " }
+    return s
+}
+
+fn pp(n: Node, d: int) -> string {
+    if n.k == "U" {
+        return n.name
+    }
+    if n.k == "Q" {
+        return debug_str(n.name)
+    }
+    if n.k == "L" {
+        if len(n.kids) == 0 {
+            return "[]"
+        }
+        out = "[\n"
+        for c in n.kids {
+            out = out + rientro(d + 1) + pp(c, d + 1) + ",\n"
+        }
+        return out + rientro(d) + "]"
+    }
+    if n.k == "T" {
+        out = n.name + "(\n"
+        for c in n.kids {
+            out = out + rientro(d + 1) + pp(c, d + 1) + ",\n"
+        }
+        return out + rientro(d) + ")"
+    }
+    out = n.name + " \{\n"
+    for j, c in n.kids {
+        out = out + rientro(d + 1) + n.keys[j] + ": " + pp(c, d + 1) + ",\n"
+    }
+    return out + rientro(d) + "\}"
+}

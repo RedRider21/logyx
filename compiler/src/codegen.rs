@@ -985,7 +985,13 @@ impl Codegen {
                         return Some(v.clone());
                     }
                 }
-                None
+                // altrimenti dal tipo del bersaglio (es. campo di record `[T]`/`{K: V}`,
+                // indice di indice `xs[i][j]`)
+                let tt = self.type_of(target, ptypes)?;
+                if let Some(inner) = list_inner(&tt) {
+                    return Some(inner.to_string());
+                }
+                map_inner(&tt).map(|(_, v)| v.to_string())
             }
             _ => None,
         }
@@ -1642,6 +1648,14 @@ impl Codegen {
                     }
                 };
                 if self.cur_fallible {
+                    // `return g(…)` con g fallibile: il Result passa così com'è (errore compreso)
+                    if let Some(Expr::Call { callee, .. }) = v {
+                        if let Expr::Ident(n) = &**callee {
+                            if self.fallible.get(n).copied().unwrap_or(false) {
+                                return Ok(format!("{pad}return {};", self.expr(v.as_ref().unwrap())?));
+                            }
+                        }
+                    }
                     let inner = match v {
                         None => "()".to_string(),
                         Some(e) => gen(self, e)?,
@@ -1826,7 +1840,8 @@ impl Codegen {
                 // marca il nome come locale in scope (anche se il tipo è ignoto): così un
                 // globale omonimo non viene scambiato per il locale (vedi expr Ident)
                 self.cur_types.entry(name.clone()).or_insert(None);
-                Ok(format!("{pad}{kw} {name} = {};", self.expr(value)?))
+                // valore da una variabile: si copia (altrimenti la sorgente verrebbe "mossa")
+                Ok(format!("{pad}{kw} {name} = {};", self.arg(value)?))
             }
             Stmt::Destructure { names, value } => {
                 // destructuring di tupla: `let (a, b) = valore;`
@@ -1888,7 +1903,7 @@ impl Codegen {
                             name
                         )));
                     }
-                    let val = self.expr(value)?;
+                    let val = self.arg(value)?;
                     return Ok(format!("{pad}__set_{name}({val});"));
                 }
                 if let Some(k) = value_kind(value) {
@@ -1899,7 +1914,8 @@ impl Codegen {
                     self.cur_types.insert(name.clone(), Some(vt));
                 }
                 self.cur_types.entry(name.clone()).or_insert(None);
-                let val = self.expr(value)?;
+                // valore da una variabile: si copia (altrimenti la sorgente verrebbe "mossa")
+                let val = self.arg(value)?;
                 if declared.contains(&name) {
                     Ok(format!("{pad}{name} = {val};"))
                 } else {
